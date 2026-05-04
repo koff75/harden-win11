@@ -1,0 +1,21 @@
+# Logs
+*.log
+logs/
+
+# Backups registre
+regbackup-*/
+*.reg.bak
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editeurs
+.vscode/
+.idea/
+*.swp
+*~
+
+# PowerShell
+*.psd1.bak
