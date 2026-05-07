@@ -153,6 +153,20 @@ func applyCmd() *cobra.Command {
 			w := ndjson.NewWriter(os.Stdout)
 			ctx := context.Background()
 
+			sectionIDs := make([]string, 0, len(sections))
+			for _, s := range sections {
+				sectionIDs = append(sectionIDs, s.id)
+			}
+			_ = w.Emit(map[string]any{
+				"type":             "run_start",
+				"run_id":           runID,
+				"manifest_version": ManifestVersion,
+				"engine_version":   Version,
+				"dry_run":          true,
+				"section_count":    len(sections),
+				"sections":         sectionIDs,
+			})
+
 			for _, sct := range sections {
 				if err := dryrun.Run(ctx, sct.path, dryrun.Options{
 					ManifestDir: flagManifestDir,
@@ -161,9 +175,19 @@ func applyCmd() *cobra.Command {
 					Writer:      w,
 					RunID:       runID,
 				}); err != nil {
+					_ = w.Emit(map[string]any{
+						"type":   "run_end",
+						"run_id": runID,
+						"error":  err.Error(),
+					})
 					return fmt.Errorf("section %s: %w", sct.id, err)
 				}
 			}
+
+			_ = w.Emit(map[string]any{
+				"type":   "run_end",
+				"run_id": runID,
+			})
 			return nil
 		},
 	}

@@ -22,7 +22,12 @@ type Options struct {
 	RunID       string
 }
 
-// Run exécute le dry-run sur toutes les règles du manifest fourni.
+// Run exécute le dry-run sur toutes les règles d'un manifest section.
+//
+// Émet un event "section_start" puis une suite "action_result" puis
+// "section_end". Les events "run_start" et "run_end" englobants sont
+// émis par le caller (CLI), pas ici, pour qu'un run multi-section ait
+// 1 seul run_start/run_end et 1 paire section_start/section_end par section.
 func Run(ctx context.Context, sectionPath string, opts Options) error {
 	s, err := manifest.Load(sectionPath)
 	if err != nil {
@@ -30,10 +35,13 @@ func Run(ctx context.Context, sectionPath string, opts Options) error {
 	}
 
 	_ = opts.Writer.Emit(map[string]any{
-		"type":             "run_start",
+		"type":             "section_start",
 		"run_id":           opts.RunID,
+		"section_id":       s.Section.ID,
+		"section_order":    s.Section.Order,
+		"section_title":    s.Section.Title,
 		"manifest_version": s.Version,
-		"dry_run":          true,
+		"rule_count":       len(s.Rules),
 	})
 
 	for _, rule := range s.Rules {
@@ -46,6 +54,7 @@ func Run(ctx context.Context, sectionPath string, opts Options) error {
 		ev := map[string]any{
 			"type":        "action_result",
 			"run_id":      opts.RunID,
+			"section_id":  s.Section.ID,
 			"timestamp":   time.Now().UTC().Format(time.RFC3339),
 			"rule_id":     rule.ID,
 			"duration_ms": duration.Milliseconds(),
@@ -68,8 +77,9 @@ func Run(ctx context.Context, sectionPath string, opts Options) error {
 	}
 
 	_ = opts.Writer.Emit(map[string]any{
-		"type":   "run_end",
-		"run_id": opts.RunID,
+		"type":       "section_end",
+		"run_id":     opts.RunID,
+		"section_id": s.Section.ID,
 	})
 	return nil
 }

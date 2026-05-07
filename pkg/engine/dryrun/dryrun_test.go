@@ -43,23 +43,41 @@ func TestRun_DefenderRealtime(t *testing.T) {
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
 	if len(lines) < 3 {
-		t.Fatalf("expected >= 3 events, got %d : %s", len(lines), buf.String())
+		t.Fatalf("expected >= 3 events (section_start + action_result + section_end), got %d : %s", len(lines), buf.String())
 	}
 
-	var sawAction bool
+	var sawSectionStart, sawSectionEnd, sawAction bool
 	for _, line := range lines {
 		var ev map[string]any
 		if err := json.Unmarshal([]byte(line), &ev); err != nil {
 			t.Errorf("invalid JSON line: %q : %v", line, err)
 			continue
 		}
-		if ev["type"] == "action_result" && ev["rule_id"] == "defender.realtime" {
-			sawAction = true
-			status, _ := ev["status"].(string)
-			if status != "would_skip" && status != "would_apply" && status != "would_fail" {
-				t.Errorf("unexpected status: %q", status)
+		switch ev["type"] {
+		case "section_start":
+			sawSectionStart = true
+			if ev["section_id"] != "defender" {
+				t.Errorf("expected section_id=defender, got %v", ev["section_id"])
 			}
+		case "section_end":
+			sawSectionEnd = true
+		case "action_result":
+			if ev["rule_id"] == "defender.realtime" {
+				sawAction = true
+				status, _ := ev["status"].(string)
+				if status != "would_skip" && status != "would_apply" && status != "would_fail" {
+					t.Errorf("unexpected status: %q", status)
+				}
+			}
+		case "run_start", "run_end":
+			t.Errorf("dryrun.Run() must NOT emit %s (caller's responsibility)", ev["type"])
 		}
+	}
+	if !sawSectionStart {
+		t.Error("did not see section_start event")
+	}
+	if !sawSectionEnd {
+		t.Error("did not see section_end event")
 	}
 	if !sawAction {
 		t.Error("did not see action_result for defender.realtime")
