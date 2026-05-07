@@ -1,0 +1,259 @@
+version: "1.0"
+
+section:
+  id: privacy
+  order: 6
+  title: "Privacy & Telemetry"
+  description: "Réduit la collecte de données et les fonctionnalités cloud (telemetry, AdID, Cortana, Recall, suggestions, ink/text)."
+
+rules:
+  - id: privacy.telemetry_required
+    title: "Telemetry niveau 1 (Required only)"
+    description: "AllowTelemetry = 1 — minimum acceptable sur Win11 Home."
+    explanation: |
+      Win11 Home n'a pas le niveau 'Security only' (0) — minimum dispo = 1
+      (Required diagnostic data). Suffit pour les mises à jour critiques
+      mais coupe la télémétrie 'enhanced' optionnelle.
+    severity: important
+    impact: "Aucun impact fonctionnel."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/privacy/configure-windows-diagnostic-data-in-your-organization"
+    tags: [privacy, telemetry]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/telemetry_required.action.ps1
+    test: ./engine/actions/privacy/telemetry_required.test.ps1
+    undo: ./engine/actions/privacy/telemetry_required.undo.ps1
+
+  - id: privacy.advertising_id_machine
+    title: "Advertising ID désactivé (machine-wide)"
+    description: "DisabledByGroupPolicy = 1 — bloque l'Advertising ID pour tous les users."
+    explanation: |
+      L'Advertising ID est utilisé par les apps Store et certaines apps
+      Microsoft pour cibler les pubs. Le désactiver via Group Policy
+      empêche tous les users de la machine de l'utiliser.
+    severity: nice-to-have
+    impact: "Aucun. Les apps perdent juste leur ID de tracking."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, advertising]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/advertising_id_machine.action.ps1
+    test: ./engine/actions/privacy/advertising_id_machine.test.ps1
+    undo: ./engine/actions/privacy/advertising_id_machine.undo.ps1
+
+  - id: privacy.online_speech_off
+    title: "Online Speech Recognition désactivée"
+    description: "AllowInputPersonalization = 0."
+    explanation: |
+      Empêche Win11 d'envoyer les samples vocaux au cloud Microsoft pour
+      'améliorer' la reconnaissance. Reconnaissance locale toujours OK.
+    severity: nice-to-have
+    impact: "Aucun pour la dictée locale. Si tu utilises Cortana voice, ça casse (mais Cortana_off désactive de toute façon)."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, voice]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/online_speech_off.action.ps1
+    test: ./engine/actions/privacy/online_speech_off.test.ps1
+    undo: ./engine/actions/privacy/online_speech_off.undo.ps1
+
+  - id: privacy.activity_history_off
+    title: "Activity History désactivée (3 valeurs)"
+    description: "EnableActivityFeed + PublishUserActivities + UploadUserActivities = 0."
+    explanation: |
+      Désactive Win11 Timeline et l'envoi d'historique d'activité au compte
+      Microsoft cloud. Multi-value : 3 paramètres dans la même clé.
+    severity: nice-to-have
+    impact: "Aucun. Timeline (Win+Tab) ne montre plus l'historique."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, telemetry]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/activity_history_off.action.ps1
+    test: ./engine/actions/privacy/activity_history_off.test.ps1
+    undo: ./engine/actions/privacy/activity_history_off.undo.ps1
+
+  - id: privacy.cortana_off
+    title: "Cortana désactivée (AllowCortana = 0)"
+    description: "Bloque Cortana (assistant Microsoft)."
+    explanation: |
+      Cortana envoie au cloud Microsoft une bonne partie de ce que tu tapes
+      dans la barre de recherche pour 'l'améliorer'. Désactiver = recherche
+      locale only.
+    severity: nice-to-have
+    impact: "La recherche Win11 reste OK pour les fichiers/apps locaux. Les suggestions web Bing disparaissent."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, cortana]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/cortana_off.action.ps1
+    test: ./engine/actions/privacy/cortana_off.test.ps1
+    undo: ./engine/actions/privacy/cortana_off.undo.ps1
+
+  - id: privacy.recall_off
+    title: "Windows Recall désactivé (préventif)"
+    description: "DisableAIDataAnalysis = 1."
+    explanation: |
+      Recall est la fonctionnalité Win11 qui screenshote ton écran toutes
+      les quelques secondes pour 'l'analyser par IA'. Privacy nightmare.
+      Cette règle est préventive : même si Recall n'est pas push sur ta
+      machine actuellement, le set bloque son activation future.
+    severity: critical
+    impact: "Aucun. Recall n'est de toute façon pas utile pour 99% des users."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/client-management/manage-recall"
+    tags: [privacy, ai, recall]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/recall_off.action.ps1
+    test: ./engine/actions/privacy/recall_off.test.ps1
+    undo: ./engine/actions/privacy/recall_off.undo.ps1
+
+  - id: privacy.consumer_features_off
+    title: "Consumer features désactivées (anti-bloat machine-wide)"
+    description: "DisableWindowsConsumerFeatures + DisableConsumerAccountStateContent = 1."
+    explanation: |
+      Empêche Win11 de pousser automatiquement des apps Store ('Suggested
+      apps' dans le menu Démarrer, candidates à la réinstall après reset).
+    severity: nice-to-have
+    impact: "Plus de suggestions d'apps Store dans Démarrer. C'est l'effet voulu."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, bloat]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/consumer_features_off.action.ps1
+    test: ./engine/actions/privacy/consumer_features_off.test.ps1
+    undo: ./engine/actions/privacy/consumer_features_off.undo.ps1
+
+  - id: privacy.silent_apps_off
+    title: "HKCU : pas de réinstall silencieuse d'apps Store"
+    description: "SilentInstalledAppsEnabled = 0 (user courant)."
+    explanation: |
+      Empêche Win11 d'installer en silence les apps 'recommandées' Microsoft
+      pour ton compte user.
+    severity: nice-to-have
+    impact: "Aucun."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, bloat, hkcu]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/silent_apps_off.action.ps1
+    test: ./engine/actions/privacy/silent_apps_off.test.ps1
+    undo: ./engine/actions/privacy/silent_apps_off.undo.ps1
+
+  - id: privacy.settings_suggestions_off
+    title: "HKCU : suggestions Settings désactivées"
+    description: "SubscribedContent-338389Enabled = 0."
+    explanation: |
+      Pas de suggestions/notifications dans l'app Settings.
+    severity: nice-to-have
+    impact: "Aucun."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, bloat, hkcu]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/settings_suggestions_off.action.ps1
+    test: ./engine/actions/privacy/settings_suggestions_off.test.ps1
+    undo: ./engine/actions/privacy/settings_suggestions_off.undo.ps1
+
+  - id: privacy.start_suggestions_off
+    title: "HKCU : suggestions menu Démarrer désactivées"
+    description: "SystemPaneSuggestionsEnabled = 0."
+    explanation: |
+      Plus de suggestions d'apps dans le menu Démarrer.
+    severity: nice-to-have
+    impact: "Aucun."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, bloat, hkcu]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/start_suggestions_off.action.ps1
+    test: ./engine/actions/privacy/start_suggestions_off.test.ps1
+    undo: ./engine/actions/privacy/start_suggestions_off.undo.ps1
+
+  - id: privacy.tips_welcome_off
+    title: "HKCU : tips/welcome désactivés (3 SubscribedContent)"
+    description: "SubscribedContent-338388/310093/353698 Enabled = 0."
+    explanation: |
+      Désactive les 'tips', 'Welcome experience' et autres pop-ups
+      promotionnels Microsoft. Multi-value (3 SubscribedContent IDs).
+    severity: nice-to-have
+    impact: "Aucun. Plus de pop-ups suggéré."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, bloat, hkcu]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/tips_welcome_off.action.ps1
+    test: ./engine/actions/privacy/tips_welcome_off.test.ps1
+    undo: ./engine/actions/privacy/tips_welcome_off.undo.ps1
+
+  - id: privacy.ink_text_collection_off
+    title: "HKCU : pas de collecte ink/text implicite"
+    description: "RestrictImplicitInkCollection + RestrictImplicitTextCollection = 1."
+    explanation: |
+      Empêche Win11 de collecter en arrière-plan ce que tu tapes/écris
+      pour 'améliorer la prédiction'.
+    severity: nice-to-have
+    impact: "Aucun."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, telemetry, hkcu]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/ink_text_collection_off.action.ps1
+    test: ./engine/actions/privacy/ink_text_collection_off.test.ps1
+    undo: ./engine/actions/privacy/ink_text_collection_off.undo.ps1
+
+  - id: privacy.advertising_id_user
+    title: "HKCU : Advertising ID désactivé"
+    description: "AdvertisingInfo Enabled = 0 (user courant)."
+    explanation: |
+      Toggle user-level de l'AdID, en complément de la policy machine-wide.
+    severity: nice-to-have
+    impact: "Aucun."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [privacy, advertising, hkcu]
+    added_in: "1.0"
+    action: ./engine/actions/privacy/advertising_id_user.action.ps1
+    test: ./engine/actions/privacy/advertising_id_user.test.ps1
+    undo: ./engine/actions/privacy/advertising_id_user.undo.ps1
