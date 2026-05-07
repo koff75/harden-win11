@@ -1,4 +1,4 @@
-package dryrun
+package executor
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 	"github.com/koff75/harden-win11/pkg/engine/runner"
 )
 
-func TestRun_DefenderRealtime(t *testing.T) {
+func TestRun_DefenderRealtime_Dry(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows only")
 	}
@@ -30,6 +30,7 @@ func TestRun_DefenderRealtime(t *testing.T) {
 	w := ndjson.NewWriter(&buf)
 
 	opts := Options{
+		Mode:        ModeDry,
 		ManifestDir: filepath.Join(repo, "manifests"),
 		BasePath:    repo,
 		Runner:      runner.New(),
@@ -63,6 +64,9 @@ func TestRun_DefenderRealtime(t *testing.T) {
 			if ev["section_id"] != "defender" {
 				t.Errorf("expected section_id=defender, got %v", ev["section_id"])
 			}
+			if ev["mode"] != "dry-run" {
+				t.Errorf("expected mode=dry-run, got %v", ev["mode"])
+			}
 		case "section_end":
 			sawSectionEnd = true
 		case "action_result":
@@ -74,7 +78,7 @@ func TestRun_DefenderRealtime(t *testing.T) {
 				}
 			}
 		case "run_start", "run_end":
-			t.Errorf("dryrun.Run() must NOT emit %s (caller's responsibility)", ev["type"])
+			t.Errorf("executor.Run() must NOT emit %s (caller's responsibility)", ev["type"])
 		}
 	}
 	if !sawSectionStart {
