@@ -90,7 +90,15 @@ func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error)
 			ev["status"] = "would_fail"
 			ev["error"] = err.Error()
 			sum.Failed++
-		} else if compliant, _ := out["compliant"].(bool); compliant {
+		} else if rawCompliant, ok := out["compliant"]; !ok {
+			ev["status"] = "would_fail"
+			ev["error"] = "test.ps1 output missing required 'compliant' field"
+			sum.Failed++
+		} else if compliant, isBool := rawCompliant.(bool); !isBool {
+			ev["status"] = "would_fail"
+			ev["error"] = fmt.Sprintf("test.ps1 'compliant' field must be a boolean (got %T: %v)", rawCompliant, rawCompliant)
+			sum.Failed++
+		} else if compliant {
 			ev["status"] = "would_skip"
 			ev["reason"] = "already_compliant"
 			ev["current_state"] = out["current"]
