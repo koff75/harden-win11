@@ -162,7 +162,11 @@ func applyCmd() *cobra.Command {
 			var sections []sec
 			seenIDs := map[string]string{}
 			for _, e := range entries {
-				if e.IsDir() || filepath.Ext(e.Name()) != ".yaml" {
+				if e.IsDir() {
+					continue
+				}
+				ext := filepath.Ext(e.Name())
+				if ext != ".yaml" && ext != ".yml" {
 					continue
 				}
 				p := filepath.Join(flagManifestDir, e.Name())
