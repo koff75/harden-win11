@@ -61,7 +61,32 @@ func (v *Validator) ValidateFile(manifestPath string) error {
 	if err := v.schema.Validate(instance); err != nil {
 		return fmt.Errorf("manifest validation failed: %w", err)
 	}
+
+	// Vérification sémantique : rule.id doit être unique au sein de la section.
+	// Le JSONSchema valide la structure mais pas l'unicité des items d'array.
+	s, err := loadStructFromBytes(manifestData)
+	if err != nil {
+		return fmt.Errorf("re-parse for semantic check: %w", err)
+	}
+	seen := map[string]bool{}
+	for _, r := range s.Rules {
+		if seen[r.ID] {
+			return fmt.Errorf("duplicate rule.id %q within section %q", r.ID, s.Section.ID)
+		}
+		seen[r.ID] = true
+	}
 	return nil
+}
+
+// loadStructFromBytes parse un manifest YAML déjà lu en bytes.
+func loadStructFromBytes(data []byte) (*Section, error) {
+	var s Section
+	dec := yaml.NewDecoder(bytes.NewReader(data))
+	dec.KnownFields(true)
+	if err := dec.Decode(&s); err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
 // Validate est un raccourci qui compile le schéma + valide un manifest en
