@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"time"
 
 	"github.com/koff75/harden-win11/pkg/engine/dryrun"
@@ -104,20 +105,23 @@ func validateCmd() *cobra.Command {
 func applyCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
-		Short: "Exécute (ou dry-run) les règles d'une section",
+		Short: "Exécute (ou dry-run) les règles. Sans --section = toutes les sections",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !flagDryRun {
 				return fmt.Errorf("only --dry-run is supported in this walking skeleton (use --dry-run)")
-			}
-			if flagSection == "" {
-				return fmt.Errorf("--section is required (e.g. --section defender)")
 			}
 
 			entries, err := os.ReadDir(flagManifestDir)
 			if err != nil {
 				return fmt.Errorf("read manifest dir: %w", err)
 			}
-			var sectionPath string
+
+			type sec struct {
+				path  string
+				order int
+				id    string
+			}
+			var sections []sec
 			for _, e := range entries {
 				if e.IsDir() || filepath.Ext(e.Name()) != ".yaml" {
 					continue
@@ -127,14 +131,20 @@ func applyCmd() *cobra.Command {
 				if err != nil {
 					continue
 				}
-				if s.Section.ID == flagSection {
-					sectionPath = p
-					break
+				if flagSection != "" && s.Section.ID != flagSection {
+					continue
 				}
+				sections = append(sections, sec{path: p, order: s.Section.Order, id: s.Section.ID})
 			}
-			if sectionPath == "" {
-				return fmt.Errorf("section %q not found in %s", flagSection, flagManifestDir)
+
+			if len(sections) == 0 {
+				if flagSection != "" {
+					return fmt.Errorf("section %q not found in %s", flagSection, flagManifestDir)
+				}
+				return fmt.Errorf("no manifests found in %s", flagManifestDir)
 			}
+
+			sort.Slice(sections, func(i, j int) bool { return sections[i].order < sections[j].order })
 
 			absManifestDir, _ := filepath.Abs(flagManifestDir)
 			base := filepath.Dir(absManifestDir)
@@ -143,17 +153,22 @@ func applyCmd() *cobra.Command {
 			w := ndjson.NewWriter(os.Stdout)
 			ctx := context.Background()
 
-			return dryrun.Run(ctx, sectionPath, dryrun.Options{
-				ManifestDir: flagManifestDir,
-				BasePath:    base,
-				Runner:      runner.New(),
-				Writer:      w,
-				RunID:       runID,
-			})
+			for _, sct := range sections {
+				if err := dryrun.Run(ctx, sct.path, dryrun.Options{
+					ManifestDir: flagManifestDir,
+					BasePath:    base,
+					Runner:      runner.New(),
+					Writer:      w,
+					RunID:       runID,
+				}); err != nil {
+					return fmt.Errorf("section %s: %w", sct.id, err)
+				}
+			}
+			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&flagDryRun, "dry-run", false, "Mode dry-run (rien d'exécuté)")
-	cmd.Flags().StringVar(&flagSection, "section", "", "ID de la section à dry-runner (ex: defender)")
+	cmd.Flags().StringVar(&flagSection, "section", "", "ID de la section à dry-runner (vide = toutes)")
 	return cmd
 }
 
