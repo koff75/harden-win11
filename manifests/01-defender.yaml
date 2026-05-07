@@ -90,3 +90,67 @@ rules:
     action: ./engine/actions/defender/script_scanning.action.ps1
     test: ./engine/actions/defender/script_scanning.test.ps1
     undo: ./engine/actions/defender/script_scanning.undo.ps1
+
+  - id: defender.nis
+    title: "Network Inspection System (NIS)"
+    description: "Inspection du trafic réseau pour bloquer les exploits connus."
+    explanation: |
+      NIS analyse le trafic réseau au niveau du noyau pour détecter et bloquer
+      les tentatives d'exploitation de vulnérabilités connues (signatures
+      Microsoft pour exploits réseau).
+    severity: critical
+    impact: "Aucun. Activé par défaut sur Win11."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
+    tags: [malware, defender, network]
+    added_in: "1.0"
+    action: ./engine/actions/defender/nis.action.ps1
+    test: ./engine/actions/defender/nis.test.ps1
+    undo: ./engine/actions/defender/nis.undo.ps1
+
+  - id: defender.pua
+    title: "PUA Protection (Potentially Unwanted Apps)"
+    description: "Bloque l'installation des applications indésirables (toolbars, miners, ad-injectors)."
+    explanation: |
+      PUA Protection cible les apps qui ne sont pas malveillantes au sens strict
+      mais dégradent l'expérience : barres d'outils navigateur, mineurs de
+      crypto silencieux, ad-injectors, certains "optimiseurs" système.
+    severity: important
+    impact: "Peut bloquer certains outils gratuits considérés borderline (utilitaires de crack, certains repackagés)."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/detect-block-potentially-unwanted-apps-microsoft-defender-antivirus"
+    tags: [malware, defender, pua]
+    added_in: "1.0"
+    action: ./engine/actions/defender/pua.action.ps1
+    test: ./engine/actions/defender/pua.test.ps1
+    undo: ./engine/actions/defender/pua.undo.ps1
+
+  - id: defender.network_protection
+    title: "Network Protection"
+    description: "Bloque les connexions sortantes vers domaines/IP réputés malveillants."
+    explanation: |
+      Network Protection intercepte les requêtes DNS et connexions sortantes
+      vers les hôtes réputés malveillants (phishing, C2, exploit kits) via
+      la threat intelligence Microsoft. Couche de défense complémentaire
+      au DNS sécurisé.
+    severity: important
+    impact: "Peut bloquer occasionnellement des apps qui se connectent à des hôtes flaggés faux positif. Vérifier les blocs dans l'event viewer si une app a un comportement réseau anormal."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/network-protection"
+    tags: [malware, defender, network]
+    added_in: "1.0"
+    action: ./engine/actions/defender/network_protection.action.ps1
+    test: ./engine/actions/defender/network_protection.test.ps1
+    undo: ./engine/actions/defender/network_protection.undo.ps1
