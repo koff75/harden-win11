@@ -259,3 +259,30 @@ rules:
     added_in: "1.0"
     action: ./engine/actions/defender/signatures.action.ps1
     test: ./engine/actions/defender/signatures.test.ps1
+
+  - id: defender.tamper_protection_check
+    title: "Tamper Protection (check uniquement, à activer manuellement)"
+    description: "Vérifie que Tamper Protection est ON. Ne peut PAS être activé par script."
+    explanation: |
+      Microsoft a designed Tamper Protection pour qu'aucun script (même
+      en SYSTEM) ne puisse l'activer/désactiver. Cette règle se contente
+      de vérifier l'état et de signaler à l'user.
+
+      Si non conforme : aller dans Windows Security > Virus & threat
+      protection > Manage settings > Tamper Protection ON.
+
+      L''action' de cette règle ne fait que ré-évaluer + reporter. Pas de
+      modification système.
+    severity: critical
+    impact: "Aucun (lecture seule, plus message d'instructions)."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Tamper Protection s'active/désactive uniquement manuellement via Windows Security UI — aucune API programmatique."
+    references:
+      - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/prevent-changes-to-security-settings-with-tamper-protection"
+    tags: [defender, tamper-protection, manual-step]
+    added_in: "1.0"
+    action: ./engine/actions/defender/tamper_protection_check.action.ps1
+    test: ./engine/actions/defender/tamper_protection_check.test.ps1
