@@ -33,3 +33,6 @@ go.sum
 /dist/
 /build/
 __debug_bin*
+
+# Local PowerShell modules (Pester install hors PSModulePath standard)
+/tools/
