@@ -208,3 +208,54 @@ rules:
     action: ./engine/actions/defender/sample_submission.action.ps1
     test: ./engine/actions/defender/sample_submission.test.ps1
     undo: ./engine/actions/defender/sample_submission.undo.ps1
+
+  - id: defender.cloud_protection
+    title: "Cloud-delivered protection (HIGH)"
+    description: "Active la protection cloud Defender en mode agressif."
+    explanation: |
+      Cloud-delivered protection envoie les hashes / metadonnees suspects à
+      Microsoft Active Protection Service (MAPS) pour bénéficier de la
+      télémétrie globale en quelques secondes, avant que les signatures
+      locales soient à jour. Compose 3 paramètres :
+        - MAPSReporting=Advanced : niveau d'envoi le plus complet
+        - CloudBlockLevel=High   : bloque sur signal cloud peu sûr
+        - CloudExtendedTimeout=50 : 50s d'extension pour permettre la
+          réponse cloud avant de débloquer le fichier
+      Crucial contre les zero-days et malwares fraîchement déployés.
+    severity: critical
+    impact: "Léger délai (max 50s) sur le 1er accès à un fichier inconnu. Imperceptible en usage normal."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/cloud-protection-microsoft-defender-antivirus"
+    tags: [malware, defender, cloud]
+    added_in: "1.0"
+    action: ./engine/actions/defender/cloud_protection.action.ps1
+    test: ./engine/actions/defender/cloud_protection.test.ps1
+    undo: ./engine/actions/defender/cloud_protection.undo.ps1
+
+  - id: defender.signatures
+    title: "Signatures antivirus à jour"
+    description: "Force la mise à jour des signatures Defender."
+    explanation: |
+      Update-MpSignature télécharge les dernières signatures Defender depuis
+      Windows Update. Conforme = signatures de moins de 7 jours.
+
+      Action one-shot, idempotente : si déjà à jour, télécharge juste un
+      petit delta. Pas de "undo" possible (on ne désinstalle pas une
+      signature antivirus).
+    severity: critical
+    impact: "Quelques MB téléchargés. Aucun reboot requis."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Update-MpSignature ne peut pas être annulé : les signatures sont des données antivirus, pas une configuration."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/defender/update-mpsignature"
+    tags: [malware, defender, update]
+    added_in: "1.0"
+    action: ./engine/actions/defender/signatures.action.ps1
+    test: ./engine/actions/defender/signatures.test.ps1
