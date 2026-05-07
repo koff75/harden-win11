@@ -1,0 +1,7 @@
+version: "1.0"
+section:
+  id: broken
+  order: not-a-number       # erreur: int attendu
+  title: "Test"
+rules: [
+  malformed

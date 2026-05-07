@@ -1,0 +1,27 @@
+version: "1.0"
+
+section:
+  id: defender
+  order: 1
+  title: "Microsoft Defender"
+  description: "Antivirus intégré à Windows."
+
+rules:
+  - id: defender.realtime
+    title: "Protection temps réel"
+    description: "Scanner les fichiers à chaque ouverture."
+    explanation: |
+      Defender scanne en arrière-plan chaque fichier que tu ouvres.
+    severity: critical
+    impact: "Aucun. Activé par défaut sur Win11."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/example"
+    tags: [malware, defender]
+    added_in: "1.0"
+    action: ./engine/actions/defender/realtime.action.ps1
+    test: ./engine/actions/defender/realtime.test.ps1
+    undo: ./engine/actions/defender/realtime.undo.ps1
