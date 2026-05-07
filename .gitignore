@@ -19,3 +19,22 @@ desktop.ini
 
 # PowerShell
 *.psd1.bak
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.sum
+/dist/
+/build/
+__debug_bin*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
