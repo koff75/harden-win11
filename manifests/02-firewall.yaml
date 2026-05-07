@@ -69,3 +69,47 @@ rules:
     action: ./engine/actions/firewall/profile_public.action.ps1
     test: ./engine/actions/firewall/profile_public.test.ps1
     undo: ./engine/actions/firewall/profile_public.undo.ps1
+
+  - id: firewall.block_smb_public
+    title: "Bloquer SMB (TCP 445) entrant sur Public"
+    description: "Crée une firewall rule [Hardening] pour bloquer SMB inbound sur le profil Public."
+    explanation: |
+      SMB sur le port 445 est l'un des vecteurs principaux d'attaque latérale
+      (EternalBlue, WannaCry). Sur un réseau public (Wi-Fi café), aucune
+      raison de l'exposer. Cette règle ajoute une couche de blocage explicite
+      en plus du blocage par défaut du profil Public.
+    severity: critical
+    impact: "Aucun en usage standard. Empêche partage de fichiers SMB sur Wi-Fi public (peu probable cas d'usage)."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010"
+    tags: [firewall, smb, lateral-movement]
+    added_in: "1.0"
+    action: ./engine/actions/firewall/block_smb_public.action.ps1
+    test: ./engine/actions/firewall/block_smb_public.test.ps1
+    undo: ./engine/actions/firewall/block_smb_public.undo.ps1
+
+  - id: firewall.block_netbios_public
+    title: "Bloquer NetBIOS (UDP 137-138 + TCP 139) entrant sur Public"
+    description: "Crée 2 firewall rules [Hardening] pour bloquer NetBIOS inbound sur Public."
+    explanation: |
+      NetBIOS over TCP/IP (ports 137 nom-resolution, 138 datagram, 139 session)
+      est un protocole legacy souvent activé par défaut, exploité pour de la
+      reconnaissance et du lateral movement (Responder, NTLM relay).
+      Sur réseau public, aucune raison de l'exposer.
+    severity: critical
+    impact: "Aucun en usage standard."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://www.sans.org/blog/responder-netbios-poisoning-attacks/"
+    tags: [firewall, netbios, lateral-movement]
+    added_in: "1.0"
+    action: ./engine/actions/firewall/block_netbios_public.action.ps1
+    test: ./engine/actions/firewall/block_netbios_public.test.ps1
+    undo: ./engine/actions/firewall/block_netbios_public.undo.ps1
