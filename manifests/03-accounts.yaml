@@ -1,0 +1,56 @@
+version: "1.0"
+
+section:
+  id: accounts
+  order: 3
+  title: "Comptes locaux"
+  description: "Désactivation des comptes par défaut peu utilisés et rename du built-in Administrator."
+
+rules:
+  - id: accounts.disable_unused
+    title: "Désactiver les comptes Administrator / Guest / WsiAccount / DefaultAccount"
+    description: "Désactive les comptes locaux Windows par défaut peu ou pas utilisés."
+    explanation: |
+      Win11 Home crée plusieurs comptes système (Administrator, Guest, WsiAccount,
+      DefaultAccount) qui sont souvent ciblés par les attaques de bruteforce ou
+      d'élévation de privilèges. Ils sont généralement déjà désactivés par défaut
+      mais un mauvais script tiers peut les ré-activer. Cette règle confirme
+      qu'ils restent OFF.
+    severity: critical
+    impact: "Aucun pour usage standard. Si tu utilises explicitement le compte Guest, ne pas appliquer."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/security/identity-protection/access-control/local-accounts"
+    tags: [accounts, hardening]
+    added_in: "1.0"
+    action: ./engine/actions/accounts/disable_unused.action.ps1
+    test: ./engine/actions/accounts/disable_unused.test.ps1
+    undo: ./engine/actions/accounts/disable_unused.undo.ps1
+
+  - id: accounts.rename_admin
+    title: "Renommer le compte SID-500 (Administrator built-in)"
+    description: "Renomme 'Administrator' en 'AdminLocal_<COMPUTERNAME>' pour casser les attaques par nom."
+    explanation: |
+      Le compte SID-500 est le compte super-administrateur built-in (souvent
+      désactivé par défaut sur Win11). Beaucoup d'attaques tentent un bruteforce
+      sur le nom 'Administrator' connu universellement. Le renommer en
+      'AdminLocal_<COMPUTERNAME>' force l'attaquant à découvrir le nom d'abord.
+
+      L'action n'agit que si le nom actuel = 'Administrator'. L'undo restaure
+      le nom 'before'.
+    severity: important
+    impact: "Si tu as des scripts qui utilisent explicitement le nom 'Administrator', ils casseront. Préférer SID-500 ou .\\Administrator par alias."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/security/identity-protection/access-control/local-accounts"
+    tags: [accounts, hardening, defense-in-depth]
+    added_in: "1.0"
+    action: ./engine/actions/accounts/rename_admin.action.ps1
+    test: ./engine/actions/accounts/rename_admin.test.ps1
+    undo: ./engine/actions/accounts/rename_admin.undo.ps1
