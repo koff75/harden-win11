@@ -1,0 +1,71 @@
+version: "1.0"
+
+section:
+  id: firewall
+  order: 2
+  title: "Windows Firewall"
+  description: "Protection réseau au niveau OS — profils + règles spécifiques."
+
+rules:
+  - id: firewall.profile_domain
+    title: "Profile Domain : enabled + block inbound"
+    description: "Active le pare-feu sur le profil Domain (réseau d'entreprise AD)."
+    explanation: |
+      Le profil Domain s'applique quand la machine est jointe à un domaine
+      Active Directory et connectée à ce réseau. Pour un PC perso non-AD,
+      ce profil n'est jamais actif — la règle reste utile pour homogénéité.
+    severity: critical
+    impact: "Aucun pour PC perso (profil jamais actif)."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/netsecurity/set-netfirewallprofile"
+    tags: [firewall, network]
+    added_in: "1.0"
+    action: ./engine/actions/firewall/profile_domain.action.ps1
+    test: ./engine/actions/firewall/profile_domain.test.ps1
+    undo: ./engine/actions/firewall/profile_domain.undo.ps1
+
+  - id: firewall.profile_private
+    title: "Profile Private : enabled + block inbound"
+    description: "Active le pare-feu sur le profil Private (réseau domestique de confiance)."
+    explanation: |
+      Le profil Private s'applique sur les réseaux marqués "privés" dans
+      Windows (typiquement ton Wi-Fi à la maison). Plus permissif que
+      Public mais on garde le blocage entrant par défaut.
+    severity: critical
+    impact: "Aucun pour usage standard. Si tu hostes un service local (NAS, dev server), faudra créer une rule explicite."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/netsecurity/set-netfirewallprofile"
+    tags: [firewall, network]
+    added_in: "1.0"
+    action: ./engine/actions/firewall/profile_private.action.ps1
+    test: ./engine/actions/firewall/profile_private.test.ps1
+    undo: ./engine/actions/firewall/profile_private.undo.ps1
+
+  - id: firewall.profile_public
+    title: "Profile Public : enabled + block inbound"
+    description: "Active le pare-feu sur les réseaux publics avec blocage entrant par défaut."
+    explanation: |
+      Le profil Public s'applique sur Wi-Fi café, hotspots, réseaux non-fiables.
+      C'est le profil le plus sensible — on bloque tout ce qui vient de
+      l'extérieur (sauf règles explicites) et on laisse sortir.
+    severity: critical
+    impact: "Aucun pour usage standard. Si tu hostes un service local, faudra créer une rule explicite."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/netsecurity/set-netfirewallprofile"
+    tags: [firewall, network]
+    added_in: "1.0"
+    action: ./engine/actions/firewall/profile_public.action.ps1
+    test: ./engine/actions/firewall/profile_public.test.ps1
+    undo: ./engine/actions/firewall/profile_public.undo.ps1
