@@ -1,0 +1,22 @@
+version: "1.0"
+
+section:
+  id: fixture_rollback
+  order: 99
+  title: "Test fixture — action fails, rollback triggered"
+  description: "Test fixture où .action.ps1 plante, doit déclencher .undo.ps1."
+
+rules:
+  - id: fixture.fail
+    title: "Apply fail path with rollback"
+    description: "."
+    explanation: "."
+    severity: nice-to-have
+    impact: "."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    action: ./pkg/engine/executor/testdata/failing.action.ps1
+    test: ./pkg/engine/executor/testdata/never_compliant.test.ps1
+    undo: ./pkg/engine/executor/testdata/noop.undo.ps1

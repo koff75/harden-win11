@@ -1,0 +1,22 @@
+version: "1.0"
+
+section:
+  id: fixture_skipped
+  order: 99
+  title: "Test fixture — always compliant"
+  description: "Test fixture qui retourne toujours compliant=true."
+
+rules:
+  - id: fixture.always_ok
+    title: "Always compliant"
+    description: "."
+    explanation: "."
+    severity: nice-to-have
+    impact: "."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    action: ./pkg/engine/executor/testdata/success.action.ps1
+    test: ./pkg/engine/executor/testdata/always_compliant.test.ps1
+    undo: ./pkg/engine/executor/testdata/noop.undo.ps1
