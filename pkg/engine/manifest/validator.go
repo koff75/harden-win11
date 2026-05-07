@@ -1,8 +1,11 @@
 package manifest
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
@@ -27,6 +30,7 @@ func NewValidator(schemaPath string) (*Validator, error) {
 }
 
 // ValidateFile lit + parse + valide un manifest YAML contre le schéma compilé.
+// Refuse les YAML multi-document (cohérent avec Load).
 func (v *Validator) ValidateFile(manifestPath string) error {
 	manifestData, err := os.ReadFile(manifestPath)
 	if err != nil {
@@ -34,8 +38,15 @@ func (v *Validator) ValidateFile(manifestPath string) error {
 	}
 
 	var raw any
-	if err := yaml.Unmarshal(manifestData, &raw); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(manifestData))
+	if err := dec.Decode(&raw); err != nil {
 		return fmt.Errorf("parse YAML: %w", err)
+	}
+	var extra any
+	if err := dec.Decode(&extra); err == nil {
+		return fmt.Errorf("manifest contains multiple YAML documents — split into separate files (one section per file)")
+	} else if !errors.Is(err, io.EOF) {
+		return fmt.Errorf("parse YAML (extra docs): %w", err)
 	}
 
 	jsonBytes, err := json.Marshal(raw)

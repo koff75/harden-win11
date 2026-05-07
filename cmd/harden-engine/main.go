@@ -188,7 +188,13 @@ func applyCmd() *cobra.Command {
 				return &exitError{code: 4, msg: fmt.Sprintf("no manifests found in %s (expected *.yaml)", flagManifestDir)}
 			}
 
-			sort.Slice(sections, func(i, j int) bool { return sections[i].order < sections[j].order })
+			sort.Slice(sections, func(i, j int) bool {
+				if sections[i].order != sections[j].order {
+					return sections[i].order < sections[j].order
+				}
+				// Tie-breaker déterministe : alphabétique sur l'id de section.
+				return sections[i].id < sections[j].id
+			})
 
 			absManifestDir, _ := filepath.Abs(flagManifestDir)
 			base := filepath.Dir(absManifestDir)
