@@ -148,6 +148,9 @@ func applyCmd() *cobra.Command {
 			if !flagDryRun {
 				return fmt.Errorf("only --dry-run is supported in this walking skeleton (use --dry-run)")
 			}
+			if flagRuleTimeout < 0 {
+				return &exitError{code: 4, msg: "--rule-timeout must be >= 0 (use 0 to keep the default 30s)"}
+			}
 
 			entries, err := os.ReadDir(flagManifestDir)
 			if err != nil {
