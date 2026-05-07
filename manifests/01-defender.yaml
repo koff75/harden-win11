@@ -26,3 +26,67 @@ rules:
     action: ./engine/actions/defender/realtime.action.ps1
     test: ./engine/actions/defender/realtime.test.ps1
     undo: ./engine/actions/defender/realtime.undo.ps1
+
+  - id: defender.behavior_monitoring
+    title: "Behavior Monitoring"
+    description: "Analyse comportementale des processus en cours d'exécution."
+    explanation: |
+      Defender surveille le comportement des processus (création de fichiers,
+      injection de code, persistance) pour détecter les malwares qui
+      contourneraient l'analyse statique. Crucial contre les attaques
+      fileless.
+    severity: critical
+    impact: "Aucun. Activé par défaut sur Win11."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
+    tags: [malware, defender]
+    added_in: "1.0"
+    action: ./engine/actions/defender/behavior_monitoring.action.ps1
+    test: ./engine/actions/defender/behavior_monitoring.test.ps1
+    undo: ./engine/actions/defender/behavior_monitoring.undo.ps1
+
+  - id: defender.ioav
+    title: "IOAV (analyse pièces jointes / téléchargements)"
+    description: "Analyse les fichiers téléchargés et pièces jointes Office."
+    explanation: |
+      IOAV (IOfficeAntiVirus) intercepte les fichiers téléchargés via Outlook,
+      navigateur, ou ouverts dans Office avant exécution. Bloque les pièces
+      jointes vérolées et les payloads téléchargés.
+    severity: critical
+    impact: "Aucun. Activé par défaut sur Win11."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
+    tags: [malware, defender, email]
+    added_in: "1.0"
+    action: ./engine/actions/defender/ioav.action.ps1
+    test: ./engine/actions/defender/ioav.test.ps1
+    undo: ./engine/actions/defender/ioav.undo.ps1
+
+  - id: defender.script_scanning
+    title: "Script scanning"
+    description: "Analyse des scripts PowerShell, JS, VBS avant exécution."
+    explanation: |
+      Defender scanne le contenu des scripts (PowerShell, JScript, VBScript)
+      au moment de leur exécution. Bloque les attaques fileless qui
+      n'écrivent pas de binaire sur disque.
+    severity: critical
+    impact: "Aucun. Activé par défaut sur Win11."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
+    tags: [malware, defender, script]
+    added_in: "1.0"
+    action: ./engine/actions/defender/script_scanning.action.ps1
+    test: ./engine/actions/defender/script_scanning.test.ps1
+    undo: ./engine/actions/defender/script_scanning.undo.ps1
