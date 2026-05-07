@@ -13,6 +13,10 @@ import (
 	"github.com/koff75/harden-win11/pkg/engine/runner"
 )
 
+// DefaultRuleTimeout est le timeout par défaut appliqué à chaque
+// invocation de .test.ps1 si Options.RuleTimeout est zéro.
+const DefaultRuleTimeout = 30 * time.Second
+
 // Options configure une exécution dryrun.
 type Options struct {
 	ManifestDir string
@@ -20,6 +24,9 @@ type Options struct {
 	Runner      *runner.Runner
 	Writer      *ndjson.Writer
 	RunID       string
+	// RuleTimeout limite la durée d'exécution de chaque .test.ps1.
+	// Zéro = DefaultRuleTimeout (30s).
+	RuleTimeout time.Duration
 }
 
 // Summary agrège les compteurs de statuts d'un Run.
@@ -55,12 +62,19 @@ func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error)
 		"rule_count":       len(s.Rules),
 	})
 
+	timeout := opts.RuleTimeout
+	if timeout == 0 {
+		timeout = DefaultRuleTimeout
+	}
+
 	for _, rule := range s.Rules {
 		testPath := filepath.Join(opts.BasePath, rule.Test)
 
+		ruleCtx, cancel := context.WithTimeout(ctx, timeout)
 		start := time.Now()
-		out, err := opts.Runner.RunPS(ctx, testPath, nil)
+		out, err := opts.Runner.RunPS(ruleCtx, testPath, nil)
 		duration := time.Since(start)
+		cancel()
 
 		ev := map[string]any{
 			"type":        "action_result",

@@ -9,11 +9,25 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Validate vérifie qu'un manifest YAML respecte le schéma JSONSchema fourni.
-//
-// Le YAML est d'abord parsé en `any`, puis converti en JSON, puis validé
-// (le validateur JSONSchema ne lit pas YAML directement).
-func Validate(manifestPath, schemaPath string) error {
+// Validator wrap un schéma JSONSchema déjà compilé pour pouvoir valider
+// plusieurs manifests sans recompiler le schéma à chaque appel.
+type Validator struct {
+	schema *jsonschema.Schema
+}
+
+// NewValidator compile le JSONSchema au chemin schemaPath. Retourne une
+// erreur si le schéma est introuvable ou invalide.
+func NewValidator(schemaPath string) (*Validator, error) {
+	c := jsonschema.NewCompiler()
+	s, err := c.Compile(schemaPath)
+	if err != nil {
+		return nil, fmt.Errorf("compile schema %s: %w", schemaPath, err)
+	}
+	return &Validator{schema: s}, nil
+}
+
+// ValidateFile lit + parse + valide un manifest YAML contre le schéma compilé.
+func (v *Validator) ValidateFile(manifestPath string) error {
 	manifestData, err := os.ReadFile(manifestPath)
 	if err != nil {
 		return fmt.Errorf("read manifest: %w", err)
@@ -33,14 +47,19 @@ func Validate(manifestPath, schemaPath string) error {
 		return fmt.Errorf("parse converted JSON: %w", err)
 	}
 
-	c := jsonschema.NewCompiler()
-	schema, err := c.Compile(schemaPath)
-	if err != nil {
-		return fmt.Errorf("compile schema: %w", err)
-	}
-
-	if err := schema.Validate(instance); err != nil {
+	if err := v.schema.Validate(instance); err != nil {
 		return fmt.Errorf("manifest validation failed: %w", err)
 	}
 	return nil
+}
+
+// Validate est un raccourci qui compile le schéma + valide un manifest en
+// une seule étape. Pour valider plusieurs manifests, préférer NewValidator
+// + ValidateFile pour ne pas recompiler le schéma à chaque appel.
+func Validate(manifestPath, schemaPath string) error {
+	v, err := NewValidator(schemaPath)
+	if err != nil {
+		return err
+	}
+	return v.ValidateFile(manifestPath)
 }

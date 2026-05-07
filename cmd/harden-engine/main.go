@@ -28,6 +28,7 @@ var (
 	flagSchemaPath  string
 	flagDryRun      bool
 	flagSection     string
+	flagRuleTimeout time.Duration
 )
 
 func main() {
@@ -78,6 +79,11 @@ func validateCmd() *cobra.Command {
 				return fmt.Errorf("read manifest dir: %w", err)
 			}
 
+			validator, err := manifest.NewValidator(flagSchemaPath)
+			if err != nil {
+				return &exitError{code: 4, msg: err.Error()}
+			}
+
 			var (
 				failed     int
 				processed  int
@@ -93,7 +99,7 @@ func validateCmd() *cobra.Command {
 				}
 				processed++
 				path := filepath.Join(flagManifestDir, e.Name())
-				if err := manifest.Validate(path, flagSchemaPath); err != nil {
+				if err := validator.ValidateFile(path); err != nil {
 					fmt.Fprintf(os.Stderr, "[FAIL] %s : %v\n", e.Name(), err)
 					failed++
 				} else {
@@ -213,6 +219,7 @@ func applyCmd() *cobra.Command {
 					Runner:      runner.New(),
 					Writer:      w,
 					RunID:       runID,
+					RuleTimeout: flagRuleTimeout,
 				})
 				if err != nil {
 					_ = w.Emit(map[string]any{
@@ -244,6 +251,7 @@ func applyCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&flagDryRun, "dry-run", false, "Mode dry-run (rien d'exécuté)")
 	cmd.Flags().StringVar(&flagSection, "section", "", "ID de la section à dry-runner (vide = toutes)")
+	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", dryrun.DefaultRuleTimeout, "Timeout maximum par règle (ex: 30s, 1m)")
 	return cmd
 }
 
