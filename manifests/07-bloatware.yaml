@@ -1,0 +1,36 @@
+version: "1.0"
+
+section:
+  id: bloatware
+  order: 7
+  title: "Bloatware Microsoft Store"
+  description: "Désinstallation des apps Store consommateurs préinstallées (TikTok, Candy Crush, Bing News, etc.)."
+
+rules:
+  - id: bloatware.cleanup
+    title: "Désinstaller les apps Store bloatware"
+    description: "Supprime les apps préinstallées (Appx + provisioned) listées comme bloatware."
+    explanation: |
+      Win11 préinstalle un paquet d'apps grand public : TikTok, Spotify,
+      Disney, CandyCrush, Microsoft Solitaire, Bing News/Weather, Cortana,
+      Skype, etc. Cette règle les désinstalle (Get-AppxPackage + Get-AppxProvisionedPackage).
+
+      ATTENTION : la règle est marquée irreversible parce que réinstaller
+      des apps Store désinstallées requiert le Microsoft Store + un compte
+      Microsoft connecté. Si tu utilises l'une de ces apps, ne pas appliquer
+      ou ajuster la liste dans engine/actions/bloatware/cleanup.action.ps1.
+
+      Liste actuelle (27 patterns) : voir le fichier action.ps1.
+    severity: nice-to-have
+    impact: "Les apps listées sont supprimées de TOUS les comptes user. Réinstall manuelle via Store si besoin."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Réinstaller des apps Store désinstallées requiert le Microsoft Store + compte Microsoft connecté. Pas une opération scriptable de façon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/cleanup.action.ps1
+    test: ./engine/actions/bloatware/cleanup.test.ps1
