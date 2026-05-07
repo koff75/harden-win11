@@ -77,7 +77,12 @@ func validateCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("read manifest dir: %w", err)
 			}
-			var failed int
+
+			var (
+				failed     int
+				processed  int
+				validPaths []string
+			)
 			for _, e := range entries {
 				if e.IsDir() {
 					continue
@@ -86,16 +91,43 @@ func validateCmd() *cobra.Command {
 				if ext != ".yaml" && ext != ".yml" {
 					continue
 				}
+				processed++
 				path := filepath.Join(flagManifestDir, e.Name())
 				if err := manifest.Validate(path, flagSchemaPath); err != nil {
 					fmt.Fprintf(os.Stderr, "[FAIL] %s : %v\n", e.Name(), err)
 					failed++
 				} else {
 					fmt.Fprintf(os.Stderr, "[OK]   %s\n", e.Name())
+					validPaths = append(validPaths, path)
 				}
 			}
+
+			if processed == 0 {
+				return &exitError{code: 4, msg: fmt.Sprintf("no manifests found in %s (expected *.yaml or *.yml)", flagManifestDir)}
+			}
+
+			// Détecte les collisions de section.id entre les manifests valides.
+			seen := map[string]string{}
+			var collisions int
+			for _, p := range validPaths {
+				s, err := manifest.Load(p)
+				if err != nil {
+					continue
+				}
+				if existing, ok := seen[s.Section.ID]; ok {
+					fmt.Fprintf(os.Stderr, "[COLLISION] section.id %q is defined in both %s and %s\n",
+						s.Section.ID, filepath.Base(existing), filepath.Base(p))
+					collisions++
+				} else {
+					seen[s.Section.ID] = p
+				}
+			}
+
 			if failed > 0 {
 				return &exitError{code: 3, msg: fmt.Sprintf("%d manifests invalid", failed)}
+			}
+			if collisions > 0 {
+				return &exitError{code: 3, msg: fmt.Sprintf("%d section.id collisions", collisions)}
 			}
 			return nil
 		},
@@ -122,6 +154,7 @@ func applyCmd() *cobra.Command {
 				id    string
 			}
 			var sections []sec
+			seenIDs := map[string]string{}
 			for _, e := range entries {
 				if e.IsDir() || filepath.Ext(e.Name()) != ".yaml" {
 					continue
@@ -131,6 +164,11 @@ func applyCmd() *cobra.Command {
 				if err != nil {
 					continue
 				}
+				if existing, ok := seenIDs[s.Section.ID]; ok {
+					return &exitError{code: 3, msg: fmt.Sprintf("section.id %q is defined in both %s and %s — please fix before running apply",
+						s.Section.ID, filepath.Base(existing), filepath.Base(p))}
+				}
+				seenIDs[s.Section.ID] = p
 				if flagSection != "" && s.Section.ID != flagSection {
 					continue
 				}
@@ -139,9 +177,9 @@ func applyCmd() *cobra.Command {
 
 			if len(sections) == 0 {
 				if flagSection != "" {
-					return fmt.Errorf("section %q not found in %s", flagSection, flagManifestDir)
+					return &exitError{code: 4, msg: fmt.Sprintf("section %q not found in %s", flagSection, flagManifestDir)}
 				}
-				return fmt.Errorf("no manifests found in %s", flagManifestDir)
+				return &exitError{code: 4, msg: fmt.Sprintf("no manifests found in %s (expected *.yaml)", flagManifestDir)}
 			}
 
 			sort.Slice(sections, func(i, j int) bool { return sections[i].order < sections[j].order })
@@ -167,14 +205,16 @@ func applyCmd() *cobra.Command {
 				"sections":         sectionIDs,
 			})
 
+			var total dryrun.Summary
 			for _, sct := range sections {
-				if err := dryrun.Run(ctx, sct.path, dryrun.Options{
+				summary, err := dryrun.Run(ctx, sct.path, dryrun.Options{
 					ManifestDir: flagManifestDir,
 					BasePath:    base,
 					Runner:      runner.New(),
 					Writer:      w,
 					RunID:       runID,
-				}); err != nil {
+				})
+				if err != nil {
 					_ = w.Emit(map[string]any{
 						"type":   "run_end",
 						"run_id": runID,
@@ -182,12 +222,23 @@ func applyCmd() *cobra.Command {
 					})
 					return fmt.Errorf("section %s: %w", sct.id, err)
 				}
+				total.Skipped += summary.Skipped
+				total.Applied += summary.Applied
+				total.Failed += summary.Failed
 			}
 
 			_ = w.Emit(map[string]any{
-				"type":   "run_end",
-				"run_id": runID,
+				"type":    "run_end",
+				"run_id":  runID,
+				"skipped": total.Skipped,
+				"applied": total.Applied,
+				"failed":  total.Failed,
 			})
+
+			// Exit code 2 si au moins une règle a planté (would_fail) — utile pour scripting.
+			if total.Failed > 0 {
+				return &exitError{code: 2, msg: fmt.Sprintf("%d rules failed during dry-run (would_fail)", total.Failed)}
+			}
 			return nil
 		},
 	}

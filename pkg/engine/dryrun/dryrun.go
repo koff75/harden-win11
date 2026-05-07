@@ -22,16 +22,27 @@ type Options struct {
 	RunID       string
 }
 
+// Summary agrège les compteurs de statuts d'un Run.
+type Summary struct {
+	Skipped int // would_skip (already_compliant)
+	Applied int // would_apply (non conforme)
+	Failed  int // would_fail (test.ps1 a planté)
+}
+
 // Run exécute le dry-run sur toutes les règles d'un manifest section.
 //
 // Émet un event "section_start" puis une suite "action_result" puis
 // "section_end". Les events "run_start" et "run_end" englobants sont
 // émis par le caller (CLI), pas ici, pour qu'un run multi-section ait
 // 1 seul run_start/run_end et 1 paire section_start/section_end par section.
-func Run(ctx context.Context, sectionPath string, opts Options) error {
+//
+// Retourne un Summary agrégé pour que le caller puisse remonter un
+// exit code non-zero si des règles ont would_fail.
+func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error) {
+	var sum Summary
 	s, err := manifest.Load(sectionPath)
 	if err != nil {
-		return fmt.Errorf("load manifest: %w", err)
+		return sum, fmt.Errorf("load manifest: %w", err)
 	}
 
 	_ = opts.Writer.Emit(map[string]any{
@@ -64,13 +75,16 @@ func Run(ctx context.Context, sectionPath string, opts Options) error {
 		if err != nil {
 			ev["status"] = "would_fail"
 			ev["error"] = err.Error()
+			sum.Failed++
 		} else if compliant, _ := out["compliant"].(bool); compliant {
 			ev["status"] = "would_skip"
 			ev["reason"] = "already_compliant"
 			ev["current_state"] = out["current"]
+			sum.Skipped++
 		} else {
 			ev["status"] = "would_apply"
 			ev["current_state"] = out["current"]
+			sum.Applied++
 		}
 
 		_ = opts.Writer.Emit(ev)
@@ -81,5 +95,5 @@ func Run(ctx context.Context, sectionPath string, opts Options) error {
 		"run_id":     opts.RunID,
 		"section_id": s.Section.ID,
 	})
-	return nil
+	return sum, nil
 }

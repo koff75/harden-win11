@@ -37,8 +37,12 @@ func TestRun_DefenderRealtime(t *testing.T) {
 		RunID:       "test-run",
 	}
 
-	if err := Run(context.Background(), manifestPath, opts); err != nil {
+	summary, err := Run(context.Background(), manifestPath, opts)
+	if err != nil {
 		t.Fatalf("Run error: %v", err)
+	}
+	if summary.Skipped+summary.Applied+summary.Failed == 0 {
+		t.Errorf("expected non-zero summary counters, got %+v", summary)
 	}
 
 	lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
