@@ -1,0 +1,199 @@
+version: "1.0"
+
+section:
+  id: network
+  order: 5
+  title: "Hardening protocoles réseau"
+  description: "Coupe les protocoles de résolution de nom hérités (LLMNR, mDNS, NetBIOS, WPAD) et impose NTLMv2 + signature SMB."
+
+rules:
+  - id: network.llmnr_disable
+    title: "LLMNR désactivé (EnableMulticast=0)"
+    description: "Empêche la résolution de noms multicast vulnérable au poisoning."
+    explanation: |
+      LLMNR (UDP 5355) est un fallback de résolution de noms qui broadcast
+      des requêtes sur le réseau local. Trivialement spoofable via Responder
+      → vol de hashes NTLMv2 → relay/cracking. Aucune raison d'avoir ça
+      activé sur Win11 moderne.
+    severity: critical
+    impact: "Aucun en pratique. DNS et hosts file restent OK."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://www.sans.org/blog/responder-netbios-poisoning-attacks/"
+    tags: [network, llmnr, lateral-movement]
+    added_in: "1.0"
+    action: ./engine/actions/network/llmnr_disable.action.ps1
+    test: ./engine/actions/network/llmnr_disable.test.ps1
+    undo: ./engine/actions/network/llmnr_disable.undo.ps1
+
+  - id: network.mdns_disable
+    title: "mDNS désactivé (EnableMDNS=0)"
+    description: "Désactive mDNS Microsoft (Bonjour-like, vecteur similaire à LLMNR)."
+    explanation: |
+      mDNS (UDP 5353) est un autre protocole de résolution multicast,
+      vulnérable au même type de poisoning que LLMNR. Win11 a son propre
+      mDNS depuis 2021 — on coupe.
+    severity: important
+    impact: "Si tu utilises des devices Bonjour (imprimantes Apple, Chromecast en mDNS), ça peut dégrader la découverte. Pour un PC sans device IoT particulier, OK."
+    requires_reboot: true
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows-server/security/windows-services/turn-off-mdns"
+    tags: [network, mdns, lateral-movement]
+    added_in: "1.0"
+    action: ./engine/actions/network/mdns_disable.action.ps1
+    test: ./engine/actions/network/mdns_disable.test.ps1
+    undo: ./engine/actions/network/mdns_disable.undo.ps1
+
+  - id: network.netbios_off
+    title: "NetBIOS over TCP/IP désactivé sur tous les adapters"
+    description: "Désactive NetBIOS-NS sur chaque interface (anti-Responder)."
+    explanation: |
+      NetBIOS Name Service (UDP 137) est l'autre vecteur principal de
+      Responder, en plus de LLMNR. Cette règle agit sur 2 niveaux : WMI
+      (TcpipNetbiosOptions=2 sur les adapters IP-enabled) et registre
+      (NetbiosOptions=2 sur toutes les NetBT\\Interfaces).
+    severity: critical
+    impact: "Aucun pour l'usage moderne (DNS prend le relais). Si tu utilises encore des partages SMB par nom NetBIOS, faudra passer en FQDN/IP."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://www.sans.org/blog/responder-netbios-poisoning-attacks/"
+    tags: [network, netbios, lateral-movement]
+    added_in: "1.0"
+    action: ./engine/actions/network/netbios_off.action.ps1
+    test: ./engine/actions/network/netbios_off.test.ps1
+    undo: ./engine/actions/network/netbios_off.undo.ps1
+
+  - id: network.wpad_disable
+    title: "WPAD désactivé (service WinHttpAutoProxySvc Start=4)"
+    description: "Désactive le Web Proxy Auto-Discovery (vecteur de proxy poisoning)."
+    explanation: |
+      WPAD broadcast pour découvrir un proxy auto-config. Vulnérable au
+      poisoning sur réseau local (Responder/MitM). Aucune raison de l'avoir
+      activé sur PC perso : si tu as un proxy entreprise, il est configuré
+      en dur via Group Policy ou IT.
+    severity: important
+    impact: "Si ton réseau utilise WPAD (rare en perso, possible en entreprise), pas appliquer."
+    requires_reboot: true
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://attack.mitre.org/techniques/T1557/002/"
+    tags: [network, wpad, lateral-movement]
+    added_in: "1.0"
+    action: ./engine/actions/network/wpad_disable.action.ps1
+    test: ./engine/actions/network/wpad_disable.test.ps1
+    undo: ./engine/actions/network/wpad_disable.undo.ps1
+
+  - id: network.ntlm_v2_only
+    title: "NTLM : LmCompatibilityLevel = 5 (NTLMv2 only)"
+    description: "Refuse l'auth LM/NTLMv1 (anciens, faibles). NTLMv2 only."
+    explanation: |
+      LmCompatibilityLevel=5 = "Send NTLMv2 response only. Refuse LM and
+      NTLMv1." Casse les attaques de downgrade vers NTLMv1, qui est
+      cassable en quelques heures.
+    severity: critical
+    impact: "Si tu utilises encore des serveurs SMB/AD très anciens (Windows Server 2003-), ça casse. Win11/Server 2019+ : aucun problème."
+    requires_reboot: true
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-security-lan-manager-authentication-level"
+    tags: [network, ntlm, lateral-movement]
+    added_in: "1.0"
+    action: ./engine/actions/network/ntlm_v2_only.action.ps1
+    test: ./engine/actions/network/ntlm_v2_only.test.ps1
+    undo: ./engine/actions/network/ntlm_v2_only.undo.ps1
+
+  - id: network.smb_client_signing
+    title: "SMB client : signature requise (RequireSecuritySignature=1)"
+    description: "Force la signature des paquets SMB côté client."
+    explanation: |
+      Sans signature, un attaquant en MitM peut altérer les paquets SMB en
+      vol. La signature SMBv2/v3 prévient les attaques type SMB relay.
+    severity: critical
+    impact: "Léger overhead CPU (négligeable Win11). Si tu as un serveur SMB qui ne signe pas, négo échouera."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing-overview"
+    tags: [network, smb, integrity]
+    added_in: "1.0"
+    action: ./engine/actions/network/smb_client_signing.action.ps1
+    test: ./engine/actions/network/smb_client_signing.test.ps1
+    undo: ./engine/actions/network/smb_client_signing.undo.ps1
+
+  - id: network.smb_server_signing
+    title: "SMB server : signature requise (RequireSecuritySignature=1)"
+    description: "Force la signature des paquets SMB côté server."
+    explanation: |
+      Pareil que client_signing mais côté serveur (au cas où la machine
+      partage des fichiers via SMB).
+    severity: critical
+    impact: "Si un client SMB n'implémente pas la signature, il ne peut plus se connecter."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing-overview"
+    tags: [network, smb, integrity]
+    added_in: "1.0"
+    action: ./engine/actions/network/smb_server_signing.action.ps1
+    test: ./engine/actions/network/smb_server_signing.test.ps1
+    undo: ./engine/actions/network/smb_server_signing.undo.ps1
+
+  - id: network.smbv1_disable
+    title: "SMBv1 désactivé (legacy, vulnérable EternalBlue)"
+    description: "Set-SmbServerConfiguration + Disable-WindowsOptionalFeature SMB1Protocol."
+    explanation: |
+      SMBv1 est le protocole exploité par EternalBlue (WannaCry, NotPetya).
+      Aucune raison de l'avoir activé en 2026. Microsoft le désactive par
+      défaut depuis Win10 1709 — la règle vérifie qu'aucune politique
+      tiers ne l'a réactivé.
+    severity: critical
+    impact: "Aucun pour un usage moderne. Si tu te connectes encore à un NAS antédiluvien en SMBv1, c'est le moment de le mettre à jour."
+    requires_reboot: true
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows-server/storage/file-server/troubleshoot/detect-enable-and-disable-smbv1-v2-v3"
+    tags: [network, smb, ransomware, eternalblue]
+    added_in: "1.0"
+    action: ./engine/actions/network/smbv1_disable.action.ps1
+    test: ./engine/actions/network/smbv1_disable.test.ps1
+    undo: ./engine/actions/network/smbv1_disable.undo.ps1
+
+  - id: network.smb_guest_auth_off
+    title: "SMB client : refuser l'auth guest (AllowInsecureGuestAuth=0)"
+    description: "Empêche le client SMB d'utiliser une auth guest non chiffrée."
+    explanation: |
+      L'auth guest SMB est non chiffrée et permet aux attaques de phishing
+      d'inciter ta machine à se connecter à un share malveillant pour voler
+      des hashes. Win11 le bloque par défaut depuis 2022 mais on confirme.
+    severity: important
+    impact: "Si tu utilises explicitement des shares SMB en mode guest (rare), ça casse."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/guest-access-in-smb2-is-disabled-by-default"
+    tags: [network, smb, lateral-movement]
+    added_in: "1.0"
+    action: ./engine/actions/network/smb_guest_auth_off.action.ps1
+    test: ./engine/actions/network/smb_guest_auth_off.test.ps1
+    undo: ./engine/actions/network/smb_guest_auth_off.undo.ps1
