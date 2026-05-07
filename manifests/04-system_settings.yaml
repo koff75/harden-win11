@@ -1,0 +1,181 @@
+version: "1.0"
+
+section:
+  id: system_settings
+  order: 4
+  title: "UAC, RDP, Power"
+  description: "Renforcement UAC, désactivation RDP, et économie disque (hibernation/fast startup)."
+
+rules:
+  - id: system_settings.uac_enable_lua
+    title: "UAC : EnableLUA = 1"
+    description: "Active globalement le filtrage LUA (base technique d'UAC)."
+    explanation: |
+      EnableLUA=1 est la racine d'UAC. À 0, UAC est entièrement désactivé
+      et tous les processus tournent en admin sans confirmation. Crucial.
+    severity: critical
+    impact: "Aucun. Activé par défaut sur Win11."
+    requires_reboot: true
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/settings-and-configuration"
+    tags: [uac, hardening]
+    added_in: "1.0"
+    action: ./engine/actions/uac/enable_lua.action.ps1
+    test: ./engine/actions/uac/enable_lua.test.ps1
+    undo: ./engine/actions/uac/enable_lua.undo.ps1
+
+  - id: system_settings.uac_consent_admin
+    title: "UAC : ConsentPromptBehaviorAdmin = 5"
+    description: "Prompt admin sur secure desktop pour les escalades."
+    explanation: |
+      Valeur 5 = "Prompt for consent on the secure desktop". Le secure desktop
+      est isolé du desktop user, ce qui empêche un malware en user-mode
+      d'auto-cliquer le prompt UAC.
+    severity: critical
+    impact: "Aucun. Comportement UAC par défaut sur Win11."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/settings-and-configuration"
+    tags: [uac, hardening]
+    added_in: "1.0"
+    action: ./engine/actions/uac/consent_admin.action.ps1
+    test: ./engine/actions/uac/consent_admin.test.ps1
+    undo: ./engine/actions/uac/consent_admin.undo.ps1
+
+  - id: system_settings.uac_prompt_secure_desktop
+    title: "UAC : PromptOnSecureDesktop = 1"
+    description: "Force tous les prompts UAC à apparaître sur le secure desktop."
+    explanation: |
+      Renforce ConsentPromptBehaviorAdmin en s'assurant que tous les prompts
+      UAC (admin et user) passent par le secure desktop, même si une politique
+      les modifie.
+    severity: critical
+    impact: "Aucun en usage standard."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/settings-and-configuration"
+    tags: [uac, hardening]
+    added_in: "1.0"
+    action: ./engine/actions/uac/prompt_secure_desktop.action.ps1
+    test: ./engine/actions/uac/prompt_secure_desktop.test.ps1
+    undo: ./engine/actions/uac/prompt_secure_desktop.undo.ps1
+
+  - id: system_settings.uac_deny_user_elevation
+    title: "UAC : ConsentPromptBehaviorUser = 0 (refuser élévation user)"
+    description: "Refuse silencieusement toute tentative d'élévation depuis un compte standard."
+    explanation: |
+      Valeur 0 = "Automatically deny elevation requests". Si un user standard
+      tente une élévation, c'est refusé sans même prompt — il faut explicitement
+      basculer en compte admin (Run as) pour les actions privilégiées.
+    severity: important
+    impact: "Si tu utilises un compte standard au quotidien, certaines actions admin nécessiteront un Run as. Pas une régression sur PC perso (compte unique = admin de toute façon)."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/settings-and-configuration"
+    tags: [uac, hardening]
+    added_in: "1.0"
+    action: ./engine/actions/uac/deny_user_elevation.action.ps1
+    test: ./engine/actions/uac/deny_user_elevation.test.ps1
+    undo: ./engine/actions/uac/deny_user_elevation.undo.ps1
+
+  - id: system_settings.rdp_disable
+    title: "RDP : fDenyTSConnections = 1 (désactivation RDP)"
+    description: "Refuse les connexions Remote Desktop entrantes."
+    explanation: |
+      RDP exposé sur Internet est l'un des vecteurs principaux de ransomware
+      (BlueKeep, exposed-RDP brute force). Pour PC perso, RDP est rarement
+      utilisé — on coupe.
+    severity: critical
+    impact: "Si tu utilises RDP pour te connecter à cette machine depuis un autre PC, ne pas appliquer."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows-server/remote/remote-desktop-services/clients/remote-desktop-allow-access"
+    tags: [rdp, network, hardening]
+    added_in: "1.0"
+    action: ./engine/actions/system_settings/rdp_disable.action.ps1
+    test: ./engine/actions/system_settings/rdp_disable.test.ps1
+    undo: ./engine/actions/system_settings/rdp_disable.undo.ps1
+
+  - id: system_settings.rdp_firewall_disable
+    title: "RDP : firewall rules 'Remote Desktop' désactivées"
+    description: "Désactive les rules firewall du groupe Remote Desktop (defense-in-depth)."
+    explanation: |
+      Belt-and-suspenders avec system_settings.rdp_disable. Même si une
+      politique re-active RDP côté service, les ports restent fermés
+      au niveau firewall.
+    severity: important
+    impact: "Aucun additionnel par rapport à rdp_disable."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references: []
+    tags: [rdp, firewall, defense-in-depth]
+    added_in: "1.0"
+    action: ./engine/actions/system_settings/rdp_firewall_disable.action.ps1
+    test: ./engine/actions/system_settings/rdp_firewall_disable.test.ps1
+    undo: ./engine/actions/system_settings/rdp_firewall_disable.undo.ps1
+
+  - id: system_settings.hibernate_off
+    title: "Hibernation désactivée (libère ~RAM size sur disque)"
+    description: "powercfg.exe /hibernate off — supprime hiberfil.sys."
+    explanation: |
+      L'hibernation Win11 stocke un dump complet de la RAM dans
+      C:\\hiberfil.sys (= taille RAM, donc 8-32 GB selon la machine).
+      Pour un desktop / portable plug, l'hibernation est rarement utile :
+      on dort ou on shutdown.
+
+      Bonus sécu : hiberfil.sys peut contenir des secrets (clés crypto,
+      sessions) lus par un attaquant avec accès physique.
+    severity: nice-to-have
+    impact: "Plus d'hibernation possible (mais sleep et shutdown OK). Sur laptop, vérifier que ton flow ne dépend pas d'hibernation longue."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows-hardware/customize/power-settings/policies-no-hibernate"
+    tags: [power, disk-space]
+    added_in: "1.0"
+    action: ./engine/actions/system_settings/hibernate_off.action.ps1
+    test: ./engine/actions/system_settings/hibernate_off.test.ps1
+    undo: ./engine/actions/system_settings/hibernate_off.undo.ps1
+
+  - id: system_settings.fast_startup_off
+    title: "Fast Startup désactivé (HiberbootEnabled = 0)"
+    description: "Désactive le 'fast startup' Win11 (semi-hibernation kernel au shutdown)."
+    explanation: |
+      Fast Startup mélange hibernation + shutdown : à l'arrêt, l'état kernel
+      est dumpé sur disque puis rechargé au boot (~30% plus rapide). Mais
+      ça empêche les vrais shutdowns, ce qui :
+        - bloque certaines mises à jour qui demandent un cold boot
+        - rend les diagnostics plus durs (état kernel persistant)
+        - dépend de hiberfil.sys (cf hibernate_off)
+    severity: nice-to-have
+    impact: "Boot ~5-10s plus lent. Plus déterministe, mises à jour OK."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/powering-down"
+    tags: [power, boot]
+    added_in: "1.0"
+    action: ./engine/actions/system_settings/fast_startup_off.action.ps1
+    test: ./engine/actions/system_settings/fast_startup_off.test.ps1
+    undo: ./engine/actions/system_settings/fast_startup_off.undo.ps1
