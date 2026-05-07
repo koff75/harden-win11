@@ -1,0 +1,20 @@
+version: "1.0"
+section:
+  id: defender
+  order: 1
+  title: "Defender"
+  description: "."
+rules:
+  - id: defender.broken
+    title: "Sans action"
+    description: "."
+    explanation: "."
+    severity: critical
+    impact: "."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    test: ./engine/actions/defender/broken.test.ps1
+    undo: ./engine/actions/defender/broken.undo.ps1
+    # action: missing

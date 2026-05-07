@@ -1,0 +1,20 @@
+version: "1.0"
+section:
+  id: defender
+  order: 1
+  title: "Defender"
+  description: "."
+rules:
+  - id: defender.broken
+    title: "Severité invalide"
+    description: "."
+    explanation: "."
+    severity: super-critical
+    impact: "."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    action: ./engine/actions/defender/broken.action.ps1
+    test: ./engine/actions/defender/broken.test.ps1
+    undo: ./engine/actions/defender/broken.undo.ps1
