@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/koff75/harden-win11/pkg/engine/dryrun"
@@ -93,7 +94,7 @@ func validateCmd() *cobra.Command {
 				if e.IsDir() {
 					continue
 				}
-				ext := filepath.Ext(e.Name())
+				ext := strings.ToLower(filepath.Ext(e.Name()))
 				if ext != ".yaml" && ext != ".yml" {
 					continue
 				}
@@ -168,7 +169,7 @@ func applyCmd() *cobra.Command {
 				if e.IsDir() {
 					continue
 				}
-				ext := filepath.Ext(e.Name())
+				ext := strings.ToLower(filepath.Ext(e.Name()))
 				if ext != ".yaml" && ext != ".yml" {
 					continue
 				}
