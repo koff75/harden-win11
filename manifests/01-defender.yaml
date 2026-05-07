@@ -154,3 +154,57 @@ rules:
     action: ./engine/actions/defender/network_protection.action.ps1
     test: ./engine/actions/defender/network_protection.test.ps1
     undo: ./engine/actions/defender/network_protection.undo.ps1
+
+  - id: defender.controlled_folder_access
+    title: "Controlled Folder Access (anti-ransomware)"
+    description: "Empêche les apps non autorisées de modifier les dossiers protégés."
+    explanation: |
+      CFA verrouille les dossiers utilisateur (Documents, Pictures, etc.)
+      et n'autorise que les apps signées Microsoft à y écrire. Bloque la
+      majorité des ransomwares qui chiffrent en masse.
+
+      ATTENTION : peut bloquer des apps légitimes non-Microsoft (Office,
+      Photoshop, VSCode, Firefox profiles, OBS, etc.). Si une app ne
+      peut plus sauvegarder, l'ajouter manuellement dans Windows Security
+      > Virus & threat protection > Ransomware protection > Allow an app
+      through Controlled folder access.
+    severity: important
+    impact: "Peut bloquer des apps légitimes (Office, Photoshop, VSCode, OBS, certains jeux). Liste blanche à compléter au cas par cas."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/controlled-folders"
+    tags: [malware, defender, ransomware]
+    added_in: "1.0"
+    action: ./engine/actions/defender/controlled_folder_access.action.ps1
+    test: ./engine/actions/defender/controlled_folder_access.test.ps1
+    undo: ./engine/actions/defender/controlled_folder_access.undo.ps1
+
+  - id: defender.sample_submission
+    title: "Sample submission (envoi automatique d'échantillons sûrs)"
+    description: "Envoie à Microsoft les fichiers suspects qui ne contiennent pas d'info perso."
+    explanation: |
+      Defender peut envoyer automatiquement à Microsoft les fichiers détectés
+      comme suspects pour analyse cloud, ce qui améliore la détection pour
+      tous les utilisateurs. Le mode SendSafeSamples filtre les fichiers
+      qui contiennent probablement de l'info perso (docs Office, PDF...) :
+      ceux-là demandent un consentement explicite.
+
+      Trade-off privacy : si une app envoie des fichiers métier suspects,
+      Microsoft les voit. Le mode NeverSend bloque tout ; AlwaysPrompt
+      demande à chaque fois (relou).
+    severity: nice-to-have
+    impact: "Léger envoi de fichiers suspects à Microsoft (mais filtré pour éviter les docs perso). Pour usage perso, c'est un bon trade-off ; pour environnement sensible (santé, finance), considérer NeverSend."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
+    tags: [defender, privacy, cloud]
+    added_in: "1.0"
+    action: ./engine/actions/defender/sample_submission.action.ps1
+    test: ./engine/actions/defender/sample_submission.test.ps1
+    undo: ./engine/actions/defender/sample_submission.undo.ps1
