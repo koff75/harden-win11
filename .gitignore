@@ -11,10 +11,11 @@ regbackup-*/
 Thumbs.db
 desktop.ini
 
-# Editeurs
+# Editeurs / IDE
 .vscode/
 .idea/
 *.swp
+*.swo
 *~
 
 # PowerShell
@@ -32,9 +33,3 @@ go.sum
 /dist/
 /build/
 __debug_bin*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
