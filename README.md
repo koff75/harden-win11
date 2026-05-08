@@ -1,187 +1,185 @@
 # harden-win11
 
-Script PowerShell de hardening Windows 11 — baseline de sécurité reproductible et idempotente.
-
-## Démarrage rapide
-
-1. **Télécharge** le script `Harden-Win11.ps1`
-2. **Ouvre PowerShell en administrateur** : menu Démarrer → tape `PowerShell` → clic droit → *Exécuter en tant qu'administrateur*
-3. **Débloque le fichier** (Windows marque les fichiers téléchargés depuis Internet) :
-   ```powershell
-   cd "C:\chemin\vers\le\dossier"
-   Unblock-File -Path .\Harden-Win11.ps1
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   ```
-4. **Lance le script** :
-   ```powershell
-   .\Harden-Win11.ps1
-   ```
-   Un menu s'affiche avec 3 options.
-
-## Workflow recommandé
-
-```
-┌─────────────────────────────┐
-│ 1. Test à blanc (DryRun)    │ → Vérifie ce qui serait modifié
-└─────────────┬───────────────┘
-              ↓
-┌─────────────────────────────┐
-│ 2. Mode AUDIT ASR           │ → Applique tout, ASR loggent sans bloquer
-│    (laisse tourner 2-3 j.)  │   Vérifie ensuite les events ASR
-└─────────────┬───────────────┘
-              ↓
-┌─────────────────────────────┐
-│ 3. Application complète     │ → Tout en mode bloquant
-└─────────────────────────────┘
-```
-
-Les règles ASR (Attack Surface Reduction) peuvent bloquer des outils légitimes peu courants. Le mode AUDIT permet de voir ce qui *aurait* été bloqué sans casser ton workflow.
-
-## Options de la ligne de commande
-
-| Paramètre | Effet |
-|-----------|-------|
-| *(aucun)* | Menu interactif |
-| `-DryRun` | Test à blanc, n'applique rien |
-| `-AsrAuditMode` | Tout applique, mais ASR en mode audit |
-| `-SkipBloatware` | Ne désinstalle pas les apps Store |
-| `-Quiet` | Pas de menu, pas de pause finale (idéal pour automatisation) |
-| `-LogPath <path>` | Chemin du log custom |
-
-### Exemples
+Outil de hardening Windows 11 — applique une baseline de sécurité reproductible, auditée, et **réversible**. 69 règles couvrant Defender, ASR, Firewall, comptes locaux, UAC/RDP, hardening réseau (LLMNR/NTLM/SMB), privacy/telemetry et bloatware.
 
 ```powershell
-# Test à blanc
-.\Harden-Win11.ps1 -DryRun
+# Vérifier ce qui serait modifié (sans rien toucher, sans admin requis)
+.\dist\harden-engine.exe apply --dry-run
 
-# Premier passage : audit ASR, automatisé
-.\Harden-Win11.ps1 -AsrAuditMode -Quiet
+# Appliquer (admin requis, demande confirmation interactive)
+.\dist\harden-engine.exe apply
 
-# Passage final : tout bloquant, automatisé
-.\Harden-Win11.ps1 -Quiet
-
-# Sans bloatware (machines pro où Clipchamp etc. peuvent être nécessaires)
-.\Harden-Win11.ps1 -SkipBloatware
+# Revenir en arrière sur le dernier run
+.\dist\harden-engine.exe undo
 ```
 
-## Ce que fait le script (8 sections)
+## Pourquoi v2 ?
 
-1. **Microsoft Defender** : Real-time, Behavior, IOAV, NIS, PUA, Controlled Folder Access, Network Protection, cloud HIGH
-2. **ASR rules** : 19 règles (Office, LSASS, scripts obfusqués, USB, WMI, ransomware…)
-3. **Firewall** : 3 profils ON, blocage SMB et NetBIOS sur profil Public
-4. **Comptes locaux** : désactivation Administrator/Guest/WsiAccount/DefaultAccount, renommage admin built-in
-5. **UAC** niveau 5 + Secure Desktop, **RDP** off, **Hibernation** off, **Fast Startup** off
-6. **Réseau** : LLMNR/mDNS/NetBIOS/WPAD off, NTLMv2 only, signatures SMB requises, SMBv1 off
-7. **Privacy** : Telemetry minimum, AdvertisingID off, Activity History off, Cortana/Recall off, anti-bloat HKCU
-8. **Bloatware** : désinstallation apps Store inutiles (Bing Weather, Solitaire, Skype, etc.)
+Le v1 (`Harden-Win11.ps1`) reste fonctionnel à la racine du repo pour usage simple. Le v2 (binaire Go `harden-engine.exe`) ajoute :
 
-## Sortie type
+- **Réversibilité** : chaque règle a un `.undo.ps1` qui restaure l'état avant. La commande `undo` rejoue l'inverse depuis le journal sur disque.
+- **Audit trail** : chaque run est loggé en NDJSON dans `%ProgramData%\Harden-Win11\runs\<run_id>.ndjson` (machine-wide, crash-safe avec `fsync` après chaque event).
+- **Auto-rollback** : si une action plante en cours d'apply, le moteur lance immédiatement le `.undo.ps1` correspondant et stoppe le run. Les règles déjà appliquées restent intactes.
+- **Validation stricte** : JSONSchema + détection de collisions de `section.id` / `rule.id` cross-fichiers + types stricts.
+- **Granularité** : `--section <id>` cible une catégorie ; `undo --rule-id <id>` revert une règle précise.
+- **Manifests YAML** : chaque règle est décrite dans un fichier YAML auditable (sévérité, impact, références, irréversibilité documentée). Pas de logique business cachée dans le PS.
+
+## Quick start
+
+### 1. Build
+
+```powershell
+git clone https://github.com/koff75/harden-win11.git
+cd harden-win11
+go build -o dist/harden-engine.exe ./cmd/harden-engine
+```
+
+Prérequis : Go 1.26+, Windows 11, PowerShell 5.1+ (intégré).
+
+### 2. Voir ce qui serait modifié
+
+Pas besoin d'admin pour le dry-run :
+
+```powershell
+.\dist\harden-engine.exe apply --dry-run
+```
+
+Sortie : un flux NDJSON sur stdout avec un event `action_result` par règle. Le `status` indique :
+
+- `would_skip` — la règle est déjà conforme
+- `would_apply` — la règle modifierait l'état (en mode réel)
+- `would_fail` — le test a planté (souvent admin requis)
+
+Exemple sur une machine fraîchement installée :
 
 ```
-  ====================================================================
-      HARDEN-WIN11   |   Baseline de securite Windows 11
-  ====================================================================
+defender.realtime                    would_skip   (déjà ON)
+defender.cloud_protection            would_apply  (CloudBlockLevel pas High)
+firewall.profile_public              would_apply  (DefaultInbound pas Block explicite)
+network.llmnr_disable                would_apply  (LLMNR pas désactivé)
+privacy.recall_off                   would_apply  (Recall pas bloqué)
+asr.block_lsass_credential_theft     would_apply  (ASR rule pas activée)
+...
+```
 
-  Hote      : DESKTOP-XYZ
-  User      : moi
-  Build     : 26200
-  Mode      : DRY-RUN (aucune modification)
-  Log       : C:\ProgramData\Harden-Win11\harden-20260504-232341.log
+### 3. Appliquer (avec confirmation)
 
-  --- Section 1/8 : Microsoft Defender ---
-  [=] Defender : Real-time Protection -> deja conforme
-  [=] Defender : Behavior Monitoring -> deja conforme
-  [?] Defender : Network Protection -> serait applique
+Dans une PowerShell **élevée** :
+
+```powershell
+.\dist\harden-engine.exe apply --section defender   # une section
+.\dist\harden-engine.exe apply                       # toutes les sections
+.\dist\harden-engine.exe apply --yes                 # skip confirmation (CI/scripting)
+```
+
+Le moteur :
+1. Re-valide tous les manifests contre le JSONSchema
+2. Demande confirmation interactive (sauf `--yes`)
+3. Pour chaque règle, lance `.test.ps1` puis `.action.ps1` si non-conforme
+4. Capture `before` dans le journal pour permettre `undo`
+5. Si une action plante → auto-rollback via `.undo.ps1` + stop
+
+### 4. Revenir en arrière
+
+```powershell
+# Undo le dernier run complet (LIFO sur les rules applied)
+.\dist\harden-engine.exe undo
+
+# Undo un run précis
+.\dist\harden-engine.exe undo --run-id 2026-05-08T14-23-00
+
+# Undo une seule règle
+.\dist\harden-engine.exe undo --rule-id defender.cloud_protection
+```
+
+Les règles marquées `irreversible: true` (ex: `defender.signatures` car on ne désinstalle pas une signature antivirus, `defender.tamper_protection_check` car TP n'a pas d'API programmatique) sont skippées avec un message explicite.
+
+## Architecture
+
+```
+manifests/                  YAML descriptifs (1 par section)
+  01-defender.yaml          12 règles
+  02-firewall.yaml          5 règles
+  03-accounts.yaml          2 règles
+  04-system_settings.yaml   8 règles (UAC, RDP, Power)
+  05-network.yaml           9 règles (LLMNR, NTLM, SMB)
+  06-privacy.yaml           13 règles (telemetry, AdID, Cortana, Recall)
+  07-bloatware.yaml         1 règle agrégée (27 patterns d'apps Store)
+  08-asr.yaml               19 règles ASR (Attack Surface Reduction)
+
+engine/actions/             snippets PowerShell par règle
+  defender/
+    realtime.action.ps1     active la rule
+    realtime.test.ps1       lit l'état, retourne {compliant, current}
+    realtime.undo.ps1       restaure l'état à partir du 'before' fourni
+    realtime.tests.ps1      tests Pester (pour les snippets non triviaux)
   ...
+  _helpers/reg.psm1         module PS qui factorise le pattern registre
 
-  ====================================================================
-                              SYNTHESE
-  ====================================================================
-
-  Duree d'execution    : 14.3 secondes
-  Total operations     : 89
-
-  [?] 32 actions seraient appliquees
-  [=] 57 items deja conformes
-
-  Score de conformite avant : 64.0 %
-  Score de conformite apres : 100.0 % (si applique)
+cmd/harden-engine/          binaire Go CLI (Cobra)
+pkg/engine/                 library Go partagée
+  manifest/                 types + loader YAML + validator JSONSchema
+  runner/                   spawn de PS avec I/O JSON
+  executor/                 orchestration dry-run et apply (+ auto-rollback)
+  journal/                  lecture/écriture NDJSON sur disque
+  ndjson/                   writer thread-safe
+  winadmin/                 détection privilèges admin
+schemas/manifest.schema.json   JSONSchema 2020-12, validation stricte
 ```
 
-Légende des icônes : `[+]` appliqué, `[=]` déjà conforme, `[?]` dry-run, `[!]` warning, `[X]` erreur
+## Sécurité du moteur
 
-## Backup et restauration
+- **Validation systématique** : `apply` re-valide les manifests avant de toucher au système (trust + verify).
+- **Détection des collisions** : `section.id` et `rule.id` cross-fichiers refusés à `validate` et `apply`.
+- **YAML strict** : `KnownFields(true)`, refus des multi-document YAML, types stricts.
+- **Timeout par règle** : 30s par défaut (configurable via `--rule-timeout`). Une règle qui hang ne fait pas hanger le moteur.
+- **`fsync` après chaque event** : le journal sur disque survit à un crash.
+- **Pas de path traversal** : les paths absolus dans `rule.action`/`test`/`undo` sont supportés volontairement (cas tests E2E) ; les paths relatifs sont résolus contre la racine du repo.
+- **Admin requis** pour `apply` réel et `undo`. Détecté via probe `%SystemRoot%\Temp\`.
 
-Le script fait **automatiquement un backup du registre** avant toute modification dans :
-```
-C:\ProgramData\Harden-Win11\regbackup-<timestamp>\
-```
+## Exit codes
 
-Trois fichiers `.reg` y sont stockés (Policies, Lsa, ContentDeliveryManager). Pour restaurer :
-```cmd
-reg import "C:\ProgramData\Harden-Win11\regbackup-XXX\HKLM-SOFTWARE-Policies.reg"
-```
+| Code | Signification |
+|---|---|
+| 0 | OK |
+| 1 | Erreur générique non catégorisée |
+| 2 | Run partiellement échoué (some `failed` ou `aborted` après auto-rollback) |
+| 3 | Manifest invalide ou collision détectée |
+| 4 | Input invalide (dossier absent, section inconnue, schema invalide) |
+| 5 | Privilèges admin requis |
+| 6 | Cancelled par l'utilisateur |
 
-## Vérifier les events ASR après mode audit
-
-Après quelques jours d'utilisation en `-AsrAuditMode`, vérifie ce qui aurait été bloqué :
+## Tester / contribuer
 
 ```powershell
-Get-WinEvent -LogName 'Microsoft-Windows-Windows Defender/Operational' |
-  Where-Object {$_.Id -in 1121,1122,1125,1126} |
-  Select-Object TimeCreated, Id, Message -First 50
+# Tests Go (7 packages)
+go test ./...
+
+# Tests Pester (~71 tests sur les snippets defender + firewall)
+Import-Module .\tools\pester\Pester\5.7.1\Pester.psd1 -Force
+Invoke-Pester -Path engine\actions
 ```
 
-- **1121** = règle ASR a bloqué (mode block)
-- **1122** = règle ASR aurait bloqué (mode audit)
-- **1125, 1126** = règles ASR sur dossiers protégés
+Voir [`docs/DEVELOPING.md`](docs/DEVELOPING.md) pour le détail des conventions, format des events NDJSON, schéma JSON attendu par les snippets, et étapes pour ajouter une nouvelle règle.
 
-Si rien de légitime n'est bloqué, relance le script sans `-AsrAuditMode`.
+## Status & roadmap
 
-## Troubleshooting
+- ✅ **SP1 — Walking skeleton** : moteur complet, 69 règles migrées (parité v1)
+- ✅ **SP2 — Outil utilisable** : apply réel, journal disque, undo, admin check, auto-rollback
+- 🟨 **SP3 (futur)** : profile auto-detection (`profile_when` runtime), GUI/TUI, CI/CD release signée
 
-**`script cannot be loaded ... not digitally signed`**
-→ Le script n'est pas signé. Solution :
-```powershell
-Unblock-File -Path .\Harden-Win11.ps1
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
+## v1 (script PowerShell legacy)
 
-**`must be lance en tant qu'administrateur`**
-→ Tu n'as pas lancé PowerShell en admin. Clic droit sur PowerShell → *Exécuter en tant qu'administrateur*.
-
-**Accents cassés dans la console (`dÃ©jÃ ` au lieu de `déjà`)**
-→ Résolu dans la version actuelle du script (BOM UTF-8 + `chcp 65001`). Si tu vois encore des accents cassés, c'est que tu utilises une vieille version — re-télécharge.
-
-**Une appli légitime cassée après application**
-→ Probablement une règle ASR. Vérifie l'event log (voir section précédente) et désactive la règle concernée :
-```powershell
-Add-MpPreference -AttackSurfaceReductionRules_Ids <GUID> -AttackSurfaceReductionRules_Actions Disabled
-```
-
-**Partage SMB local cassé**
-→ Si tu as un NAS/imprimante très ancien qui ne parle que SMBv1, commente le bloc `Set-SmbServerConfiguration -EnableSMB1Protocol $false` dans le script avant de relancer.
-
-## Déploiement multi-machines
-
-Pour déployer sur plusieurs PC, copie le script via partage réseau ou USB et lance-le en mode automatisé :
+Le script original `Harden-Win11.ps1` est toujours à la racine du repo pour usage simple sans build Go.
 
 ```powershell
-# Workflow type pour 5+ machines
-\\serveur\partage\Harden-Win11.ps1 -AsrAuditMode -Quiet
-# Attendre 2-3 jours, vérifier les events
-\\serveur\partage\Harden-Win11.ps1 -Quiet
+.\Harden-Win11.ps1                # menu interactif
+.\Harden-Win11.ps1 -DryRun         # test à blanc
+.\Harden-Win11.ps1 -AsrAuditMode   # ASR en mode audit (loggent sans bloquer)
+.\Harden-Win11.ps1 -SkipBloatware  # garde les apps Store
+.\Harden-Win11.ps1 -Quiet          # pas de menu (CI)
 ```
 
-Le log généré (`C:\ProgramData\Harden-Win11\harden-*.log`) permet de comparer l'état des machines.
+## Licence
 
-## Compatibilité
-
-- **Cible** : Windows 11 (build 22000+, testé sur 26200/24H2/25H2)
-- **PowerShell** : 5.1 (intégré) ou 7.x
-- **Windows 10** : la plupart des paramètres fonctionnent mais non garanti
-- **Windows Home / Pro / Enterprise** : oui, avec quelques différences sur la télémétrie (niveau 1 minimum sur Home)
-
-## Sécurité du script
-
-Le script est **idempotent** : tu peux le relancer 100 fois, il vérifie l'état avant chaque action et ne fait que ce qui est nécessaire. Backup automatique avant modification. Pas de connexion Internet sortante (sauf `Update-MpSignature` qui télécharge les signatures Defender).
+WTFPL — Do whatever you want with this. Pas de garantie. Tu es responsable de ce que tu lances sur ta machine.

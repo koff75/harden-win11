@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main, v2-walking-skeleton]
+  pull_request:
+    branches: [main]
+
+jobs:
+  go-build-test:
+    name: Go build + tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go build
+        run: go build -o dist/harden-engine.exe ./cmd/harden-engine
+
+      - name: go test
+        run: go test ./... -count=1 -timeout 5m
+
+      - name: Smoke test (version + validate + dry-run)
+        run: |
+          .\dist\harden-engine.exe version
+          .\dist\harden-engine.exe validate
+          .\dist\harden-engine.exe apply --dry-run --section accounts
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: harden-engine-windows-amd64
+          path: dist/harden-engine.exe
+          retention-days: 30
+
+  pester:
+    name: Pester (PowerShell)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester 5
+        shell: powershell
+        run: |
+          Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck -Scope CurrentUser
+          Get-Module -ListAvailable Pester | Where-Object { $_.Version.Major -ge 5 } | Format-Table
+
+      - name: Run Pester
+        shell: powershell
+        run: |
+          Import-Module Pester -MinimumVersion 5.0 -Force
+          $config = New-PesterConfiguration
+          $config.Run.Path = 'engine/actions'
+          $config.Run.Exit = $true
+          $config.Output.Verbosity = 'Detailed'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputFormat = 'NUnitXml'
+          $config.TestResult.OutputPath = 'pester-results.xml'
+          Invoke-Pester -Configuration $config
+
+      - name: Upload Pester results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pester-results
+          path: pester-results.xml
+          retention-days: 30
+
+  golangci-lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+  # Linux compile-only check : confirme que les build tags Windows-only
+  # n'empêchent pas la compilation sur Linux (utile pour les contributors
+  # qui dev sur Linux/macOS et veulent au moins voir compiler).
+  go-cross-compile:
+    name: Go cross-compile sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: GOOS=windows go build (cmd + pkg)
+        run: GOOS=windows go build ./cmd/... ./pkg/...
+
+      - name: GOOS=linux go build (vérifie les build tags _other.go)
+        run: GOOS=linux go build ./cmd/... ./pkg/...

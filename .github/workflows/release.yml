@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build + Release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+
+      - name: Build harden-engine.exe
+        run: |
+          $version = "${{ github.ref_name }}"
+          go build -ldflags "-X main.Version=$version" -o dist/harden-engine.exe ./cmd/harden-engine
+
+      - name: Smoke test
+        run: |
+          .\dist\harden-engine.exe version
+          .\dist\harden-engine.exe validate
+
+      - name: Compute SHA256
+        shell: powershell
+        run: |
+          $hash = (Get-FileHash dist/harden-engine.exe -Algorithm SHA256).Hash
+          "$hash  harden-engine.exe" | Out-File -Encoding ascii dist/harden-engine.exe.sha256
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/harden-engine.exe
+            dist/harden-engine.exe.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true

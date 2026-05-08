@@ -1,0 +1,25 @@
+# golangci-lint config — configuration minimaliste, on durcira plus tard.
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - errcheck
+    - gosec
+    - misspell
+    - revive
+    - unconvert
+  exclusions:
+    rules:
+      # Les tests E2E ignorent volontairement des erreurs (cmd.Run pour smoke).
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+      # Le journal écrit avec _ = explicite (best-effort logging).
+      - text: 'Error return value of `.*Emit` is not checked'
+        linters:
+          - errcheck
