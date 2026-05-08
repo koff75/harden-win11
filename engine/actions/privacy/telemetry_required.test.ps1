@@ -2,14 +2,9 @@
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module (Join-Path $PSScriptRoot '..\_helpers\reg.psm1') -Force
 
-$path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection'
-$name = 'AllowTelemetry'
-$expected = 1
-
-$existing = Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-$value = if ($existing) { $existing.$name } else { $null }
-# Compliant si <= expected (les niveaux plus bas sont OK aussi)
-$compliant = ($null -ne $value) -and ($value -le $expected)
-
-@{ compliant = $compliant; current = @{ AllowTelemetry = $value } } | ConvertTo-Json -Compress
+Invoke-RegTestAction `
+    -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection' `
+    -Name 'AllowTelemetry' `
+    -Expected 1

@@ -2,13 +2,9 @@
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module (Join-Path $PSScriptRoot '..\_helpers\reg.psm1') -Force
 
-$path = 'HKLM:\SOFTWARE\Policies\Microsoft\InputPersonalization'
-$name = 'AllowInputPersonalization'
-$expected = 0
-
-$existing = Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-$value = if ($existing) { $existing.$name } else { $null }
-$compliant = $value -eq $expected
-
-@{ compliant = $compliant; current = @{ AllowInputPersonalization = $value } } | ConvertTo-Json -Compress
+Invoke-RegTestAction `
+    -Path 'HKLM:\SOFTWARE\Policies\Microsoft\InputPersonalization' `
+    -Name 'AllowInputPersonalization' `
+    -Expected 0

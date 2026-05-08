@@ -1,20 +1,12 @@
 # mdns_disable.action.ps1
-# Désactive mDNS (Bonjour-like, vecteur similaire à LLMNR).
+# mDNS dÃ©sactivÃ©.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module (Join-Path $PSScriptRoot '..\_helpers\reg.psm1') -Force
 
-$path = 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters'
-$name = 'EnableMDNS'
-$expected = 0
-
-$existing = Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-$before = @{ exists = [bool]$existing; value = if ($existing) { $existing.$name } else { $null } }
-
-if (-not (Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
-Set-ItemProperty -Path $path -Name $name -Value $expected -Type DWord -Force
-
-$existing = Get-ItemProperty -Path $path -Name $name
-$after = @{ exists = $true; value = $existing.$name }
-
-@{ ok = $true; before = $before; after = $after } | ConvertTo-Json -Compress -Depth 10
+Invoke-RegSetAction `
+    -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' `
+    -Name 'EnableMDNS' `
+    -Value 0 `
+    -Type DWord

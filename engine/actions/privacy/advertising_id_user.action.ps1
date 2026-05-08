@@ -1,20 +1,12 @@
 # advertising_id_user.action.ps1
-# HKCU : AdvertisingInfo Enabled = 0.
+# HKCU : Advertising ID off.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module (Join-Path $PSScriptRoot '..\_helpers\reg.psm1') -Force
 
-$path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo'
-$name = 'Enabled'
-$expected = 0
-
-$existing = Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-$before = @{ exists = [bool]$existing; value = if ($existing) { $existing.$name } else { $null } }
-
-if (-not (Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
-Set-ItemProperty -Path $path -Name $name -Value $expected -Type DWord -Force
-
-$existing = Get-ItemProperty -Path $path -Name $name
-$after = @{ exists = $true; value = $existing.$name }
-
-@{ ok = $true; before = $before; after = $after } | ConvertTo-Json -Compress -Depth 10
+Invoke-RegSetAction `
+    -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo' `
+    -Name 'Enabled' `
+    -Value 0 `
+    -Type DWord

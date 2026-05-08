@@ -2,13 +2,9 @@
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module (Join-Path $PSScriptRoot '..\_helpers\reg.psm1') -Force
 
-$path = 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters'
-$name = 'AllowInsecureGuestAuth'
-$expected = 0
-
-$existing = Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-$value = if ($existing) { $existing.$name } else { $null }
-$compliant = $value -eq $expected
-
-@{ compliant = $compliant; current = @{ AllowInsecureGuestAuth = $value } } | ConvertTo-Json -Compress
+Invoke-RegTestAction `
+    -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters' `
+    -Name 'AllowInsecureGuestAuth' `
+    -Expected 0

@@ -2,13 +2,9 @@
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module (Join-Path $PSScriptRoot '..\_helpers\reg.psm1') -Force
 
-$path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'
-$name = 'SilentInstalledAppsEnabled'
-$expected = 0
-
-$existing = Get-ItemProperty -Path $path -Name $name -ErrorAction SilentlyContinue
-$value = if ($existing) { $existing.$name } else { $null }
-$compliant = $value -eq $expected
-
-@{ compliant = $compliant; current = @{ SilentInstalledAppsEnabled = $value } } | ConvertTo-Json -Compress
+Invoke-RegTestAction `
+    -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager' `
+    -Name 'SilentInstalledAppsEnabled' `
+    -Expected 0
