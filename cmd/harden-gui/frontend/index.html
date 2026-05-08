@@ -42,8 +42,16 @@
     <section id="results-pane">
         <div id="status-bar" class="muted">Sélectionne des sections puis clique <strong>Vérifier</strong> ou <strong>Appliquer</strong>.</div>
 
+        <div id="dashboard" class="hidden">
+            <div class="dash-score">
+                <div class="dash-score-label">Maturité</div>
+                <div class="dash-score-value"><span id="dash-percent">—</span><span class="dash-score-suffix">%</span></div>
+                <div class="dash-score-sub" id="dash-summary">—</div>
+            </div>
+            <div class="dash-bars" id="dash-bars"></div>
+        </div>
+
         <div id="filters">
-            <input type="search" id="filter-search" placeholder="Rechercher dans les règles…">
             <div class="filter-group">
                 <span class="filter-label">Niveau</span>
                 <label><input type="checkbox" class="filter-severity" value="critical" checked> <span class="filter-pill critical">Critique</span></label>
@@ -53,7 +61,7 @@
             <div class="filter-group">
                 <span class="filter-label">État</span>
                 <label><input type="checkbox" class="filter-status" value="pending" checked> En attente</label>
-                <label><input type="checkbox" class="filter-status" value="conforme" checked> Conforme</label>
+                <label><input type="checkbox" class="filter-status" value="conforme"> Conforme</label>
                 <label><input type="checkbox" class="filter-status" value="to-apply" checked> À renforcer</label>
                 <label><input type="checkbox" class="filter-status" value="failed" checked> Échec</label>
             </div>

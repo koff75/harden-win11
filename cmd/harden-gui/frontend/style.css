@@ -130,6 +130,88 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 #status-bar.error   { background: #6b2030; border-left-color: #ff5566; }
 #status-bar.aborted { background: #5b4612; border-left-color: #ffaa00; }
 
+/* Dashboard maturité */
+#dashboard {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 20px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #15203a 0%, #1a2748 100%);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border: 1px solid #2c3a55;
+}
+
+#dashboard.hidden { display: none; }
+
+.dash-score {
+    text-align: center;
+    border-right: 1px solid #2c3a55;
+    padding-right: 20px;
+}
+.dash-score-label {
+    color: #8fa1be;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+}
+.dash-score-value {
+    font-size: 42px;
+    font-weight: 600;
+    color: #4fc3ff;
+    line-height: 1;
+}
+#dash-percent[data-level="low"]    { color: #ff6b7e; }
+#dash-percent[data-level="medium"] { color: #ffaa00; }
+#dash-percent[data-level="high"]   { color: #5fcf6f; }
+
+.dash-score-suffix {
+    font-size: 22px;
+    color: #8fa1be;
+    margin-left: 2px;
+}
+.dash-score-sub {
+    color: #8fa1be;
+    font-size: 11px;
+    margin-top: 6px;
+}
+
+.dash-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+}
+
+.dash-bar {
+    display: grid;
+    grid-template-columns: 90px 1fr 70px;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+}
+.dash-bar-label { color: #c0c8d8; }
+.dash-bar-track {
+    height: 8px;
+    background: #11192a;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.dash-bar-fill {
+    height: 100%;
+    transition: width 0.4s ease-out;
+}
+.dash-bar-fill.critical { background: linear-gradient(90deg, #ff6b7e 0%, #ff9099 100%); }
+.dash-bar-fill.important { background: linear-gradient(90deg, #ffaa00 0%, #ffd770 100%); }
+.dash-bar-fill.nice-to-have { background: linear-gradient(90deg, #4fc3ff 0%, #aabfd9 100%); }
+.dash-bar-count {
+    font-family: monospace;
+    color: #8fa1be;
+    font-size: 11px;
+    text-align: right;
+}
+
 /* Barre de filtres */
 #filters {
     display: flex;

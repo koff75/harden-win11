@@ -113,12 +113,15 @@ function bindEvents() {
     document.body.addEventListener('mousemove', onMouseMove);
 
     // Filtres
-    $('#filter-search').addEventListener('input', applyFilters);
     $$('.filter-severity').forEach(cb => cb.addEventListener('change', applyFilters));
     $$('.filter-status').forEach(cb => cb.addEventListener('change', applyFilters));
     $('#filter-reset').addEventListener('click', () => {
-        $('#filter-search').value = '';
-        $$('.filter-severity, .filter-status').forEach(cb => cb.checked = true);
+        // Reset = état initial : tous niveaux cochés, tous états cochés SAUF
+        // 'Conforme' (cohérent avec le focus sur ce qui manque).
+        $$('.filter-severity').forEach(cb => cb.checked = true);
+        $$('.filter-status').forEach(cb => {
+            cb.checked = (cb.value !== 'conforme');
+        });
         applyFilters();
     });
 }
@@ -138,7 +141,6 @@ function statusBucket(status) {
 }
 
 function applyFilters() {
-    const search = $('#filter-search').value.toLowerCase().trim();
     const sevAllowed = new Set(Array.from($$('.filter-severity:checked')).map(cb => cb.value));
     const stsAllowed = new Set(Array.from($$('.filter-status:checked')).map(cb => cb.value));
 
@@ -153,10 +155,6 @@ function applyFilters() {
         let show = true;
         if (!sevAllowed.has(rule.severity || 'nice-to-have')) show = false;
         if (!stsAllowed.has(bucket)) show = false;
-        if (search) {
-            const hay = (rule.title || '').toLowerCase() + ' ' + ruleID.toLowerCase() + ' ' + (rule.description || '').toLowerCase();
-            if (!hay.includes(search)) show = false;
-        }
         tr.style.display = show ? '' : 'none';
         if (show) visible++;
     });
@@ -164,6 +162,94 @@ function applyFilters() {
     $('#filter-count').textContent = visible === total
         ? `${total} règle(s)`
         : `${visible} / ${total} règle(s) affichée(s)`;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Dashboard maturité
+// ─────────────────────────────────────────────────────────────────
+
+// renderDashboard : calcule + affiche le score de maturité et la
+// répartition par niveau de sévérité, à partir des events reçus.
+//
+// Score = % de règles vérifiées qui sont conformes. On exclut :
+//   - les 'pending' (pas encore évaluées)
+//   - les 'failed/would_fail' (état inconnu — admin requis souvent)
+function renderDashboard() {
+    const dashboard = $('#dashboard');
+    const rows = $$('#results-body tr.row');
+    if (rows.length === 0) {
+        dashboard.classList.add('hidden');
+        return;
+    }
+
+    // Compter par sévérité.
+    const counts = {
+        critical:     { total: 0, conforme: 0, evaluated: 0 },
+        important:    { total: 0, conforme: 0, evaluated: 0 },
+        'nice-to-have': { total: 0, conforme: 0, evaluated: 0 },
+    };
+    let evaluatedAll = 0, conformeAll = 0, pendingAll = 0;
+
+    rows.forEach(tr => {
+        const ruleID = tr.dataset.ruleId;
+        const rule = rulesByID[ruleID] || {};
+        const sev = rule.severity || 'nice-to-have';
+        if (!counts[sev]) return;
+        counts[sev].total++;
+
+        const status = tr.dataset.status || 'pending';
+        const bucket = statusBucket(status);
+        if (bucket === 'pending') {
+            pendingAll++;
+            return;
+        }
+        if (bucket === 'failed') return; // état inconnu, on n'inclut pas dans le score
+        counts[sev].evaluated++;
+        evaluatedAll++;
+        if (bucket === 'conforme') {
+            counts[sev].conforme++;
+            conformeAll++;
+        }
+    });
+
+    // Si pas encore évalué, masquer le dashboard.
+    if (evaluatedAll === 0 && pendingAll > 0) {
+        dashboard.classList.add('hidden');
+        return;
+    }
+
+    dashboard.classList.remove('hidden');
+
+    // Score global.
+    const pct = evaluatedAll > 0 ? Math.round((conformeAll / evaluatedAll) * 100) : 0;
+    const dashPct = $('#dash-percent');
+    dashPct.textContent = pct;
+    dashPct.dataset.level = pct < 50 ? 'low' : (pct < 80 ? 'medium' : 'high');
+
+    const toApply = evaluatedAll - conformeAll;
+    let summary;
+    if (toApply === 0) summary = '✓ Toutes les règles sont déjà conformes';
+    else if (pct < 50) summary = `${toApply} règle(s) à renforcer — protection insuffisante`;
+    else if (pct < 80) summary = `${toApply} règle(s) à renforcer pour aller plus loin`;
+    else summary = `${toApply} règle(s) restantes pour une couverture maximale`;
+    $('#dash-summary').textContent = summary;
+
+    // Mini-bars par sévérité.
+    const bars = [
+        { sev: 'critical',     label: 'Critique',  data: counts.critical },
+        { sev: 'important',    label: 'Important', data: counts.important },
+        { sev: 'nice-to-have', label: 'Optionnel', data: counts['nice-to-have'] },
+    ];
+    $('#dash-bars').innerHTML = bars.map(b => {
+        const conformePct = b.data.evaluated > 0 ? (b.data.conforme / b.data.evaluated) * 100 : 0;
+        return `
+            <div class="dash-bar">
+                <span class="dash-bar-label">${escapeHtml(b.label)}</span>
+                <div class="dash-bar-track"><div class="dash-bar-fill ${b.sev}" style="width:${conformePct}%"></div></div>
+                <span class="dash-bar-count">${b.data.conforme} / ${b.data.evaluated || b.data.total}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 function selectedSections() {
@@ -303,6 +389,8 @@ function prepareTableForRun(sectionIDs) {
     if (totalRulesInRun === 0) {
         tbody.innerHTML = '<tr class="empty"><td colspan="4">Aucune règle dans la sélection.</td></tr>';
     }
+    // Cacher le dashboard tant qu'on n'a pas évalué.
+    $('#dashboard').classList.add('hidden');
 }
 
 function renderRuleRow(rule, status, ev) {
@@ -333,6 +421,7 @@ function updateRuleRow(ev) {
         $('#results-body').appendChild(tr);
         rowsByRuleID[ruleID] = tr;
         applyFilters();
+        renderDashboard();
         return;
     }
     const status = ev.status || 'unknown';
@@ -343,7 +432,11 @@ function updateRuleRow(ev) {
     tr.querySelector('.action-cell').innerHTML = formatActionCell(rule, status, ev);
     // ré-applique les filtres pour le cas où la rule devient (in)visible avec son nouveau status.
     applyFilters();
-    tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    renderDashboard();
+    // Scroll seulement si la row est visible (sinon le filtre la cache et scroll est inutile).
+    if (tr.style.display !== 'none') {
+        tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 }
 
 // formatActionCell — texte user-friendly pour la colonne "Action proposée".
