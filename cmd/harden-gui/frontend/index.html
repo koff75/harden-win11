@@ -11,6 +11,8 @@
 <header>
     <h1>harden-win11</h1>
     <span id="engine-info" class="muted">loading…</span>
+    <span class="spacer"></span>
+    <span id="log-path" class="muted small" title="Log de la GUI"></span>
 </header>
 
 <main>
@@ -22,9 +24,15 @@
 
         <h2>Actions</h2>
         <div class="actions">
-            <button id="btn-dryrun">Dry-run (lecture seule)</button>
-            <button id="btn-apply" class="danger">Apply (modifie le système)</button>
-            <button id="btn-undo" class="warn">Undo dernier run</button>
+            <button id="btn-dryrun" title="Lit l'état système sans rien modifier (sans admin requis)">
+                🔍 Vérifier (dry-run)
+            </button>
+            <button id="btn-apply" class="danger" title="Applique réellement les changements (admin requis)">
+                ⚙️ Appliquer
+            </button>
+            <button id="btn-undo" class="warn" title="Annule les changements du dernier run">
+                ↶ Annuler le dernier run
+            </button>
         </div>
 
         <h2>Historique</h2>
@@ -32,33 +40,55 @@
     </aside>
 
     <section id="results-pane">
-        <div id="status-bar" class="muted">Sélectionne des sections puis clique Dry-run ou Apply.</div>
-        <table id="results-table">
-            <thead>
-                <tr>
-                    <th>Règle</th>
-                    <th>Status</th>
-                    <th>Détail</th>
-                    <th>ms</th>
-                </tr>
-            </thead>
-            <tbody id="results-body"></tbody>
-        </table>
+        <div id="status-bar" class="muted">Sélectionne des sections puis clique <strong>Vérifier</strong> ou <strong>Appliquer</strong>.</div>
+
+        <div id="results-table-wrap">
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th class="col-severity">Niveau</th>
+                        <th class="col-rule">Règle</th>
+                        <th class="col-status">État</th>
+                        <th class="col-detail">Détail</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <tr class="empty"><td colspan="4">Aucun résultat encore. Lance un dry-run pour voir l'état actuel.</td></tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 </main>
 
-<div id="modal-confirm" class="modal hidden">
+<!-- Loader overlay pendant un run -->
+<div id="loader" class="overlay hidden">
+    <div class="loader-content">
+        <div class="spinner"></div>
+        <div class="loader-text">
+            <h3 id="loader-title">Analyse en cours…</h3>
+            <div id="loader-progress" class="muted small">0 / 0 règles</div>
+            <div id="loader-current" class="muted small">—</div>
+        </div>
+        <button id="btn-cancel" class="warn">Annuler</button>
+    </div>
+</div>
+
+<!-- Modal confirmation apply -->
+<div id="modal-confirm" class="overlay hidden">
     <div class="modal-content">
-        <h3>Confirmer l'apply réel ?</h3>
-        <p>Les actions vont modifier le système. Un journal est écrit sous <code id="modal-journal-dir"></code> et chaque règle peut être rollback via <em>undo</em>.</p>
+        <h3>⚠ Confirmer l'application réelle ?</h3>
+        <p>Les actions vont <strong>modifier le système</strong>. Un journal est écrit sous <code id="modal-journal-dir"></code> et chaque règle peut être annulée individuellement.</p>
         <p>Sections affectées :</p>
         <ul id="modal-sections"></ul>
         <div class="modal-actions">
             <button id="modal-cancel">Annuler</button>
-            <button id="modal-confirm" class="danger">Confirmer</button>
+            <button id="modal-confirm-btn" class="danger">Confirmer l'apply</button>
         </div>
     </div>
 </div>
+
+<!-- Tooltip flottant pour les règles -->
+<div id="rule-tooltip" class="tooltip hidden"></div>
 
 <script src="/app.js"></script>
 </body>

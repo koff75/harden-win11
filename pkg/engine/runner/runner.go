@@ -39,6 +39,7 @@ func (r *Runner) RunPS(ctx context.Context, scriptPath string, input any) (map[s
 		"-ExecutionPolicy", "Bypass",
 		"-File", scriptPath,
 	)
+	hideConsoleWindow(cmd)
 
 	// Sérialise input en JSON (ou string vide si nil)
 	var stdin []byte

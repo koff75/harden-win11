@@ -15,6 +15,8 @@ import (
 var assets embed.FS
 
 func main() {
+	initLogger()
+	logf("main: starting GUI")
 	app := NewApp()
 
 	err := wails.Run(&options.App{
