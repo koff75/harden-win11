@@ -1,0 +1,50 @@
+version: "1.0"
+
+section:
+  id: undo_fixture
+  order: 99
+  title: "Undo test fixture"
+  description: "Manifest pour tester la commande undo sans toucher au système."
+
+rules:
+  - id: undofixture.first
+    title: "First test rule"
+    description: "."
+    explanation: "."
+    severity: nice-to-have
+    impact: "."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    action: ./pkg/engine/executor/testdata/success.action.ps1
+    test: ./pkg/engine/executor/testdata/never_compliant.test.ps1
+    undo: ./pkg/engine/executor/testdata/noop.undo.ps1
+
+  - id: undofixture.second
+    title: "Second test rule"
+    description: "."
+    explanation: "."
+    severity: nice-to-have
+    impact: "."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: false
+    action: ./pkg/engine/executor/testdata/success.action.ps1
+    test: ./pkg/engine/executor/testdata/never_compliant.test.ps1
+    undo: ./pkg/engine/executor/testdata/noop.undo.ps1
+
+  - id: undofixture.irreversible
+    title: "Irreversible rule (should be skipped by undo)"
+    description: "."
+    explanation: "."
+    severity: nice-to-have
+    impact: "."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Test fixture pour vérifier que undo skip les irreversible."
+    action: ./pkg/engine/executor/testdata/success.action.ps1
+    test: ./pkg/engine/executor/testdata/never_compliant.test.ps1

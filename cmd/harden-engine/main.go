@@ -142,8 +142,9 @@ func loadAndValidateManifests(dir, schemaPath string, verbose bool) ([]manifestE
 		return nil, 0, &exitError{code: 4, msg: fmt.Sprintf("no manifests found in %s (expected *.yaml or *.yml)", dir)}
 	}
 
-	// Collision detection sur section.id.
-	seen := map[string]string{}
+	// Collision detection sur section.id ET sur rule.id global (cross-fichiers).
+	seenSection := map[string]string{}
+	seenRule := map[string]string{} // rule.id → file qui le définit
 	var collisions int
 	var sections []manifestEntry
 	for _, p := range validPaths {
@@ -151,23 +152,35 @@ func loadAndValidateManifests(dir, schemaPath string, verbose bool) ([]manifestE
 		if err != nil {
 			continue
 		}
-		if existing, ok := seen[s.Section.ID]; ok {
+		if existing, ok := seenSection[s.Section.ID]; ok {
 			if verbose {
 				fmt.Fprintf(os.Stderr, "[COLLISION] section.id %q is defined in both %s and %s\n",
 					s.Section.ID, filepath.Base(existing), filepath.Base(p))
 			}
 			collisions++
-		} else {
-			seen[s.Section.ID] = p
-			sections = append(sections, manifestEntry{path: p, order: s.Section.Order, id: s.Section.ID})
+			continue // skip cette section pour ne pas pollluer le check rule.id
 		}
+		seenSection[s.Section.ID] = p
+
+		for _, r := range s.Rules {
+			if existingFile, ok := seenRule[r.ID]; ok {
+				if verbose {
+					fmt.Fprintf(os.Stderr, "[COLLISION] rule.id %q is defined in both %s and %s\n",
+						r.ID, filepath.Base(existingFile), filepath.Base(p))
+				}
+				collisions++
+			} else {
+				seenRule[r.ID] = p
+			}
+		}
+		sections = append(sections, manifestEntry{path: p, order: s.Section.Order, id: s.Section.ID})
 	}
 
 	if failed > 0 {
 		return nil, failed, &exitError{code: 3, msg: fmt.Sprintf("%d manifests invalid", failed)}
 	}
 	if collisions > 0 {
-		return nil, collisions, &exitError{code: 3, msg: fmt.Sprintf("%d section.id collisions", collisions)}
+		return nil, collisions, &exitError{code: 3, msg: fmt.Sprintf("%d collisions detected", collisions)}
 	}
 	return sections, 0, nil
 }
@@ -478,7 +491,10 @@ func undoCmd() *cobra.Command {
 					})
 					continue
 				}
-				undoPath := filepath.Join(base, ref.undo)
+				undoPath := ref.undo
+				if !filepath.IsAbs(undoPath) {
+					undoPath = filepath.Join(base, undoPath)
+				}
 				ctxRule, cancel := context.WithTimeout(ctx, timeout)
 				start := time.Now()
 				_, err := r.RunPS(ctxRule, undoPath, u.Before)

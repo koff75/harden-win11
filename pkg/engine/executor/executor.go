@@ -150,7 +150,7 @@ func modeName(m Mode) string {
 
 // runDry exécute la logique dry-run pour une règle.
 func runDry(ctx context.Context, rule manifest.Rule, opts Options, timeout time.Duration, sum *Summary) map[string]any {
-	testPath := filepath.Join(opts.BasePath, rule.Test)
+	testPath := resolvePath(opts.BasePath, rule.Test)
 	ev := baseEvent(rule, opts, "dry-run")
 
 	out, dur, err := runPS(ctx, opts.Runner, testPath, nil, timeout)
@@ -187,8 +187,8 @@ func runDry(ctx context.Context, rule manifest.Rule, opts Options, timeout time.
 // runApply exécute la logique apply pour une règle. Retourne (event, aborted).
 // aborted=true signale au caller de stopper le run global (auto-rollback enclenché).
 func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout time.Duration, sum *Summary) (map[string]any, bool) {
-	testPath := filepath.Join(opts.BasePath, rule.Test)
-	actionPath := filepath.Join(opts.BasePath, rule.Action)
+	testPath := resolvePath(opts.BasePath, rule.Test)
+	actionPath := resolvePath(opts.BasePath, rule.Action)
 	ev := baseEvent(rule, opts, "apply")
 
 	// 1. Test : skip si déjà conforme.
@@ -247,7 +247,7 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 	// On utilise le testOut.current comme proxy pour le before (l'état avant
 	// l'action est ce que test a vu juste avant de lancer l'action).
 	rollbackInput := testOut["current"]
-	undoPath := filepath.Join(opts.BasePath, rule.Undo)
+	undoPath := resolvePath(opts.BasePath, rule.Undo)
 	_, undoDur, undoErr := runPS(ctx, opts.Runner, undoPath, rollbackInput, timeout)
 
 	rollbackEv := map[string]any{
@@ -302,6 +302,18 @@ func ruleSectionID(rule manifest.Rule) string {
 		}
 	}
 	return rule.ID
+}
+
+// resolvePath retourne path tel quel s'il est absolu (cas où le manifest a
+// utilisé un chemin absolu, p.ex. dans des tests), sinon joint avec base.
+//
+// Sur Windows, filepath.Join("C:\\base", "C:\\foo") retourne "C:\\base\\C:\\foo"
+// (Go ne drop pas le second drive letter), donc on doit faire le check à la main.
+func resolvePath(base, path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(base, path)
 }
 
 func runPS(ctx context.Context, r *runner.Runner, path string, input any, timeout time.Duration) (map[string]any, time.Duration, error) {
