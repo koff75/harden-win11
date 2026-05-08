@@ -290,7 +290,28 @@ func (a *App) runEngine(mode executor.Mode, sectionIDs []string) (*RunSummary, e
 	}
 
 	runID := time.Now().UTC().Format("2006-01-02T15-04-05")
-	w := newEventWriter(a.ctx, mode, runID)
+
+	// Apply réel : ouvrir un fichier journal sur disque pour audit + undo
+	// futur via 'harden-engine.exe undo'. Dry-run : pas de journal disque
+	// (on n'a rien modifié).
+	var journalFile *os.File
+	var journalPath string
+	if mode == executor.ModeApply {
+		dir := journal.DefaultDir()
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			logf("runEngine: cannot create journal dir %s: %v", dir, err)
+		} else {
+			journalPath = filepath.Join(dir, runID+".ndjson")
+			f, err := os.OpenFile(journalPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+			if err != nil {
+				logf("runEngine: cannot open journal %s: %v", journalPath, err)
+			} else {
+				journalFile = f
+				defer journalFile.Close()
+			}
+		}
+	}
+	w := newEventWriter(a.ctx, mode, runID, journalFile)
 
 	a.emit("run_start", map[string]any{
 		"runId":        runID,
@@ -298,7 +319,16 @@ func (a *App) runEngine(mode executor.Mode, sectionIDs []string) (*RunSummary, e
 		"sectionCount": len(sections),
 		"ruleCount":    totalRules,
 		"sections":     collectIDs(sections),
+		"journalPath":  journalPath,
 	})
+
+	// Émettre run_start aussi dans le journal disque (cohérent avec la CLI).
+	if journalFile != nil {
+		runStartJSON := fmt.Sprintf(`{"type":"run_start","run_id":%q,"mode":%q,"engine_version":"0.1.0-dev","manifest_version":"1.0","section_count":%d,"sections":%s,"journal_path":%q,"emitter":"gui"}`+"\n",
+			runID, modeName(mode), len(sections), jsonStringSlice(collectIDs(sections)), journalPath)
+		_, _ = journalFile.WriteString(runStartJSON)
+		_ = journalFile.Sync()
+	}
 
 	// Setup cancel context.
 	runCtx, cancel := context.WithCancel(context.Background())
@@ -357,8 +387,39 @@ func (a *App) runEngine(mode executor.Mode, sectionIDs []string) (*RunSummary, e
 		Cancelled:  cancelled,
 	}
 	logf("app.runEngine: done %+v", res)
+
+	// Émettre run_end dans le journal disque pour clore le fichier proprement.
+	if journalFile != nil {
+		runEndJSON := fmt.Sprintf(`{"type":"run_end","run_id":%q,"skipped":%d,"applied":%d,"failed":%d,"rolled_back":%d,"aborted":%t,"cancelled":%t}`+"\n",
+			runID, total.Skipped, total.Applied, total.Failed, total.RolledBack, aborted, cancelled)
+		_, _ = journalFile.WriteString(runEndJSON)
+		_ = journalFile.Sync()
+	}
+
 	a.emit("run_end", res)
 	return res, nil
+}
+
+// jsonStringSlice retourne ["a","b","c"] pour ["a","b","c"] (encoder à la
+// main pour éviter d'importer encoding/json juste pour ça).
+func jsonStringSlice(s []string) string {
+	b := make([]byte, 0, 64)
+	b = append(b, '[')
+	for i, v := range s {
+		if i > 0 {
+			b = append(b, ',')
+		}
+		b = append(b, '"')
+		for _, c := range []byte(v) {
+			if c == '"' || c == '\\' {
+				b = append(b, '\\')
+			}
+			b = append(b, c)
+		}
+		b = append(b, '"')
+	}
+	b = append(b, ']')
+	return string(b)
 }
 
 // ListRuns retourne les run IDs disponibles dans le journal (du plus récent
@@ -396,19 +457,24 @@ func (a *App) emit(name string, payload any) {
 // eventWriter : transforme NDJSON en events Wails côté frontend
 // ─────────────────────────────────────────────────────────────────
 
+// eventWriter dual-écrit chaque ligne NDJSON :
+//   1. émet un event Wails 'engine_event' vers le frontend (live progress)
+//   2. (optionnel) append au fichier journal sur disque (audit trail)
 type eventWriter struct {
-	ctx    context.Context
-	mode   executor.Mode
-	runID  string
-	buffer []byte
+	ctx     context.Context
+	mode    executor.Mode
+	runID   string
+	buffer  []byte
+	journal *os.File // peut être nil (mode dry-run = pas de fichier)
 }
 
-func newEventWriter(ctx context.Context, mode executor.Mode, runID string) *ndjson.Writer {
-	ew := &eventWriter{ctx: ctx, mode: mode, runID: runID}
+func newEventWriter(ctx context.Context, mode executor.Mode, runID string, journalFile *os.File) *ndjson.Writer {
+	ew := &eventWriter{ctx: ctx, mode: mode, runID: runID, journal: journalFile}
 	return ndjson.NewWriter(ew)
 }
 
 func (e *eventWriter) Write(p []byte) (int, error) {
+	// Tjs append d'abord au buffer pour gérer le split par newline.
 	e.buffer = append(e.buffer, p...)
 	for {
 		nl := indexByte(e.buffer, '\n')
@@ -420,8 +486,15 @@ func (e *eventWriter) Write(p []byte) (int, error) {
 		if len(line) == 0 {
 			continue
 		}
+		// 1. Event Wails vers le frontend (best-effort — on ignore les erreurs).
 		if e.ctx != nil {
 			wailsruntime.EventsEmit(e.ctx, "engine_event", string(line))
+		}
+		// 2. Persistance sur disque + fsync (crash-safe).
+		if e.journal != nil {
+			_, _ = e.journal.Write(line)
+			_, _ = e.journal.Write([]byte{'\n'})
+			_ = e.journal.Sync()
 		}
 	}
 	return len(p), nil
