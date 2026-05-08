@@ -36,3 +36,7 @@ __debug_bin*
 
 # Local PowerShell modules (Pester install hors PSModulePath standard)
 /tools/
+
+# Wails build artifacts
+/cmd/harden-gui/build/
+/cmd/harden-gui/frontend/wailsjs/

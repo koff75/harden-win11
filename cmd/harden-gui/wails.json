@@ -1,0 +1,14 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "harden-gui",
+  "outputfilename": "harden-gui",
+  "frontend:dir": "frontend",
+  "wailsjsdir": "frontend",
+  "version": "0.1.0",
+  "info": {
+    "productName": "harden-win11 GUI",
+    "productVersion": "0.1.0",
+    "copyright": "WTFPL",
+    "comments": "GUI pour le moteur harden-win11 v2"
+  }
+}

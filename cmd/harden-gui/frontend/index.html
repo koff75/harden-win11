@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>harden-win11 — GUI</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+    <h1>harden-win11</h1>
+    <span id="engine-info" class="muted">loading…</span>
+</header>
+
+<main>
+    <aside>
+        <h2>Sections</h2>
+        <div id="sections-list">loading…</div>
+
+        <hr>
+
+        <h2>Actions</h2>
+        <div class="actions">
+            <button id="btn-dryrun">Dry-run (lecture seule)</button>
+            <button id="btn-apply" class="danger">Apply (modifie le système)</button>
+            <button id="btn-undo" class="warn">Undo dernier run</button>
+        </div>
+
+        <h2>Historique</h2>
+        <div id="runs-list" class="muted small">loading…</div>
+    </aside>
+
+    <section id="results-pane">
+        <div id="status-bar" class="muted">Sélectionne des sections puis clique Dry-run ou Apply.</div>
+        <table id="results-table">
+            <thead>
+                <tr>
+                    <th>Règle</th>
+                    <th>Status</th>
+                    <th>Détail</th>
+                    <th>ms</th>
+                </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+        </table>
+    </section>
+</main>
+
+<div id="modal-confirm" class="modal hidden">
+    <div class="modal-content">
+        <h3>Confirmer l'apply réel ?</h3>
+        <p>Les actions vont modifier le système. Un journal est écrit sous <code id="modal-journal-dir"></code> et chaque règle peut être rollback via <em>undo</em>.</p>
+        <p>Sections affectées :</p>
+        <ul id="modal-sections"></ul>
+        <div class="modal-actions">
+            <button id="modal-cancel">Annuler</button>
+            <button id="modal-confirm" class="danger">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
