@@ -99,35 +99,43 @@ function Invoke-RegTestAction {
 }
 
 # Invoke-RegUndoAction : équivalent .undo.ps1 pour une règle registry simple.
-# Lit l'état before depuis stdin (pipeline ou Console::In), restaure ou supprime
-# la valeur selon que la clé existait avant.
+# L'état before peut être fourni de 3 façons :
+#   1. Pipeline PowerShell : '<json>' | Invoke-RegUndoAction -Path X -Name Y
+#      (cas tests Pester)
+#   2. Console::In (stdin du process) — fallback si rien sur le pipeline
+#      (cas du runner Go qui spawn powershell.exe avec le JSON sur stdin)
+#   3. Paramètre -State explicite (cas avancé)
 function Invoke-RegUndoAction {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] [string] $Path,
         [Parameter(Mandatory)] [string] $Name,
-        [string] $Type = 'DWord'
+        [string] $Type = 'DWord',
+        [Parameter(ValueFromPipeline = $true)] [string] $InputJson,
+        $State
     )
+    process {
+        if (-not $State) {
+            $payload = $InputJson
+            if (-not $payload -or -not $payload.Trim()) {
+                # Fallback : lire stdin du process (cas runner Go).
+                $payload = [Console]::In.ReadToEnd()
+            }
+            if (-not $payload -or -not $payload.Trim()) {
+                Write-Error "undo requires JSON input with {exists, value} fields"
+                exit 1
+            }
+            $State = $payload | ConvertFrom-Json
+        }
 
-    if ($MyInvocation.ExpectingInput) {
-        $inputJson = ($input | Out-String).Trim()
-    } else {
-        $inputJson = [Console]::In.ReadToEnd()
+        if ($State.exists) {
+            Set-RegValue -Path $Path -Name $Name -Value ([int]$State.value) -Type $Type
+        } else {
+            Remove-RegValueIfPresent -Path $Path -Name $Name
+        }
+
+        @{ ok = $true } | ConvertTo-Json -Compress
     }
-
-    if (-not $inputJson.Trim()) {
-        Write-Error "undo requires JSON input with {exists, value} fields"
-        exit 1
-    }
-    $state = $inputJson | ConvertFrom-Json
-
-    if ($state.exists) {
-        Set-RegValue -Path $Path -Name $Name -Value ([int]$state.value) -Type $Type
-    } else {
-        Remove-RegValueIfPresent -Path $Path -Name $Name
-    }
-
-    @{ ok = $true } | ConvertTo-Json -Compress
 }
 
 Export-ModuleMember -Function Get-RegState, Set-RegValue, Remove-RegValueIfPresent,
