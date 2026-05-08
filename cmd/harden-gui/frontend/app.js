@@ -11,6 +11,7 @@ let isRunning = false;
 let totalRulesInRun = 0;
 let processedRules = 0;
 const rowsByRuleID = {};
+const eventByRuleID = {};   // dernier event reçu par règle (pour le tooltip)
 
 // ─────────────────────────────────────────────────────────────────
 // Init
@@ -110,6 +111,59 @@ function bindEvents() {
     document.body.addEventListener('mouseover', onRowHover);
     document.body.addEventListener('mouseout', onRowOut);
     document.body.addEventListener('mousemove', onMouseMove);
+
+    // Filtres
+    $('#filter-search').addEventListener('input', applyFilters);
+    $$('.filter-severity').forEach(cb => cb.addEventListener('change', applyFilters));
+    $$('.filter-status').forEach(cb => cb.addEventListener('change', applyFilters));
+    $('#filter-reset').addEventListener('click', () => {
+        $('#filter-search').value = '';
+        $$('.filter-severity, .filter-status').forEach(cb => cb.checked = true);
+        applyFilters();
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Filtres
+// ─────────────────────────────────────────────────────────────────
+
+// statusBucket : regroupe les statuses techniques en 4 catégories user-facing
+// pour le filtre. Cohérent avec les checkboxes dans index.html.
+function statusBucket(status) {
+    if (status === 'pending') return 'pending';
+    if (status === 'would_skip' || status === 'skipped') return 'conforme';
+    if (status === 'would_apply' || status === 'applied') return 'to-apply';
+    if (status === 'would_fail' || status === 'failed' || status === 'rolled_back') return 'failed';
+    return '';
+}
+
+function applyFilters() {
+    const search = $('#filter-search').value.toLowerCase().trim();
+    const sevAllowed = new Set(Array.from($$('.filter-severity:checked')).map(cb => cb.value));
+    const stsAllowed = new Set(Array.from($$('.filter-status:checked')).map(cb => cb.value));
+
+    const rows = $$('#results-body tr.row');
+    let visible = 0;
+    rows.forEach(tr => {
+        const ruleID = tr.dataset.ruleId;
+        const rule = rulesByID[ruleID] || {};
+        const status = tr.dataset.status || 'pending';
+        const bucket = statusBucket(status);
+
+        let show = true;
+        if (!sevAllowed.has(rule.severity || 'nice-to-have')) show = false;
+        if (!stsAllowed.has(bucket)) show = false;
+        if (search) {
+            const hay = (rule.title || '').toLowerCase() + ' ' + ruleID.toLowerCase() + ' ' + (rule.description || '').toLowerCase();
+            if (!hay.includes(search)) show = false;
+        }
+        tr.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    const total = rows.length;
+    $('#filter-count').textContent = visible === total
+        ? `${total} règle(s)`
+        : `${visible} / ${total} règle(s) affichée(s)`;
 }
 
 function selectedSections() {
@@ -232,27 +286,30 @@ function prepareTableForRun(sectionIDs) {
     const tbody = $('#results-body');
     tbody.innerHTML = '';
     Object.keys(rowsByRuleID).forEach(k => delete rowsByRuleID[k]);
+    Object.keys(eventByRuleID).forEach(k => delete eventByRuleID[k]);
     processedRules = 0;
     totalRulesInRun = 0;
 
     for (const s of currentSections) {
         if (!sectionIDs.includes(s.id)) continue;
         for (const r of (s.rules || [])) {
-            const tr = renderRuleRow(r, 'pending', '');
+            const tr = renderRuleRow(r, 'pending', null);
             tbody.appendChild(tr);
             rowsByRuleID[r.id] = tr;
             totalRulesInRun++;
         }
     }
+    applyFilters();
     if (totalRulesInRun === 0) {
         tbody.innerHTML = '<tr class="empty"><td colspan="4">Aucune règle dans la sélection.</td></tr>';
     }
 }
 
-function renderRuleRow(rule, status, detail) {
+function renderRuleRow(rule, status, ev) {
     const tr = document.createElement('tr');
     tr.className = 'row';
     tr.dataset.ruleId = rule.id;
+    tr.dataset.status = status;
     const severity = rule.severity || 'nice-to-have';
     tr.innerHTML = `
         <td><span class="severity ${severity}">${humanSeverity(severity)}</span></td>
@@ -261,46 +318,84 @@ function renderRuleRow(rule, status, detail) {
             <span class="rule-id-tech">${escapeHtml(rule.id)}</span>
         </td>
         <td><span class="status ${status}">${escapeHtml(humanStatus(status))}</span></td>
-        <td class="detail">${detail || ''}</td>
+        <td class="action-cell">${formatActionCell(rule, status, ev)}</td>
     `;
     return tr;
 }
 
 function updateRuleRow(ev) {
     const ruleID = ev.rule_id;
+    eventByRuleID[ruleID] = ev;   // mémoriser pour le tooltip
     const rule = rulesByID[ruleID] || { id: ruleID, title: ruleID, severity: 'nice-to-have' };
     let tr = rowsByRuleID[ruleID];
     if (!tr) {
-        tr = renderRuleRow(rule, ev.status, formatDetail(ev));
+        tr = renderRuleRow(rule, ev.status, ev);
         $('#results-body').appendChild(tr);
         rowsByRuleID[ruleID] = tr;
+        applyFilters();
         return;
     }
     const status = ev.status || 'unknown';
+    tr.dataset.status = status;
     const statusCell = tr.querySelector('.status');
     statusCell.className = `status ${status}`;
     statusCell.textContent = humanStatus(status);
-    tr.querySelector('.detail').innerHTML = formatDetail(ev);
+    tr.querySelector('.action-cell').innerHTML = formatActionCell(rule, status, ev);
+    // ré-applique les filtres pour le cas où la rule devient (in)visible avec son nouveau status.
+    applyFilters();
     tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function formatDetail(ev) {
-    if (ev.error) return `<span style="color:#ff9099">${escapeHtml(truncate(ev.error, 200))}</span>`;
-    if (ev.status === 'rolled_back') return `<span style="color:#ffaa70">Action a planté → rollback exécuté</span>`;
-    if (ev.current_state) return formatStateInline(ev.current_state);
-    if (ev.before && ev.after) return `${formatStateInline(ev.before)} → ${formatStateInline(ev.after)}`;
-    if (ev.before) return formatStateInline(ev.before);
+// formatActionCell — texte user-friendly pour la colonne "Action proposée".
+//
+// L'idée : pas de JSON brut. On dit clairement ce qui se passerait pour la
+// règle dans son état actuel.
+function formatActionCell(rule, status, ev) {
+    if (status === 'pending') {
+        return `<span class="action-icon pending">○</span><span class="action-text">Pas encore vérifiée</span>`;
+    }
+    if (status === 'would_fail' || status === 'failed') {
+        const err = ev && ev.error ? truncate(ev.error, 200) : 'erreur inconnue';
+        return `<span class="action-icon fail">✗</span><span class="action-text">Vérification impossible</span>
+                <span class="action-state">${escapeHtml(err)}</span>`;
+    }
+    if (status === 'rolled_back') {
+        return `<span class="action-icon fail">↶</span><span class="action-text">Action a échoué → rollback exécuté</span>`;
+    }
+    if (status === 'would_skip' || status === 'skipped') {
+        // Déjà conforme : juste rassurer.
+        return `<span class="action-icon ok">✓</span><span class="action-text">Aucune action — déjà conforme</span>`;
+    }
+    if (status === 'would_apply') {
+        // Le user verra ça sur les règles qu'il pourrait renforcer.
+        const desc = rule.description || 'modification système';
+        const stateBlurb = ev && ev.current_state ? humanStateBlurb(ev.current_state) : '';
+        return `<span class="action-icon warn">⚠</span><span class="action-text">À renforcer : ${escapeHtml(desc)}</span>
+                ${stateBlurb ? `<span class="action-state">État actuel : ${stateBlurb}</span>` : ''}`;
+    }
+    if (status === 'applied') {
+        return `<span class="action-icon ok">✓</span><span class="action-text">Appliquée avec succès</span>`;
+    }
     return '';
 }
 
-function formatStateInline(state) {
-    if (state === null || state === undefined) return '<em>(absent)</em>';
+// humanStateBlurb : transforme un current_state {Foo: 1, Bar: "Disabled"}
+// en un texte court "Foo=1, Bar=Disabled" (déjà plus lisible que JSON brut).
+function humanStateBlurb(state) {
+    if (state === null || state === undefined) return '<em>non défini</em>';
     if (typeof state !== 'object') return `<code>${escapeHtml(String(state))}</code>`;
     const entries = Object.entries(state).slice(0, 3);
     return entries.map(([k, v]) => {
-        const vs = (v === null || v === undefined) ? '∅' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
-        return `<code>${escapeHtml(k)}=${escapeHtml(truncate(vs, 40))}</code>`;
+        const vs = formatStateValue(v);
+        return `<code>${escapeHtml(k)}=${escapeHtml(vs)}</code>`;
     }).join(' ');
+}
+
+function formatStateValue(v) {
+    if (v === null || v === undefined) return 'absent';
+    if (typeof v === 'boolean') return v ? 'oui' : 'non';
+    if (typeof v === 'object') return truncate(JSON.stringify(v), 40);
+    return truncate(String(v), 40);
 }
 
 function humanStatus(status) {
@@ -349,9 +444,13 @@ function setStatus(kind, message) {
 function onRowHover(e) {
     const tr = e.target.closest('tr.row');
     if (!tr) return hideTooltip();
-    const rule = rulesByID[tr.dataset.ruleId];
+    const ruleID = tr.dataset.ruleId;
+    const rule = rulesByID[ruleID];
     if (!rule) return hideTooltip();
-    showTooltip(rule);
+    const status = tr.dataset.status || 'pending';
+    const ev = eventByRuleID[ruleID];
+    const currentState = ev && ev.current_state ? ev.current_state : null;
+    showTooltip(rule, status, currentState);
 }
 
 function onRowOut(e) {
@@ -374,29 +473,88 @@ function onMouseMove(e) {
     tt.style.top = `${y}px`;
 }
 
-function showTooltip(rule) {
+function showTooltip(rule, status, currentState) {
     const tt = $('#rule-tooltip');
     const irreversibleSection = rule.irreversible
         ? `<div class="tt-irreversible">⚠ Irréversible : ${escapeHtml(rule.irreversibleReason || 'Cette règle ne peut pas être annulée par undo.')}</div>`
         : '';
     const explanationSection = rule.explanation
-        ? `<div class="tt-section"><div class="tt-label">Pourquoi</div>${escapeHtml(rule.explanation).replace(/\n/g, '<br>')}</div>`
+        ? `<div class="tt-section"><div class="tt-label">Pourquoi cette règle</div>${escapeHtml(rule.explanation).replace(/\n/g, '<br>')}</div>`
         : '';
     const rebootSection = rule.requiresReboot
-        ? '<div class="tt-section tt-label" style="color:#ffd770">Nécessite un redémarrage après application</div>'
+        ? '<div class="tt-section" style="color:#ffd770;font-size:11px">⚙ Nécessite un redémarrage après application</div>'
         : '';
+
+    // Comparatif avant/après si on a un current_state.
+    let comparisonSection = '';
+    if (status && status !== 'pending') {
+        const stateBlurb = currentState ? humanStateBlurb(currentState) : '';
+        const isCompliant = (status === 'would_skip' || status === 'skipped' || status === 'applied');
+
+        if (isCompliant) {
+            comparisonSection = `
+                <div class="tt-row">
+                    <span class="tt-key">Maintenant</span>
+                    <span class="tt-val tt-current">${stateBlurb || '—'}</span>
+                </div>
+                <div class="tt-row">
+                    <span class="tt-key">État cible</span>
+                    <span class="tt-val tt-target">✓ Déjà atteint</span>
+                </div>`;
+        } else if (status === 'would_apply') {
+            comparisonSection = `
+                <div class="tt-row">
+                    <span class="tt-key">Maintenant</span>
+                    <span class="tt-val tt-current">${stateBlurb || '<em>non protégé</em>'}</span>
+                </div>
+                <div class="tt-row">
+                    <span class="tt-key">Si appliquée</span>
+                    <span class="tt-val tt-target">${escapeHtml(rule.description || 'Activation de la protection')}</span>
+                </div>
+                <div class="tt-row">
+                    <span class="tt-key">Bénéfice</span>
+                    <span class="tt-val tt-benefit">${escapeHtml(extractBenefit(rule.explanation) || rule.description || '—')}</span>
+                </div>`;
+        } else if (status === 'would_fail' || status === 'failed') {
+            comparisonSection = `
+                <div class="tt-row">
+                    <span class="tt-key">Maintenant</span>
+                    <span class="tt-val tt-current">Vérification impossible — souvent admin requis</span>
+                </div>`;
+        } else if (status === 'rolled_back') {
+            comparisonSection = `
+                <div class="tt-row">
+                    <span class="tt-key">Action</span>
+                    <span class="tt-val tt-side">A planté → rollback exécuté</span>
+                </div>`;
+        }
+    }
+
     tt.innerHTML = `
         <h4>${escapeHtml(rule.title)} <span class="severity ${rule.severity}" style="margin-left:6px;font-size:9px;vertical-align:middle">${escapeHtml(humanSeverity(rule.severity))}</span></h4>
         <div class="tt-desc">${escapeHtml(rule.description)}</div>
+        ${comparisonSection}
         ${explanationSection}
         <div class="tt-section">
-            <div class="tt-label">Impact concret</div>
+            <div class="tt-label">Impact concret si appliquée</div>
             <span class="tt-impact">${escapeHtml(rule.impact || '—')}</span>
         </div>
         ${rebootSection}
         ${irreversibleSection}
     `;
     tt.classList.remove('hidden');
+}
+
+// extractBenefit : sortir 1 phrase du explanation pour le panneau "Bénéfice".
+// Heuristique simple : 1re phrase qui contient un verbe protecteur.
+function extractBenefit(explanation) {
+    if (!explanation) return null;
+    const sentences = explanation.split(/(?<=[.!?])\s+/);
+    const protective = /(bloque|emp[êe]che|prot[èe]ge|d[ée]tecte|active|interdit|refuse|isole|coupe|s[ée]curise|durcit)/i;
+    for (const s of sentences) {
+        if (protective.test(s)) return s.trim();
+    }
+    return sentences[0] ? sentences[0].trim() : null;
 }
 
 function hideTooltip() {

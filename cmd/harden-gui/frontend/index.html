@@ -42,6 +42,25 @@
     <section id="results-pane">
         <div id="status-bar" class="muted">Sélectionne des sections puis clique <strong>Vérifier</strong> ou <strong>Appliquer</strong>.</div>
 
+        <div id="filters">
+            <input type="search" id="filter-search" placeholder="Rechercher dans les règles…">
+            <div class="filter-group">
+                <span class="filter-label">Niveau</span>
+                <label><input type="checkbox" class="filter-severity" value="critical" checked> <span class="filter-pill critical">Critique</span></label>
+                <label><input type="checkbox" class="filter-severity" value="important" checked> <span class="filter-pill important">Important</span></label>
+                <label><input type="checkbox" class="filter-severity" value="nice-to-have" checked> <span class="filter-pill nice-to-have">Optionnel</span></label>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">État</span>
+                <label><input type="checkbox" class="filter-status" value="pending" checked> En attente</label>
+                <label><input type="checkbox" class="filter-status" value="conforme" checked> Conforme</label>
+                <label><input type="checkbox" class="filter-status" value="to-apply" checked> À renforcer</label>
+                <label><input type="checkbox" class="filter-status" value="failed" checked> Échec</label>
+            </div>
+            <button id="filter-reset" class="filter-reset" title="Réinitialiser les filtres">Reset</button>
+            <span id="filter-count" class="muted small"></span>
+        </div>
+
         <div id="results-table-wrap">
             <table id="results-table">
                 <thead>
@@ -49,7 +68,7 @@
                         <th class="col-severity">Niveau</th>
                         <th class="col-rule">Règle</th>
                         <th class="col-status">État</th>
-                        <th class="col-detail">Détail</th>
+                        <th class="col-detail">Action proposée</th>
                     </tr>
                 </thead>
                 <tbody id="results-body">
