@@ -24,8 +24,26 @@ jobs:
       - name: go build
         run: go build -o dist/harden-engine.exe ./cmd/harden-engine
 
-      - name: go test
-        run: go test ./... -count=1 -timeout 5m
+      - name: go test (avec coverage + race detector)
+        env:
+          CGO_ENABLED: "1"
+        run: go test ./... -count=1 -timeout 10m -race -coverprofile=coverage.out
+
+      - name: Coverage report
+        run: go tool cover -func=coverage.out | tail -1
+
+      - name: Coverage threshold (≥ 60% global)
+        shell: powershell
+        run: |
+          $line = (go tool cover -func=coverage.out | Select-Object -Last 1).ToString()
+          if ($line -match '(\d+\.\d+)%') {
+              $pct = [double]$matches[1]
+              Write-Host "Total coverage: $pct%"
+              if ($pct -lt 60.0) {
+                  Write-Error "Coverage $pct% below threshold 60%"
+                  exit 1
+              }
+          }
 
       - name: Smoke test (version + validate + coverage + dry-run)
         run: |
@@ -98,6 +116,14 @@ jobs:
         with:
           go-version: '1.26'
           cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Frontend syntax check
+        shell: powershell
+        run: |
+          node --check cmd/harden-gui/frontend/app.js
+          if ($LASTEXITCODE -ne 0) { Write-Error "app.js syntax error"; exit 1 }
       - name: Install Wails CLI v2.12.0
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
       - name: Build GUI
@@ -109,6 +135,64 @@ jobs:
           name: harden-gui-windows-amd64
           path: cmd/harden-gui/build/bin/harden-gui.exe
           retention-days: 30
+
+  gosec:
+    name: Security scan (gosec)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+      # G301/G302/G306 : noise sur Windows (perms POSIX ignorées par l'OS).
+      # G204/G304 : design intentionnel (on spawn des PS scripts validés via JSONSchema).
+      # On garde les autres rules pour détecter les vraies vulnérabilités.
+      - name: Run gosec
+        run: |
+          $gosec = "$(go env GOPATH)\bin\gosec.exe"
+          & $gosec -fmt=text -quiet -exclude=G204,G301,G302,G304,G306 ./pkg/... ./cmd/harden-engine/...
+
+  mutation:
+    name: Mutation testing (gremlins, maturity package)
+    runs-on: windows-latest
+    needs: go-build-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+      - name: Install gremlins
+        run: go install github.com/go-gremlins/gremlins/cmd/gremlins@latest
+      # Mutation testing : modifie le source (ex: > devient <), relance les tests,
+      # vérifie que le test échoue. Si pas → bug latent dans la suite de tests.
+      # On le fait sur les packages business logic qui ont >90% coverage : maturity, baseline.
+      - name: Run mutation testing
+        shell: powershell
+        continue-on-error: true   # gremlins peut être lent — n'échoue pas le build
+        run: |
+          $g = "$(go env GOPATH)\bin\gremlins.exe"
+          & $g unleash --threshold-efficacy=70 ./pkg/engine/maturity/
+          & $g unleash --threshold-efficacy=70 ./pkg/engine/baseline/
+
+  fuzz:
+    name: Fuzz parsers (smoke 30s each)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+      - name: Fuzz manifest loader
+        run: go test -fuzz=FuzzLoad -fuzztime=30s ./pkg/engine/manifest/
+      - name: Fuzz journal NDJSON reader
+        run: go test -fuzz=FuzzReadRun -fuzztime=30s ./pkg/engine/journal/
+      - name: Fuzz baseline loader
+        run: go test -fuzz=FuzzLoad -fuzztime=30s ./pkg/engine/baseline/
 
   golangci-lint:
     name: golangci-lint

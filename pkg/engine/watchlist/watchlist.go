@@ -146,7 +146,9 @@ func Watch(ctx context.Context, runID string, baselineAt time.Time, duration tim
 		case <-ctx.Done():
 			report.Completed = time.Now().UTC().Format(time.RFC3339)
 			report.Alerts = mergeAlerts(report.Alerts, scanOnce(ctx, baselineAt, DefaultSources))
-			persist(report)
+			if err := persist(report); err != nil {
+				fmt.Fprintf(os.Stderr, "watchlist: final persist on cancel failed: %v\n", err)
+			}
 			return report, ctx.Err()
 		default:
 		}
@@ -164,14 +166,18 @@ func Watch(ctx context.Context, runID string, baselineAt time.Time, duration tim
 		case <-ctx.Done():
 			t.Stop()
 			report.Completed = time.Now().UTC().Format(time.RFC3339)
-			persist(report)
+			if err := persist(report); err != nil {
+				fmt.Fprintf(os.Stderr, "watchlist: final persist on cancel failed: %v\n", err)
+			}
 			return report, ctx.Err()
 		case <-t.C:
 		}
 	}
 
 	report.Completed = time.Now().UTC().Format(time.RFC3339)
-	persist(report)
+	if err := persist(report); err != nil {
+		fmt.Fprintf(os.Stderr, "watchlist: final persist failed: %v\n", err)
+	}
 	return report, nil
 }
 

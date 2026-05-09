@@ -33,6 +33,10 @@ func isElevatedWindows() (bool, error) {
 
 	var elevation uint32
 	var returnedLen uint32
+	// unsafe.Pointer requis par la signature Windows API GetTokenInformation
+	// (cf. golang.org/x/sys/windows). Pas une vulnérabilité — c'est le bon
+	// idiome pour passer un buffer sized à un syscall.
+	// #nosec G103
 	if err := windows.GetTokenInformation(
 		token,
 		windows.TokenElevation,
