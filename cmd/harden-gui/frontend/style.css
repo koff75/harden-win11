@@ -89,18 +89,38 @@ aside hr {
     margin-bottom: 12px;
 }
 
+/* Section "Options avancées" repliée par défaut */
+.advanced {
+    border-top: 1px solid #2c3a55;
+    margin-top: 4px;
+    padding-top: 8px;
+}
+.advanced summary {
+    cursor: pointer;
+    user-select: none;
+    color: #8fa1be;
+    font-size: 11px;
+    padding: 4px 0;
+    list-style: none;
+}
+.advanced summary::-webkit-details-marker { display: none; }
+.advanced summary::before {
+    content: '▸ ';
+    font-size: 9px;
+    color: #4fc3ff;
+}
+.advanced[open] summary::before { content: '▾ '; }
+.advanced summary:hover { color: #4fc3ff; }
+
 .audit-toggle {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 8px;
+    padding: 6px 4px 4px 16px;
     cursor: pointer;
     user-select: none;
     font-size: 11px;
     color: #c0c8d8;
-    border-top: 1px solid #2c3a55;
-    margin-top: 4px;
-    padding-top: 10px;
 }
 .audit-toggle:hover { color: #4fc3ff; }
 .audit-toggle input[type="checkbox"] { accent-color: #4fc3ff; }

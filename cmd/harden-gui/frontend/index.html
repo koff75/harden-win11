@@ -38,10 +38,13 @@
             <button id="btn-undo" class="warn" title="Annule les changements du dernier run">
                 ↶ Annuler le dernier run
             </button>
-            <label class="audit-toggle" title="Pour les règles ASR et Network Protection : passe en mode 'Audit' (loggue dans Event Viewer mais ne bloque pas). Permet de valider 1-2 semaines avant de passer en blocage réel.">
-                <input type="checkbox" id="audit-mode">
-                <span>Mode audit (ASR &amp; Network)</span>
-            </label>
+            <details class="advanced">
+                <summary>Options avancées</summary>
+                <label class="audit-toggle" title="Pour les protections Microsoft Defender qui peuvent générer des faux positifs (ASR, Network Protection) : active un mode test pendant 1-2 semaines pour voir ce qui serait bloqué dans Event Viewer (events 1121/1122) sans casser tes apps. Une fois sûr qu'aucune app légitime n'est impactée, décoche pour activer le blocage réel.">
+                    <input type="checkbox" id="audit-mode">
+                    <span>Mode test (n'enregistre que sans bloquer)</span>
+                </label>
+            </details>
         </div>
 
         <h2>Historique</h2>
