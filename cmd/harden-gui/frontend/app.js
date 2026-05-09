@@ -782,8 +782,13 @@ function renderRuleRow(rule, status, ev) {
             showCoachModal(rule);
         });
     }
-    // Tooltip riche au survol — détail user-friendly sans cliquer.
-    setupRuleTooltip(tr, rule.id);
+    // Tooltip natif HTML : suit la souris naturellement, ergonomique.
+    // Posé sur la cellule "Action proposée" (la cellule la plus large qui
+    // déclenchera le tooltip dès qu'on survole l'info action).
+    const actionCell = tr.querySelector('.action-cell');
+    if (actionCell) {
+        actionCell.title = buildUserTooltipText(rule, ev);
+    }
     return tr;
 }
 
@@ -830,7 +835,9 @@ function updateRuleRow(ev) {
     const statusCell = tr.querySelector('.status');
     statusCell.className = `status ${status}`;
     statusCell.textContent = humanStatus(status, ruleID);
-    tr.querySelector('.action-cell').innerHTML = formatActionCell(rule, status, ev);
+    const actionCell = tr.querySelector('.action-cell');
+    actionCell.innerHTML = formatActionCell(rule, status, ev);
+    actionCell.title = buildUserTooltipText(rule, ev); // refresh tooltip natif
     // ré-applique les filtres pour le cas où la rule devient (in)visible avec son nouveau status.
     applyFilters();
     renderDashboard();
@@ -844,11 +851,13 @@ function updateRuleRow(ev) {
 //
 // L'idée : pas de JSON brut. On dit clairement ce qui se passerait pour la
 // règle dans son état actuel.
-// buildUserTooltipHTML : contenu du tooltip riche affiché au hover d'une row.
-// Lit les champs userToday(En) selon la langue active (i18n.js).
-function buildUserTooltipHTML(rule, ev) {
+// buildUserTooltipText : contenu plain-text du tooltip natif HTML (attribut
+// `title`), affiché par le navigateur au survol et qui SUIT le curseur.
+// Plus ergonomique qu'un tooltip custom positionné en absolute (qui se
+// retrouve fixe à un endroit pendant qu'on bouge la souris).
+function buildUserTooltipText(rule, ev) {
     const verb = contextualVerb(rule);
-    const title = escapeHtml(rule.title || rule.id || '');
+    const title = rule.title || rule.id || '';
     const lang = (typeof getLang === 'function') ? getLang() : 'fr';
 
     const today  = lang === 'en' ? (rule.userTodayEn  || rule.userToday)  : rule.userToday;
@@ -856,104 +865,36 @@ function buildUserTooltipHTML(rule, ev) {
     const forWho = lang === 'en' ? (rule.userForWhoEn || rule.userForWho) : rule.userForWho;
     const risk   = lang === 'en' ? (rule.userRiskEn   || rule.userRisk)   : rule.userRisk;
 
+    const lines = [];
+    lines.push(`${verb.toUpperCase()} · ${title}`);
+    lines.push('─'.repeat(40));
+
     if (today && after) {
-        return `
-            <div class="tooltip-card">
-                <div class="tooltip-header">
-                    <span class="tooltip-verb">${verb}</span>
-                    <span class="tooltip-title">${title}</span>
-                </div>
-                <div class="tooltip-row">
-                    <span class="tooltip-label">${escapeHtml(t('tooltip.today'))}</span>
-                    <span class="tooltip-value">${escapeHtml(today)}</span>
-                </div>
-                <div class="tooltip-row">
-                    <span class="tooltip-label">${escapeHtml(t('tooltip.after'))}</span>
-                    <span class="tooltip-value">${escapeHtml(after)}</span>
-                </div>
-                ${forWho ? `
-                <div class="tooltip-row">
-                    <span class="tooltip-label">${escapeHtml(t('tooltip.forwho'))}</span>
-                    <span class="tooltip-value">${escapeHtml(forWho)}</span>
-                </div>` : ''}
-                ${risk ? `
-                <div class="tooltip-row tooltip-risk">
-                    <span class="tooltip-label">${escapeHtml(t('tooltip.risk'))}</span>
-                    <span class="tooltip-value">${escapeHtml(risk)}</span>
-                </div>` : ''}
-            </div>`;
-    }
-
-    // Fallback minimal pour les rules non annotées.
-    const desc = rule.description || '—';
-    const stateBlurb = ev && ev.current_state ? humanStateBlurb(ev.current_state) : '';
-    return `
-        <div class="tooltip-card">
-            <div class="tooltip-header">
-                <span class="tooltip-verb">${verb}</span>
-                <span class="tooltip-title">${title}</span>
-            </div>
-            <div class="tooltip-row">
-                <span class="tooltip-label">${escapeHtml(t('tooltip.description'))}</span>
-                <span class="tooltip-value">${escapeHtml(desc)}</span>
-            </div>
-            ${stateBlurb ? `
-            <div class="tooltip-row">
-                <span class="tooltip-label">${escapeHtml(t('tooltip.currentstate'))}</span>
-                <span class="tooltip-value">${stateBlurb}</span>
-            </div>` : ''}
-        </div>`;
-}
-
-// setupRuleTooltip : attache mouseenter/mouseleave sur une row pour afficher
-// le tooltip riche en position dynamique (à droite ou à gauche selon l'espace).
-// Le tooltip lit toujours rulesByID + eventByRuleID au hover, pour avoir la
-// version la plus à jour si l'event arrive en streaming après le rendu initial.
-let _tooltipEl = null;
-function setupRuleTooltip(tr, ruleID) {
-    tr.addEventListener('mouseenter', () => {
-        if (_tooltipEl) _tooltipEl.remove();
-        const rule = rulesByID[ruleID] || { id: ruleID };
-        const ev = eventByRuleID[ruleID];
-        _tooltipEl = document.createElement('div');
-        _tooltipEl.className = 'rule-tooltip';
-        _tooltipEl.innerHTML = buildUserTooltipHTML(rule, ev);
-        document.body.appendChild(_tooltipEl);
-        positionTooltip(tr, _tooltipEl);
-    });
-    tr.addEventListener('mouseleave', () => {
-        if (_tooltipEl) {
-            _tooltipEl.remove();
-            _tooltipEl = null;
+        lines.push(`${t('tooltip.today')} : ${today}`);
+        lines.push('');
+        lines.push(`${t('tooltip.after')} : ${after}`);
+        if (forWho) {
+            lines.push('');
+            lines.push(`${t('tooltip.forwho')} : ${forWho}`);
         }
-    });
-}
-
-function positionTooltip(anchor, tip) {
-    const r = anchor.getBoundingClientRect();
-    const tipW = tip.offsetWidth;
-    const tipH = tip.offsetHeight;
-    const margin = 8;
-
-    // Préférence : à droite de la row, aligné avec son haut.
-    let left = r.right + margin;
-    let top = r.top;
-
-    // Si ça déborde à droite, mets-le à gauche.
-    if (left + tipW > window.innerWidth) {
-        left = r.left - tipW - margin;
+        if (risk) {
+            lines.push('');
+            lines.push(`${t('tooltip.risk')} : ${risk}`);
+        }
+    } else {
+        const desc = rule.description || '—';
+        lines.push(`${t('tooltip.description')} : ${desc}`);
+        if (ev && ev.current_state) {
+            // Plain text : juste les clés-valeurs séparées par virgule.
+            const entries = Object.entries(ev.current_state).slice(0, 3);
+            const stateText = entries.map(([k, v]) => `${k}=${v}`).join(', ');
+            if (stateText) {
+                lines.push('');
+                lines.push(`${t('tooltip.currentstate')} : ${stateText}`);
+            }
+        }
     }
-    // Si ça déborde à gauche aussi, mets-le sous la row.
-    if (left < 0) {
-        left = Math.max(margin, r.left);
-        top = r.bottom + margin;
-    }
-    // Si ça déborde en bas, remonte.
-    if (top + tipH > window.innerHeight) {
-        top = Math.max(margin, window.innerHeight - tipH - margin);
-    }
-    tip.style.left = left + 'px';
-    tip.style.top = top + 'px';
+    return lines.join('\n');
 }
 
 // contextualVerb : verbe lisible selon le type de rule. Délègue au système
@@ -1009,8 +950,7 @@ function formatActionCell(rule, status, ev) {
         const breaksBadge = rule.breaks && rule.breaks.length > 0
             ? `<span class="breaks-badge" title="${escapeHtml(rule.breaks.join('  •  '))}">⚠ peut casser…</span>`
             : '';
-        const hoverHint = rule.userToday ? '<span class="hover-hint" title="Survole pour voir le détail">ⓘ</span>' : '';
-        return `<span class="action-icon warn">⚠</span><span class="action-text"><strong>${verb}</strong> · ${escapeHtml(synth)}</span> ${breaksBadge} ${hoverHint}`;
+        return `<span class="action-icon warn">⚠</span><span class="action-text"><strong>${verb}</strong> · ${escapeHtml(synth)}</span> ${breaksBadge}`;
     }
     if (status === 'applied') {
         const txt = isBloatware ? 'Désinstallée ✓' : 'Appliquée avec succès';

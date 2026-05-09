@@ -133,73 +133,10 @@
 .comp-partial .comp-bar-fill { background: #ffaa00; }
 .comp-missing .comp-bar-fill { background: #ff6b7e; }
 
-/* Hint icon ⓘ pour signaler qu'il y a un tooltip au survol. */
-.hover-hint {
-    color: #4fc3ff;
-    cursor: help;
-    margin-left: 4px;
-    font-size: 11px;
-    opacity: 0.7;
-}
-.row:hover .hover-hint { opacity: 1; }
-
-/* Tooltip riche au hover d'une row : 4 lignes user-friendly. */
-.rule-tooltip {
-    position: fixed;
-    z-index: 2000;
-    pointer-events: none;
-    max-width: 460px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-.tooltip-card {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 12px 14px;
-    background: #1f2c3a;
-    border-left: 3px solid #4fc3ff;
-    border-radius: 6px;
-    font-size: 12px;
-    line-height: 1.55;
-}
-.tooltip-header {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #2c3c4f;
-    margin-bottom: 2px;
-}
-.tooltip-verb {
-    color: #4fc3ff;
-    font-weight: 700;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-.tooltip-title {
-    color: #e6e6e6;
-    font-weight: 500;
-}
-.tooltip-row {
-    display: grid;
-    grid-template-columns: 110px 1fr;
-    gap: 10px;
-    align-items: start;
-}
-.tooltip-label {
-    color: #8fa1be;
-    font-weight: 500;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    padding-top: 2px;
-}
-.tooltip-value {
-    color: #d8e0ec;
-}
-.tooltip-risk .tooltip-label { color: #ffaa00; }
-.tooltip-risk .tooltip-value { color: #ffd0a0; }
+/* Tooltip natif HTML uniquement (suit la souris). Pas de tooltip custom :
+   on enrichit le contenu via l'attribut `title` posé en JS sur la cellule
+   .action-cell, avec le format multi-ligne user-friendly. */
+td.action-cell { cursor: help; }
 
 /* Lang switch button */
 .btn-lang {
