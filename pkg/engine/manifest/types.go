@@ -58,6 +58,12 @@ type Rule struct {
 	UserAfter  string `yaml:"user_after,omitempty"`  // ce que la règle change concrètement
 	UserForWho string `yaml:"user_for_who,omitempty"` // quel profil en bénéficie
 	UserRisk   string `yaml:"user_risk,omitempty"`   // ce que la règle peut t'empêcher de faire
+	// Versions anglaises (i18n). Optionnelles. Si présentes, la GUI les
+	// utilise quand l'utilisateur a sélectionné la langue 'en'.
+	UserTodayEn  string `yaml:"user_today_en,omitempty"`
+	UserAfterEn  string `yaml:"user_after_en,omitempty"`
+	UserForWhoEn string `yaml:"user_for_who_en,omitempty"`
+	UserRiskEn   string `yaml:"user_risk_en,omitempty"`
 }
 
 // AppliesToProfile retourne true si la règle s'applique au profil donné.

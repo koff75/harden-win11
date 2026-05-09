@@ -55,6 +55,10 @@ rules:
     user_after: "Si tu cliques par erreur sur une fausse facture, le programme caché ne pourra pas démarrer. La menace est neutralisée à la source."
     user_for_who: "Tout le monde qui reçoit des PDF/DOCX par mail."
     user_risk: "Si tu programmes en VBA avec des macros qui appellent des .exe (très rare en perso), il faudra autoriser tes macros au cas par cas."
+    user_today_en: "Word and Excel can open a file containing a hidden program and launch it (classic malware-by-email vector)."
+    user_after_en: "If you click on a fake invoice by mistake, the hidden program can't start. The threat is neutralized at the source."
+    user_for_who_en: "Everyone who receives PDF/DOCX files via email."
+    user_risk_en: "If you program in VBA with macros that call .exe files (very rare in personal use), you'll need to authorize macros case by case."
     action: ./engine/actions/asr/block_office_executable_content.action.ps1
     test: ./engine/actions/asr/block_office_executable_content.test.ps1
     undo: ./engine/actions/asr/block_office_executable_content.undo.ps1
@@ -235,6 +239,10 @@ rules:
     user_after: "Defender bloque tout accès à la mémoire d'authentification. Ton mot de passe reste protégé même si une attaque réussit l'étape 1."
     user_for_who: "Tout le monde."
     user_risk: "Quasi nul. Un seul cas connu : certains outils de gestion d'entreprise très spécifiques peuvent être bloqués (rarement en perso)."
+    user_today_en: "If an attacker runs code on your PC, they can extract your Windows password from authentication memory (Mimikatz)."
+    user_after_en: "Defender blocks any access to authentication memory. Your password stays protected even if step 1 of an attack succeeds."
+    user_for_who_en: "Everyone."
+    user_risk_en: "Almost none. One known case: very specific corporate management tools may be blocked (rarely in personal use)."
     action: ./engine/actions/asr/block_lsass_credential_theft.action.ps1
     test: ./engine/actions/asr/block_lsass_credential_theft.test.ps1
     undo: ./engine/actions/asr/block_lsass_credential_theft.undo.ps1
@@ -340,6 +348,10 @@ rules:
     user_after: "Les .exe rares ou non signés sont bloqués automatiquement. Defender ne laisse passer que les apps connues."
     user_for_who: "Profile maximal (paranoid). À éviter si tu testes du logiciel custom."
     user_risk: "Tes apps internes / scripts compilés / outils dev custom seront bloqués au début. Faut whitelister."
+    user_today_en: "Any unusual .exe (never seen elsewhere) can run on your PC without alert."
+    user_after_en: "Rare or unsigned .exe files are blocked automatically. Defender only lets known apps through."
+    user_for_who_en: "Maximal (paranoid) profile. Avoid if you test custom software."
+    user_risk_en: "Your internal apps / compiled scripts / custom dev tools will be blocked at first. You need to whitelist."
     action: ./engine/actions/asr/block_unprevalent_executables.action.ps1
     test: ./engine/actions/asr/block_unprevalent_executables.test.ps1
     undo: ./engine/actions/asr/block_unprevalent_executables.undo.ps1
@@ -369,6 +381,10 @@ rules:
     user_after: "Defender détecte les patterns de chiffrement massif et bloque le processus avant qu'il ne touche tous tes fichiers."
     user_for_who: "Tout le monde."
     user_risk: "Très rare. Si tu utilises un outil de chiffrement légitime (VeraCrypt en mode batch), il pourrait être flaggé. Whitelist possible."
+    user_today_en: "No specific analysis of typical ransomware behavior (massive fast encryption)."
+    user_after_en: "Defender detects mass encryption patterns and blocks the process before it touches all your files."
+    user_for_who_en: "Everyone."
+    user_risk_en: "Very rare. If you use a legitimate encryption tool (VeraCrypt in batch mode), it could be flagged. Whitelist available."
     action: ./engine/actions/asr/advanced_ransomware_protection.action.ps1
     test: ./engine/actions/asr/advanced_ransomware_protection.test.ps1
     undo: ./engine/actions/asr/advanced_ransomware_protection.undo.ps1

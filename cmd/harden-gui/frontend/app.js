@@ -332,6 +332,16 @@ function bindEvents() {
     $('#btn-apply').addEventListener('click', () => promptAndApply());
     $('#btn-undo').addEventListener('click', () => alert("Undo via GUI : à wirer (utilise pour l'instant : harden-engine.exe undo)"));
 
+    // Lang toggle FR/EN — reload pour ré-appliquer partout sans re-render manuel.
+    const langBtn = $('#btn-lang-toggle');
+    if (langBtn) {
+        langBtn.textContent = getLang() === 'fr' ? 'EN' : 'FR';
+        langBtn.addEventListener('click', () => {
+            setLang(getLang() === 'fr' ? 'en' : 'fr');
+            window.location.reload();
+        });
+    }
+
     $('#modal-cancel').addEventListener('click', closeModal);
     $('#modal-confirm-btn').addEventListener('click', () => {
         closeModal();
@@ -772,6 +782,8 @@ function renderRuleRow(rule, status, ev) {
             showCoachModal(rule);
         });
     }
+    // Tooltip riche au survol — détail user-friendly sans cliquer.
+    setupRuleTooltip(tr, rule.id);
     return tr;
 }
 
@@ -832,62 +844,141 @@ function updateRuleRow(ev) {
 //
 // L'idée : pas de JSON brut. On dit clairement ce qui se passerait pour la
 // règle dans son état actuel.
-// formatUserCard : affichage "carte" structurée pour les rules annotées
-// avec user_today/user_after/user_for_who/user_risk. Zéro jargon technique,
-// pour que l'utilisateur décide en 5 secondes si c'est utile ou pas.
-function formatUserCard(rule) {
+// buildUserTooltipHTML : contenu du tooltip riche affiché au hover d'une row.
+// Lit les champs userToday(En) selon la langue active (i18n.js).
+function buildUserTooltipHTML(rule, ev) {
     const verb = contextualVerb(rule);
-    const id = rule.id || '';
+    const title = escapeHtml(rule.title || rule.id || '');
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+
+    const today  = lang === 'en' ? (rule.userTodayEn  || rule.userToday)  : rule.userToday;
+    const after  = lang === 'en' ? (rule.userAfterEn  || rule.userAfter)  : rule.userAfter;
+    const forWho = lang === 'en' ? (rule.userForWhoEn || rule.userForWho) : rule.userForWho;
+    const risk   = lang === 'en' ? (rule.userRiskEn   || rule.userRisk)   : rule.userRisk;
+
+    if (today && after) {
+        return `
+            <div class="tooltip-card">
+                <div class="tooltip-header">
+                    <span class="tooltip-verb">${verb}</span>
+                    <span class="tooltip-title">${title}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">${escapeHtml(t('tooltip.today'))}</span>
+                    <span class="tooltip-value">${escapeHtml(today)}</span>
+                </div>
+                <div class="tooltip-row">
+                    <span class="tooltip-label">${escapeHtml(t('tooltip.after'))}</span>
+                    <span class="tooltip-value">${escapeHtml(after)}</span>
+                </div>
+                ${forWho ? `
+                <div class="tooltip-row">
+                    <span class="tooltip-label">${escapeHtml(t('tooltip.forwho'))}</span>
+                    <span class="tooltip-value">${escapeHtml(forWho)}</span>
+                </div>` : ''}
+                ${risk ? `
+                <div class="tooltip-row tooltip-risk">
+                    <span class="tooltip-label">${escapeHtml(t('tooltip.risk'))}</span>
+                    <span class="tooltip-value">${escapeHtml(risk)}</span>
+                </div>` : ''}
+            </div>`;
+    }
+
+    // Fallback minimal pour les rules non annotées.
+    const desc = rule.description || '—';
+    const stateBlurb = ev && ev.current_state ? humanStateBlurb(ev.current_state) : '';
     return `
-        <div class="action-card">
-            <div class="action-card-header">
-                <span class="action-icon warn">⚠</span>
-                <span class="action-card-verb">${verb}</span>
+        <div class="tooltip-card">
+            <div class="tooltip-header">
+                <span class="tooltip-verb">${verb}</span>
+                <span class="tooltip-title">${title}</span>
             </div>
-            <div class="action-card-row">
-                <span class="action-card-label">Aujourd'hui</span>
-                <span class="action-card-value">${escapeHtml(rule.userToday)}</span>
+            <div class="tooltip-row">
+                <span class="tooltip-label">${escapeHtml(t('tooltip.description'))}</span>
+                <span class="tooltip-value">${escapeHtml(desc)}</span>
             </div>
-            <div class="action-card-row">
-                <span class="action-card-label">Si tu actives</span>
-                <span class="action-card-value">${escapeHtml(rule.userAfter)}</span>
-            </div>
-            ${rule.userForWho ? `
-            <div class="action-card-row">
-                <span class="action-card-label">Pour qui</span>
-                <span class="action-card-value">${escapeHtml(rule.userForWho)}</span>
-            </div>` : ''}
-            ${rule.userRisk ? `
-            <div class="action-card-row action-card-risk">
-                <span class="action-card-label">Ce qui peut t'embêter</span>
-                <span class="action-card-value">${escapeHtml(rule.userRisk)}</span>
+            ${stateBlurb ? `
+            <div class="tooltip-row">
+                <span class="tooltip-label">${escapeHtml(t('tooltip.currentstate'))}</span>
+                <span class="tooltip-value">${stateBlurb}</span>
             </div>` : ''}
         </div>`;
 }
 
-// contextualVerb : verbe lisible selon le type de rule. Évite le générique
-// "À renforcer" qui se répète partout.
+// setupRuleTooltip : attache mouseenter/mouseleave sur une row pour afficher
+// le tooltip riche en position dynamique (à droite ou à gauche selon l'espace).
+// Le tooltip lit toujours rulesByID + eventByRuleID au hover, pour avoir la
+// version la plus à jour si l'event arrive en streaming après le rendu initial.
+let _tooltipEl = null;
+function setupRuleTooltip(tr, ruleID) {
+    tr.addEventListener('mouseenter', () => {
+        if (_tooltipEl) _tooltipEl.remove();
+        const rule = rulesByID[ruleID] || { id: ruleID };
+        const ev = eventByRuleID[ruleID];
+        _tooltipEl = document.createElement('div');
+        _tooltipEl.className = 'rule-tooltip';
+        _tooltipEl.innerHTML = buildUserTooltipHTML(rule, ev);
+        document.body.appendChild(_tooltipEl);
+        positionTooltip(tr, _tooltipEl);
+    });
+    tr.addEventListener('mouseleave', () => {
+        if (_tooltipEl) {
+            _tooltipEl.remove();
+            _tooltipEl = null;
+        }
+    });
+}
+
+function positionTooltip(anchor, tip) {
+    const r = anchor.getBoundingClientRect();
+    const tipW = tip.offsetWidth;
+    const tipH = tip.offsetHeight;
+    const margin = 8;
+
+    // Préférence : à droite de la row, aligné avec son haut.
+    let left = r.right + margin;
+    let top = r.top;
+
+    // Si ça déborde à droite, mets-le à gauche.
+    if (left + tipW > window.innerWidth) {
+        left = r.left - tipW - margin;
+    }
+    // Si ça déborde à gauche aussi, mets-le sous la row.
+    if (left < 0) {
+        left = Math.max(margin, r.left);
+        top = r.bottom + margin;
+    }
+    // Si ça déborde en bas, remonte.
+    if (top + tipH > window.innerHeight) {
+        top = Math.max(margin, window.innerHeight - tipH - margin);
+    }
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+}
+
+// contextualVerb : verbe lisible selon le type de rule. Délègue au système
+// i18n pour la traduction.
 function contextualVerb(rule) {
     const id = rule.id || '';
-    if (id.startsWith('bloatware.')) return 'Désinstaller';
-    if (id.startsWith('asr.') || id.startsWith('defender.')) return 'Activer la protection';
-    if (id.startsWith('firewall.')) return 'Bloquer';
+    if (id.startsWith('bloatware.')) return t('verb.uninstall');
+    if (id.startsWith('asr.') || id.startsWith('defender.')) return t('verb.activate');
+    if (id.startsWith('firewall.')) return t('verb.block');
     if (id === 'system_settings.rdp_disable' ||
         id === 'system_settings.hibernate_off' ||
         id === 'system_settings.fast_startup_off' ||
         id === 'privacy.recall_off' ||
         id === 'privacy.cortana_off' ||
-        id.startsWith('privacy.') && id.endsWith('_off') ||
+        (id.startsWith('privacy.') && id.endsWith('_off')) ||
         id === 'network.llmnr_disable' ||
         id === 'network.mdns_disable' ||
         id === 'network.netbios_off' ||
         id === 'network.wpad_disable' ||
         id === 'network.smbv1_disable' ||
-        id === 'network.smb_guest_auth_off') return 'Désactiver';
-    if (id.startsWith('network.')) return 'Renforcer';
-    if (id.startsWith('system_settings.uac_')) return 'Renforcer UAC';
-    if (id.startsWith('accounts.')) return 'Sécuriser le compte';
-    return 'Renforcer';
+        id === 'network.smb_guest_auth_off') return t('verb.disable');
+    if (id.startsWith('network.')) return t('verb.harden');
+    if (id.startsWith('system_settings.uac_')) return t('verb.harden_uac');
+    if (id.startsWith('accounts.')) return t('verb.secure_acct');
+    return t('verb.harden');
 }
 
 function formatActionCell(rule, status, ev) {
@@ -908,19 +999,18 @@ function formatActionCell(rule, status, ev) {
         return `<span class="action-icon ok">✓</span><span class="action-text">${txt}</span>`;
     }
     if (status === 'would_apply') {
-        // Si la rule a les 4 textes user-friendly, on affiche la "carte" claire.
-        if (rule.userToday && rule.userAfter) {
-            return formatUserCard(rule);
-        }
-        // Fallback : ancien format pour les rules pas encore annotées.
-        const desc = rule.description || 'modification système';
-        const stateBlurb = ev && ev.current_state ? humanStateBlurb(ev.current_state) : '';
-        const breaksBadge = rule.breaks && rule.breaks.length > 0
-            ? `<span class="breaks-badge" title="${escapeHtml(rule.breaks.join('  •  '))}">⚠ casse si…</span>`
-            : '';
+        // Cellule courte : verbe contextuel + 1 ligne synthétique.
+        // Le détail riche (Aujourd'hui / Si tu actives / Pour qui / Risque)
+        // apparaît au hover via le tooltip (cf. setupRuleTooltip).
         const verb = contextualVerb(rule);
-        return `<span class="action-icon warn">⚠</span><span class="action-text">${verb} : ${escapeHtml(desc)}</span> ${breaksBadge}
-                ${stateBlurb ? `<span class="action-state">État actuel : ${stateBlurb}</span>` : ''}`;
+        // Synthèse : on prend userAfter (le résultat concret) si dispo,
+        // sinon description (technique mais court).
+        const synth = rule.userAfter || rule.description || 'modification système';
+        const breaksBadge = rule.breaks && rule.breaks.length > 0
+            ? `<span class="breaks-badge" title="${escapeHtml(rule.breaks.join('  •  '))}">⚠ peut casser…</span>`
+            : '';
+        const hoverHint = rule.userToday ? '<span class="hover-hint" title="Survole pour voir le détail">ⓘ</span>' : '';
+        return `<span class="action-icon warn">⚠</span><span class="action-text"><strong>${verb}</strong> · ${escapeHtml(synth)}</span> ${breaksBadge} ${hoverHint}`;
     }
     if (status === 'applied') {
         const txt = isBloatware ? 'Désinstallée ✓' : 'Appliquée avec succès';

@@ -131,6 +131,10 @@ type RuleInfo struct {
 	UserAfter          string   `json:"userAfter,omitempty"`
 	UserForWho         string   `json:"userForWho,omitempty"`
 	UserRisk           string   `json:"userRisk,omitempty"`
+	UserTodayEn        string   `json:"userTodayEn,omitempty"`
+	UserAfterEn        string   `json:"userAfterEn,omitempty"`
+	UserForWhoEn       string   `json:"userForWhoEn,omitempty"`
+	UserRiskEn         string   `json:"userRiskEn,omitempty"`
 }
 
 // ProfileInfo : descripteur d'un profil pour le sélecteur GUI.
@@ -559,6 +563,10 @@ func (a *App) GetSections(profile string) ([]SectionInfo, error) {
 				UserAfter:          r.UserAfter,
 				UserForWho:         r.UserForWho,
 				UserRisk:           r.UserRisk,
+				UserTodayEn:        r.UserTodayEn,
+				UserAfterEn:        r.UserAfterEn,
+				UserForWhoEn:       r.UserForWhoEn,
+				UserRiskEn:         r.UserRiskEn,
 			})
 		}
 		// Skip les sections qui n'ont aucune rule pour le profil sélectionné.

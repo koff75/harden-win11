@@ -29,6 +29,10 @@ rules:
     user_after: "Il n'utilise plus que le DNS classique. Personne sur le réseau ne peut intercepter ses recherches."
     user_for_who: "Tout le monde. C'est un vecteur classique d'attaque sur Wi-Fi public."
     user_risk: "Sur un réseau familial sans DNS local correctement configuré, certaines découvertes automatiques peuvent ne plus marcher (rare)."
+    user_today_en: "When your PC looks for a machine name on the network, it shouts the question to everyone on the network."
+    user_after_en: "It only uses standard DNS now. Nobody on the network can intercept these lookups."
+    user_for_who_en: "Everyone. Classic attack vector on public Wi-Fi."
+    user_risk_en: "On a home network without correctly configured local DNS, some auto-discoveries may stop working (rare)."
     action: ./engine/actions/network/llmnr_disable.action.ps1
     test: ./engine/actions/network/llmnr_disable.test.ps1
     undo: ./engine/actions/network/llmnr_disable.undo.ps1
@@ -63,6 +67,14 @@ rules:
     user_for_who: "Profile 'maximal' (paranoid). À éviter chez toi si tu utilises Chromecast/AirPlay/imprimantes Apple."
 
     user_risk: "Plus de Chromecast, plus d'AirPrint. Si tu cast régulièrement vers une TV, ne pas l'activer."
+
+    user_today_en: "Your PC does Apple-Bonjour-style auto-discovery on the network (cast to TV, AirPrint, etc.)."
+
+    user_after_en: "No more such auto-discovery. More discreet on the network."
+
+    user_for_who_en: "'Maximal' (paranoid) profile. Avoid at home if you use Chromecast/AirPlay/Apple printers."
+
+    user_risk_en: "No more Chromecast, no more AirPrint. If you cast to a TV regularly, don't enable this."
     action: ./engine/actions/network/mdns_disable.action.ps1
     test: ./engine/actions/network/mdns_disable.test.ps1
     undo: ./engine/actions/network/mdns_disable.undo.ps1
@@ -97,6 +109,14 @@ rules:
     user_for_who: "Tout le monde, surtout en mobilité."
 
     user_risk: "Si tu accèdes à un partage réseau via un nom court (genre \\\\NAS-MAISON), il faudra utiliser l'IP ou le nom complet."
+
+    user_today_en: "An old Windows naming protocol (NetBIOS) is still enabled. Often used in attacks on public Wi-Fi."
+
+    user_after_en: "Disabled. Your PC no longer answers NetBIOS questions from a local attacker."
+
+    user_for_who_en: "Everyone, especially when on the move."
+
+    user_risk_en: "If you access a network share via short name (e.g., \\\\HOME-NAS), you'll need to use the IP or full name."
     action: ./engine/actions/network/netbios_off.action.ps1
     test: ./engine/actions/network/netbios_off.test.ps1
     undo: ./engine/actions/network/netbios_off.undo.ps1
@@ -134,6 +154,14 @@ rules:
     user_for_who: "Tout le monde, surtout en mobilité (Wi-Fi public)."
 
     user_risk: "Si ton entreprise utilise un proxy auto via WPAD, l'accès web peut casser (situation rare en perso)."
+
+    user_today_en: "On startup, your PC automatically searches for a web proxy. A local attacker can answer and become your middleman."
+
+    user_after_en: "No more auto-discovery of proxy. If you use one, you configure it explicitly."
+
+    user_for_who_en: "Everyone, especially when mobile (public Wi-Fi)."
+
+    user_risk_en: "If your company uses an auto WPAD proxy, web access may break (rare situation in personal use)."
     action: ./engine/actions/network/wpad_disable.action.ps1
     test: ./engine/actions/network/wpad_disable.test.ps1
     undo: ./engine/actions/network/wpad_disable.undo.ps1
@@ -170,6 +198,14 @@ rules:
     user_for_who: "Tout le monde, surtout en entreprise."
 
     user_risk: "Très rares vieux serveurs NTLMv1-only ne marcheront plus."
+
+    user_today_en: "Your PC can be forced to speak an old authentication version (NTLMv1) which cracks in hours."
+
+    user_after_en: "Refuses any downgrade negotiation. Stays at NTLMv2 minimum (resistant)."
+
+    user_for_who_en: "Everyone, especially in corporate settings."
+
+    user_risk_en: "Very rare NTLMv1-only old servers will stop working."
     action: ./engine/actions/network/ntlm_v2_only.action.ps1
     test: ./engine/actions/network/ntlm_v2_only.test.ps1
     undo: ./engine/actions/network/ntlm_v2_only.undo.ps1
@@ -202,6 +238,14 @@ rules:
     user_for_who: "Tout le monde qui utilise des partages réseau (NAS, partages Windows)."
 
     user_risk: "Rare souci de compatibilité avec très vieux NAS qui ne supportent pas la signature."
+
+    user_today_en: "When you access a network share, packets aren't signed. Someone on the network could modify them."
+
+    user_after_en: "Packets are signed on both ends. Any tampering is detected and rejected."
+
+    user_for_who_en: "Everyone using network shares (NAS, Windows shares)."
+
+    user_risk_en: "Rare compatibility issue with very old NAS that don't support signing."
     action: ./engine/actions/network/smb_client_signing.action.ps1
     test: ./engine/actions/network/smb_client_signing.test.ps1
     undo: ./engine/actions/network/smb_client_signing.undo.ps1
@@ -234,6 +278,14 @@ rules:
     user_for_who: "Tout le monde qui partage des dossiers depuis son PC."
 
     user_risk: "Idem que client signing : très rare souci avec vieux clients."
+
+    user_today_en: "If your PC shares files, outgoing packets aren't signed."
+
+    user_after_en: "Your shares enforce signing. Nobody can intercept and modify without detection."
+
+    user_for_who_en: "Everyone who shares folders from their PC."
+
+    user_risk_en: "Same as client signing: very rare issue with old clients."
     action: ./engine/actions/network/smb_server_signing.action.ps1
     test: ./engine/actions/network/smb_server_signing.test.ps1
     undo: ./engine/actions/network/smb_server_signing.undo.ps1
@@ -270,6 +322,14 @@ rules:
     user_for_who: "Tout le monde, sauf si tu accèdes à un serveur ou NAS d'avant 2012 que tu ne veux pas remplacer."
 
     user_risk: "Si un partage réseau ne marche plus, c'est qu'il était en SMBv1. Faut mettre le NAS à jour ou faire une exception."
+
+    user_today_en: "A 30-year-old file sharing system is still enabled. Used by WannaCry and NotPetya ransomware to spread."
+
+    user_after_en: "This old system is off. Your PC only speaks modern (secure) versions."
+
+    user_for_who_en: "Everyone, unless you access a server or NAS from before 2012 you don't want to replace."
+
+    user_risk_en: "If a network share stops working, it was on SMBv1. Update the NAS or make an exception."
     action: ./engine/actions/network/smbv1_disable.action.ps1
     test: ./engine/actions/network/smbv1_disable.test.ps1
     undo: ./engine/actions/network/smbv1_disable.undo.ps1
@@ -303,6 +363,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Si tu as un NAS configuré en mode invité (rare), faudra le passer en mode authentifié."
+
+    user_today_en: "Your PC can connect to shares without password ('guest' mode). A local attacker can run a fake server."
+
+    user_after_en: "Any password-less share is refused. Explicit authentication required."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "If you have a NAS configured in guest mode (rare), you'll need to switch it to authenticated mode."
     action: ./engine/actions/network/smb_guest_auth_off.action.ps1
     test: ./engine/actions/network/smb_guest_auth_off.test.ps1
     undo: ./engine/actions/network/smb_guest_auth_off.undo.ps1

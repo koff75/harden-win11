@@ -133,50 +133,87 @@
 .comp-partial .comp-bar-fill { background: #ffaa00; }
 .comp-missing .comp-bar-fill { background: #ff6b7e; }
 
-/* Carte action user-friendly (zéro jargon, structure 4 lignes). */
-.action-card {
+/* Hint icon ⓘ pour signaler qu'il y a un tooltip au survol. */
+.hover-hint {
+    color: #4fc3ff;
+    cursor: help;
+    margin-left: 4px;
+    font-size: 11px;
+    opacity: 0.7;
+}
+.row:hover .hover-hint { opacity: 1; }
+
+/* Tooltip riche au hover d'une row : 4 lignes user-friendly. */
+.rule-tooltip {
+    position: fixed;
+    z-index: 2000;
+    pointer-events: none;
+    max-width: 460px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.tooltip-card {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 10px;
-    background: #1f2c3a;
-    border-left: 3px solid #ffaa00;
-    border-radius: 4px;
-    font-size: 12px;
-    line-height: 1.45;
-    max-width: 100%;
-}
-.action-card-header {
-    display: flex;
-    align-items: center;
     gap: 6px;
+    padding: 12px 14px;
+    background: #1f2c3a;
+    border-left: 3px solid #4fc3ff;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.55;
+}
+.tooltip-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #2c3c4f;
     margin-bottom: 2px;
 }
-.action-card-verb {
-    color: #ffd060;
-    font-weight: 600;
+.tooltip-verb {
+    color: #4fc3ff;
+    font-weight: 700;
     font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
 }
-.action-card-row {
+.tooltip-title {
+    color: #e6e6e6;
+    font-weight: 500;
+}
+.tooltip-row {
     display: grid;
     grid-template-columns: 110px 1fr;
-    gap: 8px;
+    gap: 10px;
     align-items: start;
 }
-.action-card-label {
+.tooltip-label {
     color: #8fa1be;
     font-weight: 500;
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    padding-top: 1px;
+    padding-top: 2px;
 }
-.action-card-value {
+.tooltip-value {
     color: #d8e0ec;
 }
-.action-card-risk .action-card-label { color: #ffaa00; }
-.action-card-risk .action-card-value { color: #ffd0a0; }
-td.action-cell { vertical-align: top; padding: 6px 8px; }
+.tooltip-risk .tooltip-label { color: #ffaa00; }
+.tooltip-risk .tooltip-value { color: #ffd0a0; }
+
+/* Lang switch button */
+.btn-lang {
+    background: #2c3c4f;
+    color: #c8d0dc;
+    border: 1px solid #3a4c5f;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 8px;
+}
+.btn-lang:hover { background: #3a4c5f; color: #fff; }
 
 html, body {
     height: 100%;

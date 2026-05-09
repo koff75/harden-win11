@@ -97,7 +97,11 @@
           "type": "string",
           "minLength": 5,
           "description": "Ce que la règle peut empêcher de faire (impact concret)."
-        }
+        },
+        "user_today_en":   { "type": "string", "minLength": 10 },
+        "user_after_en":   { "type": "string", "minLength": 10 },
+        "user_for_who_en": { "type": "string", "minLength": 5 },
+        "user_risk_en":    { "type": "string", "minLength": 5 }
       },
       "if": {
         "properties": { "irreversible": { "const": false } }

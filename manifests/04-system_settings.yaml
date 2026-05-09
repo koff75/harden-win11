@@ -58,6 +58,14 @@ rules:
     user_for_who: "Tout le monde, sauf si tu fais du dev/admin et qu'une fenêtre UAC par jour t'agace."
 
     user_risk: "Quelques fenêtres UAC supplémentaires en installant des logiciels. C'est l'objectif : voir ce qui demande à grimper en admin."
+
+    user_today_en: "When a program requests admin rights, Windows can accept automatically (without asking you)."
+
+    user_after_en: "You must explicitly approve every elevation request. Malware can no longer slip through silently."
+
+    user_for_who_en: "Everyone, unless you do dev/admin work and one UAC popup per day annoys you."
+
+    user_risk_en: "A few extra UAC prompts when installing software. That's the goal: see what's asking to elevate."
     action: ./engine/actions/uac/consent_admin.action.ps1
     test: ./engine/actions/uac/consent_admin.test.ps1
     undo: ./engine/actions/uac/consent_admin.undo.ps1
@@ -116,6 +124,14 @@ rules:
     user_for_who: "Setup avec plusieurs comptes (parents/enfants, famille). À éviter sur PC perso solo (= ton compte unique est admin)."
 
     user_risk: "Sur PC perso solo : aucun. Sur PC partagé : impossible pour les comptes standards d'installer un logiciel."
+
+    user_today_en: "A standard account can request to become admin (by entering an admin password)."
+
+    user_after_en: "Standard accounts can no longer elevate at all. You must log in with the admin account directly."
+
+    user_for_who_en: "Multi-account setups (parents/kids, family). Avoid on solo personal PC (= your only account is admin)."
+
+    user_risk_en: "On solo personal PC: none. On shared PC: standard accounts can't install software anymore."
     action: ./engine/actions/uac/deny_user_elevation.action.ps1
     test: ./engine/actions/uac/deny_user_elevation.test.ps1
     undo: ./engine/actions/uac/deny_user_elevation.undo.ps1
@@ -151,6 +167,14 @@ rules:
     user_for_who: "Tout le monde, sauf si tu utilises RDP pour dépanner ton PC depuis ailleurs."
 
     user_risk: "Si tu te connectes à ton PC depuis ailleurs (depuis le boulot, par exemple), tu ne pourras plus."
+
+    user_today_en: "Remote Desktop (RDP) might be enabled on your PC. If so, it's a known entry point for attackers."
+
+    user_after_en: "RDP is off. No one can connect to your PC remotely through this channel anymore."
+
+    user_for_who_en: "Everyone, unless you use RDP to remote into your PC from elsewhere."
+
+    user_risk_en: "If you remote into your PC from somewhere else (e.g., from work), you won't be able to anymore."
     action: ./engine/actions/system_settings/rdp_disable.action.ps1
     test: ./engine/actions/system_settings/rdp_disable.test.ps1
     undo: ./engine/actions/system_settings/rdp_disable.undo.ps1
@@ -214,6 +238,14 @@ rules:
     user_for_who: "PC fixe principalement. À éviter sur laptop où l'hibernation économise la batterie."
 
     user_risk: "Sur laptop : tu perds l'autonomie de l'hibernation longue. Le sleep classique consomme un peu plus."
+
+    user_today_en: "When you put your PC into hibernation, Windows writes memory contents (= secrets, passwords in use) to disk."
+
+    user_after_en: "Hibernation is disabled. Either you Sleep (no disk copy) or shut down."
+
+    user_for_who_en: "Mainly desktop PCs. Avoid on laptops where hibernation saves battery."
+
+    user_risk_en: "On laptop: you lose long hibernation autonomy. Regular sleep consumes a bit more."
     action: ./engine/actions/system_settings/hibernate_off.action.ps1
     test: ./engine/actions/system_settings/hibernate_off.test.ps1
     undo: ./engine/actions/system_settings/hibernate_off.undo.ps1

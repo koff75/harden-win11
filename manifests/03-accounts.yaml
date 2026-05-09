@@ -30,6 +30,10 @@ rules:
     user_after: "Ces comptes inutiles sont désactivés. Un attaquant ne peut plus tenter de mots de passe dessus."
     user_for_who: "Tout le monde."
     user_risk: "Aucun pour 99% des gens. Si tu utilises explicitement le compte 'Invité' (très rare), à ne pas faire."
+    user_today_en: "Several default system accounts exist on Windows (Administrator, Guest…), often enabled for no reason."
+    user_after_en: "These unused accounts are disabled. An attacker can't try passwords on them."
+    user_for_who_en: "Everyone."
+    user_risk_en: "None for 99% of users. If you explicitly use the 'Guest' account (very rare), don't apply this."
     action: ./engine/actions/accounts/disable_unused.action.ps1
     test: ./engine/actions/accounts/disable_unused.test.ps1
     undo: ./engine/actions/accounts/disable_unused.undo.ps1
@@ -67,6 +71,14 @@ rules:
     user_for_who: "PC perso ou solo. À éviter en entreprise (la GPO peut écraser le rename)."
 
     user_risk: "Si tu as des scripts qui appellent 'Administrator' explicitement, ils casseront. Très rare en perso."
+
+    user_today_en: "The super-administrator account is named 'Administrator' — a name universally known by automated attackers."
+
+    user_after_en: "Renamed to 'AdminLocal_<YourPC>'. A bot trying 1000 passwords on 'Administrator' no longer finds the account."
+
+    user_for_who_en: "Personal or solo PC. Avoid in corporate environments (GPO can override the rename)."
+
+    user_risk_en: "If you have scripts that explicitly call 'Administrator', they'll break. Very rare in personal use."
     action: ./engine/actions/accounts/rename_admin.action.ps1
     test: ./engine/actions/accounts/rename_admin.test.ps1
     undo: ./engine/actions/accounts/rename_admin.undo.ps1

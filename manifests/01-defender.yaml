@@ -28,6 +28,10 @@ rules:
     user_after: "Chaque fichier est analysé en arrière-plan dès que tu y touches. Les menaces connues sont bloquées immédiatement."
     user_for_who: "Tout le monde — c'est l'antivirus de base de Windows."
     user_risk: "Quasi nul. Très rare ralentissement à l'ouverture de fichiers très gros (>1 Go) ou ZIP avec milliers de fichiers."
+    user_today_en: "When you download or open a file, nothing scans it for viruses."
+    user_after_en: "Every file is analyzed in the background as soon as you touch it. Known threats are blocked immediately."
+    user_for_who_en: "Everyone — this is Windows' built-in antivirus."
+    user_risk_en: "Almost none. Very rare slowdown when opening huge files (>1 GB) or ZIPs with thousands of files."
     action: ./engine/actions/defender/realtime.action.ps1
     test: ./engine/actions/defender/realtime.test.ps1
     undo: ./engine/actions/defender/realtime.undo.ps1
@@ -62,6 +66,14 @@ rules:
     user_for_who: "Tout le monde, surtout pour résister aux menaces récentes pas encore dans les bases antivirus."
 
     user_risk: "Aucun en usage normal."
+
+    user_today_en: "Defender only checks file signatures (i.e., previously known viruses)."
+
+    user_after_en: "Defender also monitors the behavior of running programs. Detects new malware that hides in memory."
+
+    user_for_who_en: "Everyone, especially to defend against recent threats not yet in antivirus databases."
+
+    user_risk_en: "None in normal use."
     action: ./engine/actions/defender/behavior_monitoring.action.ps1
     test: ./engine/actions/defender/behavior_monitoring.test.ps1
     undo: ./engine/actions/defender/behavior_monitoring.undo.ps1
@@ -196,6 +208,14 @@ rules:
     user_for_who: "Tout le monde qui surf sur internet."
 
     user_risk: "Très rare faux positif sur un site légitime mais récent. Tu peux le débloquer manuellement si besoin."
+
+    user_today_en: "If you click a malicious link, your browser loads the page (which can try to infect you)."
+
+    user_after_en: "Defender blocks the connection to known-malicious sites BEFORE your browser loads anything."
+
+    user_for_who_en: "Everyone who browses the web."
+
+    user_risk_en: "Very rare false positive on a legitimate but newly registered site. You can manually unblock if needed."
     action: ./engine/actions/defender/network_protection.action.ps1
     test: ./engine/actions/defender/network_protection.test.ps1
     undo: ./engine/actions/defender/network_protection.undo.ps1
@@ -238,6 +258,14 @@ rules:
     user_for_who: "Très utile contre les ransomwares. Plutôt en mode 'paranoid' car nécessite un peu de configuration."
 
     user_risk: "Au début tu vas devoir autoriser à la main certaines apps légitimes (Steam, OBS, Visual Studio, jeux). Quelques minutes de setup les premiers jours."
+
+    user_today_en: "Any program can write to your Documents, Pictures, Desktop folders (= attack surface for ransomware)."
+
+    user_after_en: "Only authorized apps (Word, Photoshop, etc.) can write there. A ransomware gets an access error and can't encrypt your files."
+
+    user_for_who_en: "Strong defense against ransomware. More of a 'paranoid' setting because it requires some configuration."
+
+    user_risk_en: "You'll need to manually authorize some legitimate apps at first (Steam, OBS, Visual Studio, games). A few minutes of setup the first days."
     action: ./engine/actions/defender/controlled_folder_access.action.ps1
     test: ./engine/actions/defender/controlled_folder_access.test.ps1
     undo: ./engine/actions/defender/controlled_folder_access.undo.ps1

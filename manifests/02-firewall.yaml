@@ -28,6 +28,10 @@ rules:
     user_after: "On force le blocage par défaut même sur le réseau d'entreprise."
     user_for_who: "Postes en entreprise (domaine Active Directory)."
     user_risk: "Si ton admin réseau a configuré des outils qui ont besoin d'accès entrant, faudra créer des règles."
+    user_today_en: "On a corporate PC (domain-joined), the firewall can be more permissive."
+    user_after_en: "Forces default-deny even on the corporate network."
+    user_for_who_en: "Corporate workstations (Active Directory domain)."
+    user_risk_en: "If your network admin has tools that need inbound access, you'll need explicit rules."
     action: ./engine/actions/firewall/profile_domain.action.ps1
     test: ./engine/actions/firewall/profile_domain.test.ps1
     undo: ./engine/actions/firewall/profile_domain.undo.ps1
@@ -60,6 +64,14 @@ rules:
     user_for_who: "Tout le monde qui a un PC à la maison."
 
     user_risk: "Aucun pour usage normal. Si tu héberges un service local (NAS, serveur de jeu), il faudra créer une exception."
+
+    user_today_en: "On your home Wi-Fi (marked 'private'), other devices can connect to your PC."
+
+    user_after_en: "Stays accessible to your home machines but blocks any unusual connection attempt."
+
+    user_for_who_en: "Everyone with a home PC."
+
+    user_risk_en: "None for normal use. If you host a local service (NAS, game server), you'll need to add an exception."
     action: ./engine/actions/firewall/profile_private.action.ps1
     test: ./engine/actions/firewall/profile_private.test.ps1
     undo: ./engine/actions/firewall/profile_private.undo.ps1
@@ -95,6 +107,14 @@ rules:
     user_for_who: "Indispensable pour un laptop qui sort de la maison. Inutile sur un fixe qui ne quitte jamais ton bureau."
 
     user_risk: "Si tu fais du jeu en LAN ou du partage de fichiers dans un café, ça bloquera. Sinon rien."
+
+    user_today_en: "When you connect to a café or airport Wi-Fi, other computers on the network can try to reach your PC."
+
+    user_after_en: "On these untrusted networks, your PC becomes invisible — nobody can connect to it."
+
+    user_for_who_en: "Essential for laptops that leave home. Useless on a desktop that never moves."
+
+    user_risk_en: "If you do LAN gaming or file sharing in a café, it'll block. Otherwise nothing."
     action: ./engine/actions/firewall/profile_public.action.ps1
     test: ./engine/actions/firewall/profile_public.test.ps1
     undo: ./engine/actions/firewall/profile_public.undo.ps1
