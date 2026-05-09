@@ -139,7 +139,11 @@ async function refreshProfiles() {
         rb.addEventListener('change', async () => {
             currentProfile = rb.value;
             await refreshSections();
-            $('#results-body').innerHTML = '<tr class="empty"><td colspan="5">Profil changé. Lance un dry-run pour voir l\'état actuel.</td></tr>';
+            const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+            const msg = lang === 'en'
+                ? 'Profile changed. Run a dry-run to see the current state.'
+                : 'Profil changé. Lance un dry-run pour voir l\'état actuel.';
+            $('#results-body').innerHTML = `<tr class="empty"><td colspan="5">${msg}</td></tr>`;
             $('#dashboard').classList.add('hidden');
             Object.keys(rowsByRuleID).forEach(k => delete rowsByRuleID[k]);
             Object.keys(eventByRuleID).forEach(k => delete eventByRuleID[k]);
@@ -161,9 +165,10 @@ async function refreshEngineInfo() {
         $('#engine-info').innerHTML = `<span style="color:#ff9099">init error: ${err}</span>`;
         return;
     }
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
     const adminLabel = engineInfo.isAdmin
         ? '<span style="color:#aaffbb">admin ✓</span>'
-        : '<span style="color:#ff9099">non-admin (apply désactivé)</span>';
+        : `<span style="color:#ff9099">${lang === 'en' ? 'non-admin (apply disabled)' : 'non-admin (apply désactivé)'}</span>`;
     $('#engine-info').innerHTML =
         `engine ${engineInfo.engineVersion} · manifest ${engineInfo.manifestVersion} · ${adminLabel}`;
     $('#log-path').textContent = engineInfo.logPath ? `log: ${engineInfo.logPath}` : '';
@@ -283,7 +288,9 @@ function computeSummary(events) {
 function bindEvents() {
     $('#btn-dryrun').addEventListener('click', () => runEngine('dryrun'));
     $('#btn-apply').addEventListener('click', () => promptAndApply());
-    $('#btn-undo').addEventListener('click', () => alert("Undo via GUI : à wirer (utilise pour l'instant : harden-engine.exe undo)"));
+    $('#btn-undo').addEventListener('click', () => alert(getLang() === 'en'
+        ? 'Undo via GUI: not wired yet (use harden-engine.exe undo for now)'
+        : "Undo via GUI : à wirer (utilise pour l'instant : harden-engine.exe undo)"));
 
     // Lang toggle FR/EN. On évite window.location.reload() qui ne re-injecte
     // pas correctement les assets dans WebView2 (assets servis via wails://) ;
@@ -292,11 +299,15 @@ function bindEvents() {
     const langBtn = $('#btn-lang-toggle');
     if (langBtn) {
         langBtn.textContent = getLang() === 'fr' ? 'EN' : 'FR';
-        langBtn.addEventListener('click', () => {
+        langBtn.addEventListener('click', async () => {
             const next = getLang() === 'fr' ? 'en' : 'fr';
             console.log('[i18n] switch from', getLang(), 'to', next);
             setLang(next);
             applyI18nStatic();
+            // Re-render des contenus dynamiques (profils + sections re-fetchent
+            // depuis Go pour utiliser title_en/description_en).
+            await refreshProfiles();
+            await refreshSections();
             rerenderAllRows();
             renderDashboard();
             langBtn.textContent = getLang() === 'fr' ? 'EN' : 'FR';
@@ -565,7 +576,7 @@ function renderDashboard() {
     if (total === 0) {
         dashboard.classList.add('level-ok');
         $('#dash-icon').textContent = '✓';
-        $('#dash-headline').textContent = 'Système conforme — toutes les règles évaluées sont OK';
+        $('#dash-headline').textContent = t('dashboard.allok');
         $('#dash-detail').textContent = detail;
         return;
     }
@@ -573,26 +584,55 @@ function renderDashboard() {
     // Headline vulgarisée : on met d'abord le positif (X points OK) puis
     // les améliorations possibles. Plus engageant qu'un nb brut de "règles
     // à renforcer".
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    const en = lang === 'en';
     let headline = '';
     let level = 'level-light';
     let icon = '✓';
     const totalNonCompliant = toApply.critical + toApply.important + toApply['nice-to-have'];
 
+    const plural = (n, fr_s, fr_ms, en_s, en_ms) => en ? (n > 1 ? en_ms : en_s) : (n > 1 ? fr_ms : fr_s);
+
     if (toApply.critical > 0) {
         const detailExtras = [];
-        if (toApply.important > 0) detailExtras.push(`${toApply.important} importante${toApply.important > 1 ? 's' : ''}`);
-        if (toApply['nice-to-have'] > 0) detailExtras.push(`${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}`);
-        const extras = detailExtras.length > 0 ? `, ${detailExtras.join(' et ')}` : '';
-        headline = `Ta machine est OK sur ${conformeAll} points. ${totalNonCompliant} amélioration${totalNonCompliant > 1 ? 's' : ''} possible${totalNonCompliant > 1 ? 's' : ''} : ${toApply.critical} critique${toApply.critical > 1 ? 's' : ''}${extras}.`;
+        if (toApply.important > 0) {
+            detailExtras.push(en
+                ? `${toApply.important} important`
+                : `${toApply.important} importante${toApply.important > 1 ? 's' : ''}`);
+        }
+        if (toApply['nice-to-have'] > 0) {
+            detailExtras.push(en
+                ? `${toApply['nice-to-have']} optional`
+                : `${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}`);
+        }
+        const join = en ? ', ' : ' et ';
+        const extras = detailExtras.length > 0 ? `, ${detailExtras.join(join)}` : '';
+        if (en) {
+            headline = `Your machine is OK on ${conformeAll} points. ${totalNonCompliant} improvement${totalNonCompliant > 1 ? 's' : ''} possible: ${toApply.critical} critical${extras}.`;
+        } else {
+            headline = `Ta machine est OK sur ${conformeAll} points. ${totalNonCompliant} amélioration${totalNonCompliant > 1 ? 's' : ''} possible${totalNonCompliant > 1 ? 's' : ''} : ${toApply.critical} critique${toApply.critical > 1 ? 's' : ''}${extras}.`;
+        }
         level = 'level-critical';
         icon = '🔴';
     } else if (toApply.important > 0) {
-        const opt = toApply['nice-to-have'] > 0 ? ` et ${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}` : '';
-        headline = `Ta machine est bien protégée. ${toApply.important} amélioration${toApply.important > 1 ? 's' : ''} importante${toApply.important > 1 ? 's' : ''}${opt} possible${(toApply.important + toApply['nice-to-have']) > 1 ? 's' : ''}.`;
+        const optExtra = toApply['nice-to-have'] > 0
+            ? (en
+                ? ` and ${toApply['nice-to-have']} optional`
+                : ` et ${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}`)
+            : '';
+        if (en) {
+            headline = `Your machine is well protected. ${toApply.important} important improvement${toApply.important > 1 ? 's' : ''}${optExtra} possible.`;
+        } else {
+            headline = `Ta machine est bien protégée. ${toApply.important} amélioration${toApply.important > 1 ? 's' : ''} importante${toApply.important > 1 ? 's' : ''}${optExtra} possible${(toApply.important + toApply['nice-to-have']) > 1 ? 's' : ''}.`;
+        }
         level = 'level-medium';
         icon = '🟡';
     } else {
-        headline = `Ta machine est solide. ${toApply['nice-to-have']} amélioration${toApply['nice-to-have'] > 1 ? 's' : ''} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''} possible si tu veux pousser plus loin.`;
+        if (en) {
+            headline = `Your machine is solid. ${toApply['nice-to-have']} optional improvement${toApply['nice-to-have'] > 1 ? 's' : ''} possible if you want to push further.`;
+        } else {
+            headline = `Ta machine est solide. ${toApply['nice-to-have']} amélioration${toApply['nice-to-have'] > 1 ? 's' : ''} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''} possible si tu veux pousser plus loin.`;
+        }
         level = 'level-light';
         icon = '⚪';
     }
@@ -611,7 +651,7 @@ async function runEngine(mode) {
     if (isRunning) return;
     const sections = selectedSections();
     if (sections.length === 0) {
-        setStatus('error', 'Sélectionne au moins une section.');
+        setStatus('error', getLang() === 'en' ? 'Select at least one section.' : 'Sélectionne au moins une section.');
         return;
     }
 
@@ -641,7 +681,7 @@ async function runEngine(mode) {
 function promptAndApply() {
     const sections = selectedSections();
     if (sections.length === 0) {
-        setStatus('error', 'Sélectionne au moins une section.');
+        setStatus('error', getLang() === 'en' ? 'Select at least one section.' : 'Sélectionne au moins une section.');
         return;
     }
     $('#modal-sections').innerHTML = sections.map(id => `<li>${escapeHtml(id)}</li>`).join('');
@@ -711,14 +751,23 @@ function bindWailsEvents() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     window.runtime.EventsOn('restore_point_started', () => {
-        setStatus('running', 'Création d\'un Restore Point Windows (peut prendre 30-60s)…');
+        const en = getLang() === 'en';
+        setStatus('running', en
+            ? 'Creating a Windows Restore Point (may take 30-60s)…'
+            : 'Création d\'un Restore Point Windows (peut prendre 30-60s)…');
     });
     window.runtime.EventsOn('restore_point_done', (payload) => {
+        const en = getLang() === 'en';
         if (payload && payload.created) {
-            setStatus('running', `Restore Point créé en ${Math.round((payload.durationMs || 0)/1000)}s. Démarrage de l'apply…`);
+            const sec = Math.round((payload.durationMs || 0)/1000);
+            setStatus('running', en
+                ? `Restore Point created in ${sec}s. Starting apply…`
+                : `Restore Point créé en ${sec}s. Démarrage de l'apply…`);
         } else {
             const why = payload && payload.reason ? `(${payload.reason})` : '';
-            setStatus('running', `Restore Point non créé ${why} — l'apply continue (rollback via journal disponible).`);
+            setStatus('running', en
+                ? `Restore Point not created ${why} — apply continues (rollback via journal still available).`
+                : `Restore Point non créé ${why} — l'apply continue (rollback via journal disponible).`);
         }
     });
 }
@@ -753,7 +802,8 @@ function prepareTableForRun(sectionIDs) {
     }
     applyFilters();
     if (totalRulesInRun === 0) {
-        tbody.innerHTML = '<tr class="empty"><td colspan="5">Aucune règle dans la sélection.</td></tr>';
+        const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+        tbody.innerHTML = `<tr class="empty"><td colspan="5">${lang === 'en' ? 'No rules in selection.' : 'Aucune règle dans la sélection.'}</td></tr>`;
     }
     // Cacher le dashboard tant qu'on n'a pas évalué.
     $('#dashboard').classList.add('hidden');
@@ -845,35 +895,35 @@ function contextualVerb(rule) {
 }
 
 function formatActionCell(rule, status, ev) {
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    const en = lang === 'en';
+
     if (status === 'pending') {
-        return `<span class="action-icon pending">○</span><span class="action-text">Pas encore vérifiée</span>`;
+        return `<span class="action-icon pending">○</span><span class="action-text">${escapeHtml(t('cell.notyetchecked'))}</span>`;
     }
     if (status === 'would_fail' || status === 'failed') {
-        const err = ev && ev.error ? truncate(ev.error, 200) : 'erreur inconnue';
-        return `<span class="action-icon fail">✗</span><span class="action-text">Vérification impossible</span>
+        const err = ev && ev.error ? truncate(ev.error, 200) : (en ? 'unknown error' : 'erreur inconnue');
+        return `<span class="action-icon fail">✗</span><span class="action-text">${escapeHtml(t('cell.checkimpossible'))}</span>
                 <span class="action-state">${escapeHtml(err)}</span>`;
     }
     if (status === 'rolled_back') {
-        return `<span class="action-icon fail">↶</span><span class="action-text">Action a échoué → rollback exécuté</span>`;
+        return `<span class="action-icon fail">↶</span><span class="action-text">${escapeHtml(t('cell.actionfailed'))}</span>`;
     }
     const isBloatware = rule.id && rule.id.startsWith('bloatware.');
     if (status === 'would_skip' || status === 'skipped') {
-        const txt = isBloatware ? 'Pas installée — rien à faire' : 'Aucune action — déjà conforme';
-        return `<span class="action-icon ok">✓</span><span class="action-text">${txt}</span>`;
+        const txt = isBloatware ? t('cell.notinstalled') : t('cell.compliant');
+        return `<span class="action-icon ok">✓</span><span class="action-text">${escapeHtml(txt)}</span>`;
     }
     if (status === 'would_apply') {
         // Cellule courte : verbe contextuel + 1 ligne synthétique.
-        // userAfter d'abord (français accessible), puis title (humain) en
-        // fallback. JAMAIS description (qui contient du jargon registry).
         const verb = contextualVerb(rule);
-        const lang = (typeof getLang === 'function') ? getLang() : 'fr';
-        const userAfter = lang === 'en' ? (rule.userAfterEn || rule.userAfter) : rule.userAfter;
-        const synth = userAfter || rule.title || (lang === 'en' ? 'system change' : 'modification système');
+        const userAfter = en ? (rule.userAfterEn || rule.userAfter) : rule.userAfter;
+        const synth = userAfter || rule.title || (en ? 'system change' : 'modification système');
         return `<span class="action-icon warn">⚠</span><span class="action-text"><strong>${escapeHtml(verb)}</strong> · ${escapeHtml(synth)}</span>`;
     }
     if (status === 'applied') {
-        const txt = isBloatware ? 'Désinstallée ✓' : 'Appliquée avec succès';
-        return `<span class="action-icon ok">✓</span><span class="action-text">${txt}</span>`;
+        const txt = isBloatware ? t('cell.uninstalled') : t('cell.appliedsuccess');
+        return `<span class="action-icon ok">✓</span><span class="action-text">${escapeHtml(txt)}</span>`;
     }
     return '';
 }
@@ -900,39 +950,47 @@ function formatStateValue(v) {
 function humanStatus(status, ruleID) {
     const isBloatware = ruleID && ruleID.startsWith('bloatware.');
     if (isBloatware) {
-        if (status === 'would_skip' || status === 'skipped') return 'Pas installée';
-        if (status === 'would_apply') return 'À supprimer';
-        if (status === 'applied') return 'Désinstallée ✓';
+        if (status === 'would_skip' || status === 'skipped') return t('status.bloat.notinst');
+        if (status === 'would_apply') return t('status.bloat.toremove');
+        if (status === 'applied') return t('status.bloat.uninstalled');
     }
-    return {
-        'pending':     'En attente',
-        'would_skip':  'OK (déjà conforme)',
-        'would_apply': 'À appliquer',
-        'would_fail':  'Échec test',
-        'skipped':     'OK (déjà conforme)',
-        'applied':     'Appliquée ✓',
-        'failed':      'Échec',
-        'rolled_back': 'Rollback exécuté',
-    }[status] || status;
+    const map = {
+        'pending':     t('status.pending'),
+        'would_skip':  t('status.compliant'),
+        'would_apply': t('status.toapply'),
+        'would_fail':  t('status.tofail'),
+        'skipped':     t('status.compliant'),
+        'applied':     t('status.applied'),
+        'failed':      t('status.failed'),
+        'rolled_back': t('status.rolledback'),
+    };
+    return map[status] || status;
 }
 
 function humanSeverity(s) {
     return {
-        'critical':     'Critique',
-        'important':    'Important',
-        'nice-to-have': 'Optionnel',
+        'critical':     t('filter.critical'),
+        'important':    t('filter.important'),
+        'nice-to-have': t('filter.nice'),
     }[s] || s;
 }
 
 function summarizeStatus(s) {
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    const en = lang === 'en';
     const parts = [];
-    if (s.skipped) parts.push(`${s.skipped} déjà OK`);
-    if (s.applied) parts.push(`${s.applied} ${s.mode === 'apply' ? 'appliquées' : 'à appliquer'}`);
-    if (s.failed) parts.push(`${s.failed} échec(s)`);
+    if (s.skipped) parts.push(`${s.skipped} ${en ? 'already OK' : 'déjà OK'}`);
+    if (s.applied) {
+        const verb = s.mode === 'apply'
+            ? (en ? 'applied' : 'appliquées')
+            : (en ? 'to apply' : 'à appliquer');
+        parts.push(`${s.applied} ${verb}`);
+    }
+    if (s.failed) parts.push(`${s.failed} ${en ? 'failure(s)' : 'échec(s)'}`);
     if (s.rolledBack) parts.push(`${s.rolledBack} rollback`);
     let suffix = '';
-    if (s.cancelled) suffix = ' [ANNULÉ]';
-    else if (s.aborted) suffix = ' [ARRÊTÉ après rollback]';
+    if (s.cancelled) suffix = en ? ' [CANCELLED]' : ' [ANNULÉ]';
+    else if (s.aborted) suffix = en ? ' [STOPPED after rollback]' : ' [ARRÊTÉ après rollback]';
     return `Run ${s.runId} (${s.mode}) · ${parts.join(' · ')}${suffix}`;
 }
 
