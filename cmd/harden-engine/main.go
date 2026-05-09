@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/koff75/harden-win11/pkg/engine/baseline"
+	"github.com/koff75/harden-win11/pkg/engine/drift"
 	"github.com/koff75/harden-win11/pkg/engine/executor"
 	"github.com/koff75/harden-win11/pkg/engine/journal"
 	"github.com/koff75/harden-win11/pkg/engine/manifest"
@@ -61,7 +62,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&flagSchemaPath, "schema", "schemas/manifest.schema.json", "Path to the JSONSchema")
 	rootCmd.PersistentFlags().StringVar(&flagJournalDir, "journal-dir", "", "NDJSON journal folder (empty = %ProgramData%\\Harden-Win11\\runs\\)")
 
-	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd(), coverageCmd(), snapshotCmd(), watchEventsCmd(), watchlistCmd())
+	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd(), coverageCmd(), snapshotCmd(), watchEventsCmd(), watchlistCmd(), driftCheckCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(exitCodeFor(err))
@@ -421,13 +422,27 @@ func applyCmd() *cobra.Command {
 				}
 				if exe, err := os.Executable(); err == nil {
 					if err := watchlist.ScheduleTask(ctx, runID, exe, 5, 24); err != nil {
-						fmt.Fprintf(os.Stderr, "Watchlist 24h non programmée : %v (continue)\n", err)
+						fmt.Fprintf(os.Stderr, "Watchlist 24h not scheduled : %v (continue)\n", err)
 					} else {
-						fmt.Fprintln(os.Stderr, "Watchlist 24h programmée (tâche planifiée harden-watchlist-"+runID+").")
+						fmt.Fprintln(os.Stderr, "Watchlist 24h scheduled (task harden-watchlist-"+runID+").")
 						_ = w.Emit(map[string]any{
 							"type":   "watchlist_scheduled",
 							"run_id": runID,
 							"task":   "harden-watchlist-" + runID,
+						})
+					}
+					// Drift auto-check : task that fires after each Windows
+					// Update install (event ID 19). Replaces previous task
+					// if any (single 'harden-drift-check' task system-wide,
+					// always points to the latest apply as baseline).
+					if err := drift.ScheduleAutoCheck(ctx, exe, runID); err != nil {
+						fmt.Fprintf(os.Stderr, "Auto drift-check not scheduled : %v (continue)\n", err)
+					} else {
+						fmt.Fprintln(os.Stderr, "Auto drift-check scheduled on Windows Update events (task harden-drift-check).")
+						_ = w.Emit(map[string]any{
+							"type":   "drift_check_scheduled",
+							"run_id": runID,
+							"task":   "harden-drift-check",
 						})
 					}
 				}
@@ -455,6 +470,46 @@ func applyCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&flagSkipWatchlist, "no-watchlist", false, "Skip the 24h Event Viewer watchlist scheduling (default: registers a scheduled task that detects post-apply anomalies).")
 	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", executor.DefaultRuleTimeout, "Per-rule timeout (e.g., 30s, 1m)")
 	cmd.Flags().BoolVar(&flagYes, "yes", false, "Skip the interactive confirmation before real apply")
+	return cmd
+}
+
+func driftCheckCmd() *cobra.Command {
+	var baselineRunID string
+	cmd := &cobra.Command{
+		Use:   "drift-check",
+		Short: "Detect post-Windows-Update drift vs the last apply baseline",
+		Long: `Compares the current system state against the post-apply snapshot of a
+baseline run (registry / Defender / services). Useful after a Cumulative
+Update to spot rules that Windows silently reset.
+
+Designed to be run as a Scheduled Task triggered on event ID 19 of the
+'Microsoft-Windows-WindowsUpdateClient/Operational' log.
+
+Writes a JSON report to %ProgramData%\Harden-Win11\drift\<timestamp>.json.
+The GUI reads this folder at boot and shows a banner if any drift is
+detected.`,
+		RunE: func(c *cobra.Command, args []string) error {
+			if baselineRunID == "" {
+				return &exitError{code: 4, msg: "--baseline-run-id required"}
+			}
+			rep, err := drift.Check(context.Background(), baselineRunID)
+			if err != nil {
+				return &exitError{code: 4, msg: err.Error()}
+			}
+			path, err := drift.Save(rep)
+			if err != nil {
+				return &exitError{code: 4, msg: err.Error()}
+			}
+			fmt.Fprintf(os.Stderr, "drift-check : %d drifted item(s) → %s\n", rep.TotalDrifted, path)
+			b, _ := json.MarshalIndent(rep, "", "  ")
+			fmt.Println(string(b))
+			if rep.TotalDrifted > 0 {
+				return &exitError{code: 2, msg: fmt.Sprintf("%d drifted item(s) detected", rep.TotalDrifted)}
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&baselineRunID, "baseline-run-id", "", "Run ID whose post-apply snapshot is the baseline (required)")
 	return cmd
 }
 

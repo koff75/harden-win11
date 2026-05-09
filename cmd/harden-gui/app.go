@@ -20,6 +20,7 @@ import (
 	"github.com/koff75/harden-win11/pkg/engine/ndjson"
 	"github.com/koff75/harden-win11/pkg/engine/restorepoint"
 	"github.com/koff75/harden-win11/pkg/engine/runner"
+	"github.com/koff75/harden-win11/pkg/engine/drift"
 	"github.com/koff75/harden-win11/pkg/engine/watchlist"
 	"github.com/koff75/harden-win11/pkg/engine/winadmin"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -189,6 +190,64 @@ func (a *App) GetEngineInfo() EngineInfo {
 
 // RelaunchAsAdmin relance la GUI avec UAC puis quitte l'instance courante.
 // Best-effort : si le spawn échoue, l'app courante reste ouverte.
+// UndoRun lance `harden-engine.exe undo --run-id <id> --yes` et renvoie
+// la sortie texte au frontend. Best-effort : si l'exe n'est pas trouvé,
+// retourne un message clair.
+//
+// L'exe est cherché à côté de harden-gui.exe (cas du ZIP portable),
+// puis dans le PATH (cas dev avec dist/ sur le PATH).
+func (a *App) UndoRun(runID string) (string, error) {
+	if runID == "" {
+		return "", fmt.Errorf("runID required")
+	}
+	logf("app.UndoRun: %s", runID)
+
+	enginePath, err := a.findHardenEngine()
+	if err != nil {
+		return "", fmt.Errorf("harden-engine.exe not found: %w. Run undo manually : harden-engine.exe undo --run-id %s --yes", err, runID)
+	}
+
+	ctx, cancel := context.WithTimeout(a.ctx, 5*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, enginePath,
+		"undo", "--run-id", runID, "--yes",
+		"--manifest-dir", a.manifestDir,
+		"--schema", a.schemaPath,
+	)
+	cmd.SysProcAttr = hideWindowAttr()
+	out, err := cmd.CombinedOutput()
+	logf("app.UndoRun: exit=%v output_bytes=%d", err, len(out))
+	if err != nil {
+		return string(out), fmt.Errorf("undo failed: %w", err)
+	}
+	return string(out), nil
+}
+
+// findHardenEngine cherche harden-engine.exe à côté du binaire courant,
+// puis dans dist/ relatif à basePath, puis dans le PATH.
+func (a *App) findHardenEngine() (string, error) {
+	// 1. À côté du harden-gui.exe (cas portable ZIP).
+	if exe, err := os.Executable(); err == nil {
+		dir := filepath.Dir(exe)
+		candidate := filepath.Join(dir, "harden-engine.exe")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		}
+	}
+	// 2. Dans dist/ relatif au repo (cas dev).
+	if a.basePath != "" {
+		candidate := filepath.Join(a.basePath, "dist", "harden-engine.exe")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		}
+	}
+	// 3. PATH.
+	if p, err := exec.LookPath("harden-engine.exe"); err == nil {
+		return p, nil
+	}
+	return "", fmt.Errorf("not found in exe dir, dist/, or PATH")
+}
+
 func (a *App) RelaunchAsAdmin() error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -307,6 +366,22 @@ func (a *App) GetWatchlistAlerts() []WatchlistAlert {
 	}
 	logf("GetWatchlistAlerts: %d alerts across %d reports", len(out), len(reports))
 	return out
+}
+
+// GetDriftAlert returns the latest drift report if it shows non-zero drift,
+// otherwise nil. The GUI uses this at boot to show a banner when Windows
+// Update reset some hardening since the last apply.
+func (a *App) GetDriftAlert() *drift.Report {
+	rep, err := drift.Latest()
+	if err != nil {
+		logf("GetDriftAlert: %v", err)
+		return nil
+	}
+	if rep == nil || rep.TotalDrifted == 0 {
+		return nil
+	}
+	logf("GetDriftAlert: %d drifted items since baseline %s", rep.TotalDrifted, rep.BaselineRunID)
+	return rep
 }
 
 // loadAllManifests charge tous les *.yaml d'un dossier sans validation schema

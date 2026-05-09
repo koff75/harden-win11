@@ -17,18 +17,105 @@ const eventByRuleID = {};   // dernier event reçu par règle (pour le tooltip)
 const excludedRules = new Set();   // rule_ids exclus du prochain run
 
 // ─────────────────────────────────────────────────────────────────
+// Préférences persistées (localStorage)
+// ─────────────────────────────────────────────────────────────────
+const PREFS_KEY = 'harden-prefs-v1';
+
+function loadPrefs() {
+    try {
+        const raw = localStorage.getItem(PREFS_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+function savePrefs() {
+    try {
+        const sections = Array.from(document.querySelectorAll('input[name="section"]:checked'))
+            .map(cb => cb.value);
+        const prefs = {
+            profile: currentProfile,
+            sections,
+            excluded: Array.from(excludedRules),
+            audit: !!document.getElementById('audit-mode')?.checked,
+        };
+        localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    } catch {}
+}
+
+function applyPrefs(prefs) {
+    if (!prefs) return;
+    if (prefs.profile && availableProfiles.find(p => p.id === prefs.profile)) {
+        currentProfile = prefs.profile;
+    }
+    if (Array.isArray(prefs.excluded)) {
+        for (const id of prefs.excluded) excludedRules.add(id);
+    }
+    if (typeof prefs.audit === 'boolean' && document.getElementById('audit-mode')) {
+        document.getElementById('audit-mode').checked = prefs.audit;
+    }
+    if (Array.isArray(prefs.sections)) {
+        const want = new Set(prefs.sections);
+        document.querySelectorAll('input[name="section"]').forEach(cb => {
+            cb.checked = want.has(cb.value);
+        });
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', async () => {
+    // Charge les prefs AVANT tout (pour que currentProfile soit set avant
+    // refreshSections, et excludedRules avant le rendu de la table).
+    const savedPrefs = loadPrefs();
+    if (savedPrefs?.profile) currentProfile = savedPrefs.profile;
+    if (Array.isArray(savedPrefs?.excluded)) {
+        for (const id of savedPrefs.excluded) excludedRules.add(id);
+    }
+
     await refreshEngineInfo();
     await refreshProfiles();
     await refreshSections();
     await refreshRuns();
     await refreshWatchlistAlerts();
+    await refreshDriftAlert();
     bindEvents();
+
+    // Restaure le reste des prefs (sections cochées + audit checkbox) APRÈS
+    // que le DOM soit construit.
+    applyPrefs(savedPrefs);
     bindWailsEvents();
 });
+
+async function refreshDriftAlert() {
+    let rep = null;
+    try {
+        rep = await window.go.main.App.GetDriftAlert();
+    } catch {
+        return;
+    }
+    if (!rep || rep.total_drifted === 0) return;
+    const banner = $('#drift-banner');
+    if (!banner) return;
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    const summary = lang === 'en'
+        ? `${rep.total_drifted} item(s) drifted since baseline ${rep.baseline_run_id}.`
+        : `${rep.total_drifted} élément(s) dérivés depuis le baseline ${rep.baseline_run_id}.`;
+    $('#drift-summary').textContent = summary;
+    banner.classList.remove('hidden');
+    $('#btn-drift-reapply').addEventListener('click', () => {
+        // Auto-coche la checkbox apply (admin requis) — l'utilisateur cliquera Apply.
+        setStatus('running', lang === 'en'
+            ? `Click "Apply" to re-harden the ${rep.total_drifted} drifted item(s).`
+            : `Clique "Appliquer" pour re-hardener les ${rep.total_drifted} élément(s) dérivés.`);
+        banner.classList.add('hidden');
+    });
+    $('#btn-drift-dismiss').addEventListener('click', () => banner.classList.add('hidden'));
+}
 
 async function refreshWatchlistAlerts() {
     try {
@@ -138,6 +225,7 @@ async function refreshProfiles() {
     $$('input[name="profile"]').forEach(rb => {
         rb.addEventListener('change', async () => {
             currentProfile = rb.value;
+            savePrefs();
             await refreshSections();
             const lang = (typeof getLang === 'function') ? getLang() : 'fr';
             const msg = lang === 'en'
@@ -228,18 +316,47 @@ async function refreshRuns() {
     const list = $('#runs-list');
     try {
         const runs = await window.go.main.App.ListRuns();
+        const lang = (typeof getLang === 'function') ? getLang() : 'fr';
         if (runs.length === 0) {
-            list.innerHTML = '<em>Aucun run dans le journal.</em>';
+            list.innerHTML = `<em>${lang === 'en' ? 'No runs in journal.' : 'Aucun run dans le journal.'}</em>`;
             return;
         }
+        const loadTitle = lang === 'en' ? 'Click to load this run' : 'Cliquer pour charger ce run';
+        const undoTitle = lang === 'en' ? 'Undo this run (rollback applied rules)' : 'Annuler ce run (rollback des règles appliquées)';
         list.innerHTML = runs.slice(0, 8).map(r =>
-            `<div class="run-item" data-run-id="${escapeHtml(r)}" title="Cliquer pour charger ce run">${escapeHtml(r)}</div>`
+            `<div class="run-item" data-run-id="${escapeHtml(r)}">
+                <span class="run-id" title="${loadTitle}">${escapeHtml(r)}</span>
+                <button class="run-undo" data-run-id="${escapeHtml(r)}" title="${undoTitle}">↶</button>
+            </div>`
         ).join('');
-        list.querySelectorAll('.run-item').forEach(el => {
-            el.addEventListener('click', () => loadHistoricalRun(el.dataset.runId));
+        list.querySelectorAll('.run-item .run-id').forEach(el => {
+            el.addEventListener('click', () => loadHistoricalRun(el.parentElement.dataset.runId));
+        });
+        list.querySelectorAll('.run-item .run-undo').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                undoRun(btn.dataset.runId);
+            });
         });
     } catch (err) {
         list.innerHTML = `<span style="color:#ff9099">${err}</span>`;
+    }
+}
+
+async function undoRun(runID) {
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    const confirmMsg = lang === 'en'
+        ? `Undo run ${runID}? This will rollback all rules applied during this run.`
+        : `Annuler le run ${runID} ? Cela va revenir sur toutes les règles appliquées pendant ce run.`;
+    if (!confirm(confirmMsg)) return;
+    setStatus('running', lang === 'en' ? `Undoing ${runID}…` : `Annulation de ${runID}…`);
+    try {
+        const out = await window.go.main.App.UndoRun(runID);
+        setStatus('success', lang === 'en' ? `Undo OK for ${runID}` : `Undo OK pour ${runID}`);
+        console.log('[undo]', out);
+        await refreshRuns();
+    } catch (err) {
+        setStatus('error', lang === 'en' ? `Undo failed: ${err}` : `Échec undo : ${err}`);
     }
 }
 
@@ -344,10 +461,19 @@ function bindEvents() {
     // Boutons Tout / Aucun pour les sections.
     $('#sections-all').addEventListener('click', () => {
         $$('input[name="section"]').forEach(cb => cb.checked = true);
+        savePrefs();
     });
     $('#sections-none').addEventListener('click', () => {
         $$('input[name="section"]').forEach(cb => cb.checked = false);
+        savePrefs();
     });
+    // Sauvegarde sur toggle individuel d'une section.
+    $$('input[name="section"]').forEach(cb => {
+        cb.addEventListener('change', savePrefs);
+    });
+    // Sauvegarde sur audit checkbox.
+    const auditCb = document.getElementById('audit-mode');
+    if (auditCb) auditCb.addEventListener('change', savePrefs);
 
     // Cocher / décocher individuellement une règle dans le tableau.
     document.body.addEventListener('change', (e) => {
@@ -360,6 +486,7 @@ function bindEvents() {
             }
             const tr = rowsByRuleID[ruleID];
             if (tr) tr.classList.toggle('excluded', !e.target.checked);
+            savePrefs();
         }
         if (e.target === $('#include-all')) {
             const checked = e.target.checked;

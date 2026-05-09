@@ -219,13 +219,29 @@ aside hr {
 
 #runs-list .run-item {
     padding: 4px 0;
-    cursor: pointer;
     color: #8fa1be;
     font-family: monospace;
     font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
-
-#runs-list .run-item:hover { color: #4fc3ff; }
+#runs-list .run-item .run-id {
+    flex: 1;
+    cursor: pointer;
+}
+#runs-list .run-item .run-id:hover { color: #4fc3ff; }
+#runs-list .run-item .run-undo {
+    background: transparent;
+    border: 1px solid #5b3612;
+    color: #ffaa70;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+    line-height: 1;
+}
+#runs-list .run-item .run-undo:hover { background: #5b3612; color: #ffd2a0; }
 
 .actions {
     display: flex;

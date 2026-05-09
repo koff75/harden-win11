@@ -111,6 +111,10 @@ const I18N = {
         // Watchlist banner
         'watchlist.title':       'Anomalies détectées après un apply récent.',
         'watchlist.detail':      'Voir détail',
+
+        // Drift banner (post-Windows Update)
+        'drift.title':           'Windows Update a réinitialisé une partie de ton hardening.',
+        'drift.reapply':         'Re-appliquer',
     },
     en: {
         'tooltip.today':       'Today',
@@ -212,6 +216,10 @@ const I18N = {
         // Watchlist banner
         'watchlist.title':       'Anomalies detected after a recent apply.',
         'watchlist.detail':      'See details',
+
+        // Drift banner (post-Windows Update)
+        'drift.title':           'Windows Update reset some of your hardening.',
+        'drift.reapply':         'Re-apply',
     },
 };
 
