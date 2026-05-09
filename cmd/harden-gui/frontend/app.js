@@ -332,15 +332,24 @@ function bindEvents() {
     $('#btn-apply').addEventListener('click', () => promptAndApply());
     $('#btn-undo').addEventListener('click', () => alert("Undo via GUI : à wirer (utilise pour l'instant : harden-engine.exe undo)"));
 
-    // Lang toggle FR/EN — reload pour ré-appliquer partout sans re-render manuel.
+    // Lang toggle FR/EN. On évite window.location.reload() qui ne re-injecte
+    // pas correctement les assets dans WebView2 (assets servis via wails://) ;
+    // à la place, on re-render les parties dynamiques in-place et on update
+    // les textes statiques du DOM via applyI18nStatic().
     const langBtn = $('#btn-lang-toggle');
     if (langBtn) {
         langBtn.textContent = getLang() === 'fr' ? 'EN' : 'FR';
         langBtn.addEventListener('click', () => {
-            setLang(getLang() === 'fr' ? 'en' : 'fr');
-            window.location.reload();
+            const next = getLang() === 'fr' ? 'en' : 'fr';
+            console.log('[i18n] switch from', getLang(), 'to', next);
+            setLang(next);
+            applyI18nStatic();
+            rerenderAllRows();
+            renderDashboard();
+            langBtn.textContent = getLang() === 'fr' ? 'EN' : 'FR';
         });
     }
+    applyI18nStatic();
 
     $('#modal-cancel').addEventListener('click', closeModal);
     $('#modal-confirm-btn').addEventListener('click', () => {
@@ -400,6 +409,53 @@ function bindEvents() {
 // ─────────────────────────────────────────────────────────────────
 // Filtres
 // ─────────────────────────────────────────────────────────────────
+
+// applyI18nStatic : re-injecte les textes statiques du DOM (titres aside,
+// boutons header, etc.) avec les valeurs t() courantes. Appelé au boot puis
+// à chaque switch de langue.
+function applyI18nStatic() {
+    // Boutons d'action principaux
+    setTextIf('#btn-dryrun', 'btn.dryrun');
+    setTextIf('#btn-apply', 'btn.apply');
+    setTextIf('#btn-cancel', 'btn.cancel');
+    setTextIf('#btn-undo', 'btn.undo');
+    setTextIf('#btn-maturity', 'btn.score');
+    // Bandeau admin
+    setHTMLIf('#admin-banner .admin-banner-text',
+        `<strong>${escapeHtml(t('admin.notadmin'))}</strong> ${escapeHtml(t('admin.banner'))}`);
+    setTextIf('#btn-relaunch-admin', 'admin.relaunch');
+}
+
+function setTextIf(sel, key) {
+    const el = document.querySelector(sel);
+    if (el) el.textContent = t(key);
+}
+function setHTMLIf(sel, html) {
+    const el = document.querySelector(sel);
+    if (el) el.innerHTML = html;
+}
+
+// rerenderAllRows : ré-applique humanStatus / formatActionCell / tooltip à
+// toutes les lignes existantes — utile après un switch de langue pour que
+// les statuts ("Pas installée" / "Not installed", etc.) et le tooltip
+// passent dans la nouvelle langue.
+function rerenderAllRows() {
+    const rows = document.querySelectorAll('#results-body tr.row');
+    rows.forEach(tr => {
+        const ruleID = tr.dataset.ruleId;
+        const rule = rulesByID[ruleID];
+        const ev = eventByRuleID[ruleID];
+        const status = tr.dataset.status || 'pending';
+        if (!rule) return;
+        const statusCell = tr.querySelector('.status');
+        if (statusCell) statusCell.textContent = humanStatus(status, ruleID);
+        const actionCell = tr.querySelector('.action-cell');
+        if (actionCell) {
+            actionCell.innerHTML = formatActionCell(rule, status, ev);
+            actionCell.title = buildUserTooltipText(rule, ev);
+        }
+    });
+}
 
 async function showMaturityModal() {
     const rows = $$('#results-body tr.row');

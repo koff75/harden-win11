@@ -52,10 +52,10 @@ const I18N = {
         'dashboard.improveCrit':'Ta machine est OK sur {ok} points. {n} amélioration{s} possible{s} : {crit} critique{cs}{rest}.',
 
         // Header / boutons
-        'btn.dryrun':  'Vérifier',
-        'btn.apply':   'Appliquer',
+        'btn.dryrun':  '🔍 Vérifier (dry-run)',
+        'btn.apply':   '⚙️ Appliquer',
         'btn.cancel':  'Annuler',
-        'btn.undo':    'Annuler le dernier run',
+        'btn.undo':    '↶ Annuler le dernier run',
         'btn.score':   '📊 Score',
         'btn.langtoggle': 'EN',
 
@@ -106,10 +106,10 @@ const I18N = {
         'dashboard.improveOpt': 'Your machine is solid. {n} optional improvement{s} possible if you want to push further.',
         'dashboard.improveCrit':'Your machine is OK on {ok} points. {n} improvement{s} possible: {crit} critical{rest}.',
 
-        'btn.dryrun':  'Check',
-        'btn.apply':   'Apply',
+        'btn.dryrun':  '🔍 Check (dry-run)',
+        'btn.apply':   '⚙️ Apply',
         'btn.cancel':  'Cancel',
-        'btn.undo':    'Undo last run',
+        'btn.undo':    '↶ Undo last run',
         'btn.score':   '📊 Score',
         'btn.langtoggle': 'FR',
 
