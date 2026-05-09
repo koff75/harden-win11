@@ -422,32 +422,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     font-family: monospace;
 }
 
-/* Coverage bar (mapping baselines) */
-.coverage-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    margin: 0 0 12px 0;
-    background: #1a1a24;
-    border: 1px solid #2c2c3c;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-}
-.coverage-bar.hidden { display: none; }
-.cov-label { color: #8fa1be; font-weight: 500; }
-.cov-pill {
-    padding: 2px 8px;
-    border-radius: 3px;
-    background: #2a2a3a;
-    color: #e6e6e6;
-    font-family: monospace;
-    font-size: 11px;
-}
-.cov-disclaimer { margin-left: auto; font-style: italic; }
-
-/* Modal coverage detail */
+/* Modal helper (used by maturity, watchlist) */
 .cov-modal {
     position: fixed;
     inset: 0;

@@ -79,65 +79,9 @@ function showWatchlistModal(alerts) {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
-let coverageReport = null;
-
-async function refreshCoverage() {
-    try {
-        coverageReport = await window.go.main.App.GetCoverage();
-    } catch (err) {
-        return;
-    }
-    if (!coverageReport) return;
-    const bar = $('#coverage-bar');
-    if (!bar) return;
-    const fmt = (st) => `${st.mapped}/${coverageReport.total_rules} (${Math.round(st.mapped/coverageReport.total_rules*100)}%)`;
-    const cis = coverageReport.frameworks.cis;
-    const anssi = coverageReport.frameworks.anssi;
-    const ms = coverageReport.frameworks.ms_baseline;
-    bar.querySelector('[data-fw="cis"]').textContent = `CIS ${fmt(cis)}`;
-    bar.querySelector('[data-fw="anssi"]').textContent = `ANSSI ${fmt(anssi)}`;
-    bar.querySelector('[data-fw="ms_baseline"]').textContent = `MS ${fmt(ms)}`;
-    bar.classList.remove('hidden');
-    bar.addEventListener('click', showCoverageModal);
-}
-
-function showCoverageModal() {
-    if (!coverageReport) return;
-    const fw = coverageReport.frameworks;
-    const sources = coverageReport.sources || {};
-    const fwRow = (label, st, src) => `
-        <tr>
-            <td><strong>${label}</strong><br><span class="muted small">${escapeHtml(src || '')}</span></td>
-            <td>${st.mapped}/${coverageReport.total_rules}</td>
-            <td>${st.unique_controls}</td>
-            <td>${st.unmapped_rules.length}</td>
-            <td><span class="muted small">${st.sample_controls.slice(0,3).map(escapeHtml).join('<br>')}</span></td>
-        </tr>`;
-    const html = `
-        <div class="cov-modal" id="cov-modal-overlay">
-            <div class="cov-modal-content">
-                <span class="cov-close" id="cov-close">✕</span>
-                <h3>Couverture vs référentiels publics</h3>
-                <p class="muted small">Total règles harden-win11 : <strong>${coverageReport.total_rules}</strong> · Avec ≥1 mapping : <strong>${coverageReport.mapped_rules}</strong></p>
-                <table>
-                    <thead>
-                        <tr><th>Référentiel</th><th>Couvertes</th><th>Contrôles uniques</th><th>Sans mapping</th><th>Exemples</th></tr>
-                    </thead>
-                    <tbody>
-                        ${fwRow('CIS', fw.cis, sources.cis)}
-                        ${fwRow('ANSSI', fw.anssi, sources.anssi)}
-                        ${fwRow('MS Baseline', fw.ms_baseline, sources.ms_baseline)}
-                    </tbody>
-                </table>
-                <p class="muted small" style="margin-top:16px"><em>${escapeHtml(coverageReport.disclaimer || '')}</em></p>
-            </div>
-        </div>`;
-    document.body.insertAdjacentHTML('beforeend', html);
-    const overlay = $('#cov-modal-overlay');
-    const close = () => overlay.remove();
-    $('#cov-close').addEventListener('click', close);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-}
+// Coverage standards (CIS / ANSSI / MS) panel removed — moved to CLI only :
+// `harden-engine.exe coverage` shows the same data. The GUI bar was visual
+// noise that didn't help the end user decide what to do.
 
 async function refreshProfiles() {
     try {
@@ -180,13 +124,17 @@ async function refreshProfiles() {
            </div>`
         : '';
 
-    $('#profile-list').innerHTML = suggestionBanner + availableProfiles.map(p => `
-        <label class="profile-item" title="${escapeHtml(p.description)}">
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    $('#profile-list').innerHTML = suggestionBanner + availableProfiles.map(p => {
+        const title = lang === 'en' ? (p.titleEn || p.title) : p.title;
+        const desc  = lang === 'en' ? (p.descriptionEn || p.description) : p.description;
+        return `
+        <label class="profile-item" title="${escapeHtml(desc)}">
             <input type="radio" name="profile" value="${p.id}" ${p.id === currentProfile ? 'checked' : ''}>
-            <span class="profile-title">${escapeHtml(p.title)}</span>
-            <span class="profile-desc">${escapeHtml(p.description)}</span>
+            <span class="profile-title">${escapeHtml(title)}</span>
+            <span class="profile-desc">${escapeHtml(desc)}</span>
         </label>
-    `).join('');
+    `;}).join('');
     $$('input[name="profile"]').forEach(rb => {
         rb.addEventListener('change', async () => {
             currentProfile = rb.value;
@@ -201,7 +149,9 @@ async function refreshProfiles() {
 
 function profileTitleFromID(id) {
     const found = availableProfiles.find(p => p.id === id);
-    return found ? found.title : id;
+    if (!found) return id;
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    return lang === 'en' ? (found.titleEn || found.title) : found.title;
 }
 
 async function refreshEngineInfo() {
@@ -256,13 +206,17 @@ async function refreshSections() {
             rulesByID[r.id] = r;
         }
     }
-    list.innerHTML = currentSections.map(s => `
-        <label title="${escapeHtml(s.description || '')}">
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    list.innerHTML = currentSections.map(s => {
+        const title = lang === 'en' ? (s.titleEn || s.title) : s.title;
+        const desc  = lang === 'en' ? (s.descriptionEn || s.description) : s.description;
+        return `
+        <label title="${escapeHtml(desc || '')}">
             <input type="checkbox" name="section" value="${s.id}" checked>
-            <span>${escapeHtml(s.title)}</span>
+            <span>${escapeHtml(title)}</span>
             <span class="rule-count">${s.ruleCount}</span>
         </label>
-    `).join('');
+    `;}).join('');
 }
 
 async function refreshRuns() {

@@ -6,6 +6,8 @@ section:
   title: "Comptes locaux"
   description: "Désactivation des comptes par défaut peu utilisés et rename du built-in Administrator."
 
+  title_en: "Local Accounts"
+  description_en: "Disable rarely-used default accounts and rename the built-in Administrator."
 rules:
   - id: accounts.disable_unused
     title: "Désactiver les comptes Administrator / Guest / WsiAccount / DefaultAccount"

@@ -6,6 +6,8 @@ section:
   title: "UAC, RDP, Power"
   description: "Renforcement UAC, désactivation RDP, et économie disque (hibernation/fast startup)."
 
+  title_en: "UAC, RDP, Power"
+  description_en: "User Account Control, Remote Desktop, hibernation — settings that make a real difference for everyday safety."
 rules:
   - id: system_settings.uac_enable_lua
     title: "UAC : EnableLUA = 1"

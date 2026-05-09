@@ -11,10 +11,12 @@ type Section struct {
 
 // SectionMeta : métadonnées de la section.
 type SectionMeta struct {
-	ID          string `yaml:"id"`
-	Order       int    `yaml:"order"`
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
+	ID            string `yaml:"id"`
+	Order         int    `yaml:"order"`
+	Title         string `yaml:"title"`
+	Description   string `yaml:"description"`
+	TitleEn       string `yaml:"title_en,omitempty"`
+	DescriptionEn string `yaml:"description_en,omitempty"`
 }
 
 // Rule représente une règle de hardening individuelle.

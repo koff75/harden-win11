@@ -6,6 +6,8 @@ section:
   title: "Microsoft Defender"
   description: "Antivirus intégré à Windows. On active toutes ses protections."
 
+  title_en: "Microsoft Defender"
+  description_en: "Built-in Windows antivirus. We turn on every protection it offers."
 rules:
   - id: defender.realtime
     title: "Protection temps réel"

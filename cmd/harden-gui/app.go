@@ -139,19 +139,23 @@ type RuleInfo struct {
 
 // ProfileInfo : descripteur d'un profil pour le sélecteur GUI.
 type ProfileInfo struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	Description   string `json:"description"`
+	TitleEn       string `json:"titleEn,omitempty"`
+	DescriptionEn string `json:"descriptionEn,omitempty"`
 }
 
 type SectionInfo struct {
-	ID         string     `json:"id"`
-	Order      int        `json:"order"`
-	Title      string     `json:"title"`
-	Description string    `json:"description"`
-	RuleCount  int        `json:"ruleCount"`
-	ManifestID string     `json:"manifestId"`
-	Rules      []RuleInfo `json:"rules"`
+	ID            string     `json:"id"`
+	Order         int        `json:"order"`
+	Title         string     `json:"title"`
+	Description   string     `json:"description"`
+	TitleEn       string     `json:"titleEn,omitempty"`
+	DescriptionEn string     `json:"descriptionEn,omitempty"`
+	RuleCount     int        `json:"ruleCount"`
+	ManifestID    string     `json:"manifestId"`
+	Rules         []RuleInfo `json:"rules"`
 }
 
 type RunSummary struct {
@@ -489,19 +493,25 @@ try {
 func (a *App) GetProfiles() []ProfileInfo {
 	return []ProfileInfo{
 		{
-			ID:          "personal",
-			Title:       "PC personnel",
-			Description: "Usage perso, pas de domaine AD, pas de NAS, pas de RDP. Règles agressives OK.",
+			ID:            "personal",
+			Title:         "PC personnel",
+			Description:   "Usage perso, pas de domaine AD, pas de NAS, pas de RDP. Règles agressives OK.",
+			TitleEn:       "Personal PC",
+			DescriptionEn: "Personal use, no AD domain, no NAS, no RDP. Aggressive rules OK.",
 		},
 		{
-			ID:          "business",
-			Title:       "Petite entreprise",
-			Description: "Workgroup, NAS / imprimante réseau, possible RDP support. On évite les règles qui cassent les partages locaux.",
+			ID:            "business",
+			Title:         "Petite entreprise",
+			Description:   "Workgroup, NAS / imprimante réseau, possible RDP support. On évite les règles qui cassent les partages locaux.",
+			TitleEn:       "Small business",
+			DescriptionEn: "Workgroup, NAS / network printer, possible RDP support. Avoid rules that break local shares.",
 		},
 		{
-			ID:          "maximal",
-			Title:       "Maximal (paranoid)",
-			Description: "Toutes les règles sans exception. Pour machine isolée à protéger au maximum.",
+			ID:            "maximal",
+			Title:         "Maximal (paranoid)",
+			Description:   "Toutes les règles sans exception. Pour machine isolée à protéger au maximum.",
+			TitleEn:       "Maximal (paranoid)",
+			DescriptionEn: "All rules with no exception. For an isolated machine that needs maximum protection.",
 		},
 	}
 }
@@ -574,10 +584,12 @@ func (a *App) GetSections(profile string) ([]SectionInfo, error) {
 			continue
 		}
 		sections = append(sections, SectionInfo{
-			ID:          s.Section.ID,
-			Order:       s.Section.Order,
-			Title:       s.Section.Title,
-			Description: s.Section.Description,
+			ID:            s.Section.ID,
+			Order:         s.Section.Order,
+			Title:         s.Section.Title,
+			Description:   s.Section.Description,
+			TitleEn:       s.Section.TitleEn,
+			DescriptionEn: s.Section.DescriptionEn,
 			RuleCount:   len(rules),
 			ManifestID:  e.Name(),
 			Rules:       rules,

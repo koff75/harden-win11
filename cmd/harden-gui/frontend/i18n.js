@@ -74,10 +74,8 @@ const I18N = {
         'aside.advanced':        'Options avancées',
         'aside.audit_label':     "Mode test (n'enregistre que sans bloquer)",
 
-        // Status bar / coverage
+        // Status bar
         'status.placeholder':    'Sélectionne des sections puis clique Vérifier ou Appliquer.',
-        'coverage.label':        'Couverture standards',
-        'coverage.disclaimer':   'mapping draft, à valider par audit externe',
 
         // Filters
         'filter.level':          'Niveau',
@@ -177,10 +175,8 @@ const I18N = {
         'aside.advanced':        'Advanced options',
         'aside.audit_label':     'Test mode (records only, no blocking)',
 
-        // Status bar / coverage
+        // Status bar
         'status.placeholder':    'Select sections then click Check or Apply.',
-        'coverage.label':        'Standards coverage',
-        'coverage.disclaimer':   'draft mapping, requires external audit',
 
         // Filters
         'filter.level':          'Level',

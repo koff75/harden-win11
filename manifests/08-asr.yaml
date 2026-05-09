@@ -6,6 +6,8 @@ section:
   title: "Attack Surface Reduction (ASR)"
   description: "RÃ¨gles Defender qui bloquent des comportements offensifs courants (Office macros, LSASS dump, scripts obfusquÃ©s, USB, WMI, ransomware)."
 
+  title_en: "Attack Surface Reduction (ASR)"
+  description_en: "Defender rules that block common offensive behaviors (Office macros, LSASS dump, obfuscated scripts, USB, WMI, ransomware)."
 rules:
   - id: asr.block_office_child_processes
     title: "Block Office apps from creating child processes"

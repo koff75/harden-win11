@@ -6,6 +6,8 @@ section:
   title: "Hardening protocoles réseau"
   description: "Coupe les protocoles de résolution de nom hérités (LLMNR, mDNS, NetBIOS, WPAD) et impose NTLMv2 + signature SMB."
 
+  title_en: "Network Protocol Hardening"
+  description_en: "Cuts off legacy name-resolution protocols (LLMNR, mDNS, NetBIOS, WPAD) and enforces NTLMv2 + SMB signing."
 rules:
   - id: network.llmnr_disable
     title: "LLMNR désactivé (EnableMulticast=0)"

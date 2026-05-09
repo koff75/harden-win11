@@ -6,6 +6,8 @@ section:
   title: "Windows Firewall"
   description: "Protection réseau au niveau OS — profils + règles spécifiques."
 
+  title_en: "Windows Firewall"
+  description_en: "OS-level network protection — profiles + specific rules."
 rules:
   - id: firewall.profile_domain
     title: "Profile Domain : enabled + block inbound"

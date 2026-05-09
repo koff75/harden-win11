@@ -54,12 +54,12 @@ var (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "harden-engine",
-		Short: "Moteur de hardening Windows 11",
+		Short: "Windows 11 hardening engine",
 		Long:  "harden-engine — moteur de la baseline de sécurité Windows 11 v2.",
 	}
-	rootCmd.PersistentFlags().StringVar(&flagManifestDir, "manifest-dir", "manifests", "Dossier contenant les manifests YAML")
-	rootCmd.PersistentFlags().StringVar(&flagSchemaPath, "schema", "schemas/manifest.schema.json", "Chemin du JSONSchema")
-	rootCmd.PersistentFlags().StringVar(&flagJournalDir, "journal-dir", "", "Dossier du journal NDJSON (vide = %ProgramData%\\Harden-Win11\\runs\\)")
+	rootCmd.PersistentFlags().StringVar(&flagManifestDir, "manifest-dir", "manifests", "Folder containing the YAML manifests")
+	rootCmd.PersistentFlags().StringVar(&flagSchemaPath, "schema", "schemas/manifest.schema.json", "Path to the JSONSchema")
+	rootCmd.PersistentFlags().StringVar(&flagJournalDir, "journal-dir", "", "NDJSON journal folder (empty = %ProgramData%\\Harden-Win11\\runs\\)")
 
 	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd(), coverageCmd(), snapshotCmd(), watchEventsCmd(), watchlistCmd())
 
@@ -71,7 +71,7 @@ func main() {
 func versionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Affiche la version (engine + manifest + OS)",
+		Short: "Print engine + manifest + OS version (JSON)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := map[string]any{
 				"version":          Version,
@@ -93,7 +93,7 @@ func versionCmd() *cobra.Command {
 func validateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "validate",
-		Short: "Valide tous les manifests contre le JSONSchema",
+		Short: "Validate all manifests against the JSONSchema",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			_, _, err := loadAndValidateManifests(flagManifestDir, flagSchemaPath, true /*verbose*/)
 			return err
@@ -200,7 +200,7 @@ func loadAndValidateManifests(dir, schemaPath string, verbose bool) ([]manifestE
 func applyCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
-		Short: "Exécute (réel ou dry-run) les règles. Sans --section = toutes les sections",
+		Short: "Run rules in real or dry-run mode. Without --section = all sections",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if flagRuleTimeout < 0 {
 				return &exitError{code: 4, msg: "--rule-timeout must be >= 0 (use 0 to keep the default 30s)"}
@@ -444,33 +444,33 @@ func applyCmd() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&flagDryRun, "dry-run", false, "Mode dry-run (lit l'état, ne modifie rien)")
-	cmd.Flags().StringVar(&flagSection, "section", "", "ID de la section à exécuter (vide = toutes)")
-	cmd.Flags().StringVar(&flagProfile, "profile", "", "Profil de risque (personal | business | maximal). Vide = toutes les règles.")
-	cmd.Flags().BoolVar(&flagAudit, "audit", false, "Mode audit pour ASR / Network Protection (n'applique pas mais log les events)")
-	cmd.Flags().IntVar(&flagParallel, "parallel", 1, "Nombre de règles dry-run exécutées en parallèle (default 1 = séquentiel). Sans effet en apply réel.")
-	cmd.Flags().BoolVar(&flagSkipRestorePoint, "skip-restore-point", false, "Ne pas créer de Windows System Restore Point avant l'apply (par défaut on en crée un, ceinture-bretelles en cas de panne globale).")
-	cmd.Flags().StringVar(&flagSeverity, "severity", "", "Filtre par sévérité (critical | important | nice-to-have). Permet d'appliquer en vagues : --severity critical d'abord, reboot, puis --severity important.")
-	cmd.Flags().BoolVar(&flagSkipSnapshot, "no-snapshot", false, "Ne pas capturer de snapshot avant/après apply (par défaut on en fait un dans %ProgramData%\\Harden-Win11\\snapshots\\, utile pour debug post-incident).")
-	cmd.Flags().BoolVar(&flagSkipWatchlist, "no-watchlist", false, "Ne pas programmer la surveillance Event Viewer 24h (par défaut on enregistre une tâche planifiée qui détecte les anomalies post-apply).")
-	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", executor.DefaultRuleTimeout, "Timeout maximum par règle (ex: 30s, 1m)")
-	cmd.Flags().BoolVar(&flagYes, "yes", false, "Skip la confirmation interactive avant apply réel")
+	cmd.Flags().BoolVar(&flagDryRun, "dry-run", false, "Dry-run mode (reads state, modifies nothing)")
+	cmd.Flags().StringVar(&flagSection, "section", "", "Section ID to run (empty = all sections)")
+	cmd.Flags().StringVar(&flagProfile, "profile", "", "Risk profile (personal | business | maximal). Empty = all rules.")
+	cmd.Flags().BoolVar(&flagAudit, "audit", false, "Audit mode for ASR / Network Protection (does not apply, only logs events)")
+	cmd.Flags().IntVar(&flagParallel, "parallel", 1, "Number of dry-run rules executed in parallel (default 1 = sequential). No effect on real apply.")
+	cmd.Flags().BoolVar(&flagSkipRestorePoint, "skip-restore-point", false, "Skip the Windows System Restore Point creation before apply (default: created — last-resort safety net).")
+	cmd.Flags().StringVar(&flagSeverity, "severity", "", "Filter by severity (critical | important | nice-to-have). Lets you apply in waves: --severity critical first, reboot, then --severity important.")
+	cmd.Flags().BoolVar(&flagSkipSnapshot, "no-snapshot", false, "Skip pre/post-apply snapshot capture (default: captured to %ProgramData%\\Harden-Win11\\snapshots\\, useful for post-incident debug).")
+	cmd.Flags().BoolVar(&flagSkipWatchlist, "no-watchlist", false, "Skip the 24h Event Viewer watchlist scheduling (default: registers a scheduled task that detects post-apply anomalies).")
+	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", executor.DefaultRuleTimeout, "Per-rule timeout (e.g., 30s, 1m)")
+	cmd.Flags().BoolVar(&flagYes, "yes", false, "Skip the interactive confirmation before real apply")
 	return cmd
 }
 
 func watchlistCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "watchlist",
-		Short: "Gère la baseline adaptive de la watchlist (médiane + σ par source Event Viewer)",
+		Short: "Manage the adaptive watchlist baseline (median + σ per Event Viewer source)",
 	}
 
 	var daysBack int
 	learnCmd := &cobra.Command{
 		Use:   "baseline-learn",
-		Short: "Apprend la baseline depuis l'historique Event Viewer (default 7 derniers jours)",
-		Long: `Lit Get-WinEvent jour par jour sur les sources surveillées (SMB, Defender, NetBT, Schannel, PrintService) et calcule médiane + écart-type. Persisté dans %ProgramData%\Harden-Win11\watchlist\baseline.json.
+		Short: "Learn baseline from Event Viewer history (default last 7 days)",
+		Long: `Reads Get-WinEvent day by day on watched sources (SMB, Defender, NetBT, Schannel, PrintService) and computes median + stddev. Persisted in %ProgramData%\Harden-Win11\watchlist\baseline.json.
 
-Sans baseline : seuils statiques (5-20 events selon source). Avec : seuils dynamiques `+"`max(static, médiane + 3σ)`"+`. Une machine bruyante (NAS legacy générant 50 SMB errors/jour) n'alerte plus à chaque event ; une machine silencieuse garde le seuil minimal.`,
+Without baseline: static thresholds (5-20 events per source). With: dynamic thresholds `+"`max(static, median + 3σ)`"+`. A noisy machine (legacy NAS generating 50 SMB errors/day) no longer alerts on every event; a quiet machine keeps the minimum threshold.`,
 		RunE: func(c *cobra.Command, args []string) error {
 			fmt.Fprintf(os.Stderr, "Apprentissage baseline sur %d jours d'historique Event Viewer (peut prendre 1-2 min)…\n", daysBack)
 			bl, err := watchlist.Learn(context.Background(), watchlist.DefaultSources, daysBack)
@@ -491,7 +491,7 @@ Sans baseline : seuils statiques (5-20 events selon source). Avec : seuils dynam
 
 	showCmd := &cobra.Command{
 		Use:   "baseline-show",
-		Short: "Affiche la baseline actuelle (JSON)",
+		Short: "Print the current baseline (JSON)",
 		RunE: func(c *cobra.Command, args []string) error {
 			bl, err := watchlist.LoadBaseline()
 			if err != nil {
@@ -509,7 +509,7 @@ Sans baseline : seuils statiques (5-20 events selon source). Avec : seuils dynam
 
 	clearCmd := &cobra.Command{
 		Use:   "baseline-clear",
-		Short: "Supprime la baseline (force le retour aux seuils statiques)",
+		Short: "Delete the baseline (forces fallback to static thresholds)",
 		RunE: func(c *cobra.Command, args []string) error {
 			path := watchlist.BaselinePath()
 			if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
@@ -533,15 +533,15 @@ func watchEventsCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "watch-events",
-		Short: "Surveille Event Viewer N heures pour détecter une casse fonctionnelle post-apply",
-		Long: `Lance une boucle de polling de Get-WinEvent sur les sources sensibles
-(SMB, Defender, NetBT, Schannel, PrintService) pour détecter les anomalies
-qui apparaissent après un apply. Écrit les alertes dans
-%ProgramData%\Harden-Win11\watchlist\<runID>.json. La GUI lit ce dossier
-au boot et affiche un bandeau si elle voit des alertes récentes.
+		Short: "Watch Event Viewer for N hours to detect post-apply functional breakage",
+		Long: `Runs a Get-WinEvent polling loop on the sensitive sources
+(SMB, Defender, NetBT, Schannel, PrintService) to detect anomalies that
+appear after an apply. Writes alerts to
+%ProgramData%\Harden-Win11\watchlist\<runID>.json. The GUI reads this
+folder at boot and shows a banner if it sees recent alerts.
 
-Typiquement enregistré comme tâche planifiée par 'apply' réel, mais peut
-aussi être lancé à la main : harden-engine watch-events --run-id myrun --duration 24h`,
+Typically registered as a scheduled task by real 'apply', but can also be
+run manually: harden-engine watch-events --run-id myrun --duration 24h`,
 		RunE: func(c *cobra.Command, args []string) error {
 			if runID == "" {
 				return &exitError{code: 4, msg: "--run-id requis"}
@@ -577,11 +577,11 @@ aussi être lancé à la main : harden-engine watch-events --run-id myrun --dura
 func snapshotCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "snapshot",
-		Short: "Capture / diff snapshots système (debug post-apply)",
+		Short: "Capture / diff system snapshots (post-apply debug)",
 	}
 	cmd.AddCommand(&cobra.Command{
 		Use:   "capture <runID>",
-		Short: "Capture un snapshot ad-hoc (sans apply)",
+		Short: "Capture an ad-hoc snapshot (without apply)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
 			path, err := snapshot.Capture(context.Background(), args[0], snapshot.PhasePre, 60*time.Second)
@@ -594,7 +594,7 @@ func snapshotCmd() *cobra.Command {
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "diff <runID>",
-		Short: "Affiche les changements entre snapshot pre et post d'un run",
+		Short: "Show the changes between pre and post snapshots of a run",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
 			runID := args[0]
@@ -620,7 +620,7 @@ func snapshotCmd() *cobra.Command {
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "list",
-		Short: "Liste les snapshots disponibles",
+		Short: "List available snapshots",
 		RunE: func(c *cobra.Command, args []string) error {
 			dir := snapshot.DefaultDir()
 			entries, err := os.ReadDir(dir)
@@ -650,7 +650,7 @@ func coverageCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "coverage",
-		Short: "Affiche la couverture des règles vs CIS / ANSSI / MS Security Baseline",
+		Short: "Show rule coverage vs CIS / ANSSI / MS Security Baseline",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			doc, err := baseline.Load(mappingPath)
 			if err != nil {
@@ -726,7 +726,7 @@ func pct(num, denom int) int {
 func undoCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "undo",
-		Short: "Restaure l'état avant un run via les .undo.ps1 (lit le journal NDJSON)",
+		Short: "Restore state before a run via .undo.ps1 (reads NDJSON journal)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if flagRuleTimeout < 0 {
 				return &exitError{code: 4, msg: "--rule-timeout must be >= 0"}

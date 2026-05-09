@@ -6,6 +6,8 @@ section:
   title: "Bloatware Microsoft Store"
   description: "Desinstallation des apps Store consommateurs. Tu peux selectionner individuellement celles que tu veux supprimer."
 
+  title_en: "Microsoft Store Bloatware"
+  description_en: "Removes preinstalled Store apps. You can pick individually which ones to keep."
 rules:
 
   - id: bloatware.clipchamp

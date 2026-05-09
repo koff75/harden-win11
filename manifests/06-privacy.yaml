@@ -6,6 +6,8 @@ section:
   title: "Privacy & Telemetry"
   description: "Réduit la collecte de données et les fonctionnalités cloud (telemetry, AdID, Cortana, Recall, suggestions, ink/text)."
 
+  title_en: "Privacy & Telemetry"
+  description_en: "Reduces the data Windows sends to Microsoft and turns off attention-stealing default features."
 rules:
   - id: privacy.telemetry_required
     title: "Telemetry niveau 1 (Required only)"
