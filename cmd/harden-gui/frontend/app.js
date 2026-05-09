@@ -82,11 +82,52 @@ async function refreshRuns() {
             return;
         }
         list.innerHTML = runs.slice(0, 8).map(r =>
-            `<div class="run-item" title="${r}">${escapeHtml(r)}</div>`
+            `<div class="run-item" data-run-id="${escapeHtml(r)}" title="Cliquer pour charger ce run">${escapeHtml(r)}</div>`
         ).join('');
+        list.querySelectorAll('.run-item').forEach(el => {
+            el.addEventListener('click', () => loadHistoricalRun(el.dataset.runId));
+        });
     } catch (err) {
         list.innerHTML = `<span style="color:#ff9099">${err}</span>`;
     }
+}
+
+async function loadHistoricalRun(runID) {
+    if (isRunning) return;
+    setStatus('running', `Chargement du run ${runID}…`);
+    let events;
+    try {
+        events = await window.go.main.App.LoadRun(runID);
+    } catch (err) {
+        setStatus('error', `Erreur: ${err}`);
+        return;
+    }
+
+    // Pré-remplir le tableau avec toutes les rules connues en pending,
+    // puis appliquer les events du run pour faire passer chacune au statut
+    // qui a été enregistré. Cohérent avec le rendering live.
+    const allSectionIDs = currentSections.map(s => s.id);
+    prepareTableForRun(allSectionIDs);
+    let applied = 0;
+    for (const ev of events) {
+        updateRuleRow(ev);
+        applied++;
+    }
+    const summary = computeSummary(events);
+    summary.runId = runID;
+    summary.mode = 'historique';
+    setStatus('success', summarizeStatus(summary));
+}
+
+function computeSummary(events) {
+    const s = { skipped: 0, applied: 0, failed: 0, rolledBack: 0, aborted: false, cancelled: false };
+    for (const ev of events) {
+        if (ev.status === 'skipped' || ev.status === 'would_skip') s.skipped++;
+        else if (ev.status === 'applied' || ev.status === 'would_apply') s.applied++;
+        else if (ev.status === 'failed' || ev.status === 'would_fail') s.failed++;
+        else if (ev.status === 'rolled_back') s.rolledBack++;
+    }
+    return s;
 }
 
 // ─────────────────────────────────────────────────────────────────

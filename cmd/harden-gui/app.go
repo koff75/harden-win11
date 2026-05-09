@@ -422,6 +422,29 @@ func jsonStringSlice(s []string) string {
 	return string(b)
 }
 
+// LoadRun retourne les events action_result d'un run précédent depuis le
+// journal disque. Utilisé pour rejouer un run dans le tableau quand
+// l'utilisateur clique sur un item de l'historique.
+func (a *App) LoadRun(runID string) ([]map[string]any, error) {
+	logf("app.LoadRun: runID=%s", runID)
+	dir := journal.DefaultDir()
+	events, err := journal.ReadRun(dir, runID)
+	if err != nil {
+		logf("app.LoadRun: %v", err)
+		return nil, err
+	}
+	// On ne renvoie que les action_result au frontend (et pas les
+	// run_start/section_start/run_end qui sont du méta).
+	var out []map[string]any
+	for _, ev := range events {
+		if ev["type"] == "action_result" {
+			out = append(out, ev)
+		}
+	}
+	logf("app.LoadRun: %d action_result events", len(out))
+	return out, nil
+}
+
 // ListRuns retourne les run IDs disponibles dans le journal (du plus récent
 // au plus ancien). Filtre les runs 'undo-*' pour ne pas polluer la sidebar.
 func (a *App) ListRuns() ([]string, error) {
