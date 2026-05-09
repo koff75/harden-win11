@@ -1,4 +1,4 @@
-# build-release.ps1 — Construit un ZIP portable de release.
+﻿# build-release.ps1 — Construit un ZIP portable de release.
 #
 # Le ZIP est self-contained : double-clic sur run-as-admin.bat → la GUI
 # démarre avec UAC. Aucune installation, aucune entrée registre, l'utilisateur

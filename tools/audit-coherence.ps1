@@ -1,4 +1,4 @@
-# audit-coherence.ps1 — Vérifications statiques sur les manifests :
+﻿# audit-coherence.ps1 — Vérifications statiques sur les manifests :
 #  - tous les .action.ps1 / .test.ps1 / .undo.ps1 référencés existent
 #  - chaque rule.id est unique
 #  - chaque rule.id matche [a-z_]+\.[a-z0-9_]+

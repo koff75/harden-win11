@@ -1,4 +1,4 @@
-# sign-release.ps1 — Signe harden-engine.exe + harden-gui.exe avec un
+﻿# sign-release.ps1 — Signe harden-engine.exe + harden-gui.exe avec un
 # certificat self-signed local. Pour un usage personnel : ça calme
 # SmartScreen/AV qui sinon flaggent un .exe non signé à chaque lancement.
 #
@@ -22,8 +22,8 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $binaries = @(
-    Join-Path $repoRoot 'dist\harden-engine.exe',
-    Join-Path $repoRoot 'cmd\harden-gui\build\bin\harden-gui.exe'
+    (Join-Path $repoRoot 'dist\harden-engine.exe'),
+    (Join-Path $repoRoot 'cmd\harden-gui\build\bin\harden-gui.exe')
 )
 
 # --- 1. Trouver ou créer le cert ---
@@ -70,10 +70,17 @@ foreach ($exe in $binaries) {
         -TimestampServer 'http://timestamp.digicert.com' `
         -HashAlgorithm SHA256
 
-    if ($sig.Status -ne 'Valid') {
-        Write-Error "Échec signature : $($sig.Status) — $($sig.StatusMessage)"
+    # Status possibles :
+    # - Valid : cert dans Trusted Root → tout vert
+    # - UnknownError + msg "root certificate which is not trusted" :
+    #   signature appliquée correctement, juste pas validable tant que le cert
+    #   n'est pas importé dans LocalMachine\Root (cf. instructions plus haut).
+    if ($sig.Status -eq 'Valid') {
+        Write-Host "  Status: Valid (cert trusted)" -ForegroundColor Green
+    } elseif ($sig.Status -eq 'UnknownError' -and $sig.StatusMessage -match 'not trusted') {
+        Write-Host "  Status: signed (self-signed, cert pas encore en Trusted Root)" -ForegroundColor Yellow
     } else {
-        Write-Host "  Status: $($sig.Status)" -ForegroundColor Green
+        Write-Error "Échec signature : $($sig.Status) — $($sig.StatusMessage)"
     }
 }
 

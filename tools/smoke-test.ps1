@@ -1,4 +1,4 @@
-# smoke-test.ps1 — Séquence E2E rapide pour valider une release.
+﻿# smoke-test.ps1 — Séquence E2E rapide pour valider une release.
 #
 # À lancer depuis la racine du repo, en admin, sur un poste Win11 (idéalement
 # une VM neuve pour ne pas pourrir l'OS hôte).

@@ -58,6 +58,13 @@ pwsh -File tools\smoke-test.ps1
 | 10 | Vue Historique (si implémentée) liste les runs | ☐ | ☐ |
 | 11 | Undo last run, dryrun re-suivant montre l'état initial | ☐ | ☐ |
 | 12 | Lancement non-admin : bandeau "Relancer en admin" | ☐ | ☐ |
+| 13 | Boot GUI affiche `autoSkipRules` cohérents (laptop/AD-joined) | ☐ | ☐ |
+| 14 | Apply réel : event `restore_point_started` puis `restore_point_done` visibles | ☐ | ☐ |
+| 15 | Restore Point créé visible dans `Get-ComputerRestorePoint` | ☐ | ☐ |
+| 16 | Action OK → re-test post-apply visible (`recheck=compliant`) | ☐ | ☐ |
+| 17 | `--severity critical` puis `--severity important` puis `--severity nice-to-have` enchaînés OK | ☐ | ☐ |
+| 18 | Si RDP actif : `rdp_disable` skip avec `reason=feature_in_use` | ☐ | ☐ |
+| 19 | `--parallel 4` complete en moins de 1/3 du temps `--parallel 1` | ☐ | ☐ |
 
 ## Pièges connus à vérifier
 
