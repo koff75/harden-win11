@@ -268,6 +268,9 @@ function applyFilters() {
 // Score = % de règles vérifiées qui sont conformes. On exclut :
 //   - les 'pending' (pas encore évaluées)
 //   - les 'failed/would_fail' (état inconnu — admin requis souvent)
+// renderDashboard : 1 ligne synthétique qui guide vers l'action.
+// Priorité : compter les règles à renforcer par sévérité, focus sur les
+// critiques (les plus impactantes pour la sécurité).
 function renderDashboard() {
     const dashboard = $('#dashboard');
     const rows = $$('#results-body tr.row');
@@ -276,74 +279,77 @@ function renderDashboard() {
         return;
     }
 
-    // Compter par sévérité.
-    const counts = {
-        critical:     { total: 0, conforme: 0, evaluated: 0 },
-        important:    { total: 0, conforme: 0, evaluated: 0 },
-        'nice-to-have': { total: 0, conforme: 0, evaluated: 0 },
-    };
-    let evaluatedAll = 0, conformeAll = 0, pendingAll = 0;
+    // Compter les règles à renforcer (would_apply / applied) par sévérité.
+    let toApply = { critical: 0, important: 0, 'nice-to-have': 0 };
+    let evaluatedAll = 0, conformeAll = 0;
 
     rows.forEach(tr => {
-        const ruleID = tr.dataset.ruleId;
-        const rule = rulesByID[ruleID] || {};
+        const rule = rulesByID[tr.dataset.ruleId] || {};
         const sev = rule.severity || 'nice-to-have';
-        if (!counts[sev]) return;
-        counts[sev].total++;
-
-        const status = tr.dataset.status || 'pending';
-        const bucket = statusBucket(status);
-        if (bucket === 'pending') {
-            pendingAll++;
-            return;
-        }
-        if (bucket === 'failed') return; // état inconnu, on n'inclut pas dans le score
-        counts[sev].evaluated++;
+        const bucket = statusBucket(tr.dataset.status || 'pending');
+        if (bucket === 'pending' || bucket === 'failed') return;
         evaluatedAll++;
         if (bucket === 'conforme') {
-            counts[sev].conforme++;
             conformeAll++;
+        } else if (bucket === 'to-apply' && toApply[sev] !== undefined) {
+            toApply[sev]++;
         }
     });
 
-    // Si pas encore évalué, masquer le dashboard.
-    if (evaluatedAll === 0 && pendingAll > 0) {
+    if (evaluatedAll === 0) {
         dashboard.classList.add('hidden');
         return;
     }
 
     dashboard.classList.remove('hidden');
+    dashboard.className = '';   // reset classes
 
-    // Score global.
-    const pct = evaluatedAll > 0 ? Math.round((conformeAll / evaluatedAll) * 100) : 0;
-    const dashPct = $('#dash-percent');
-    dashPct.textContent = pct;
-    dashPct.dataset.level = pct < 50 ? 'low' : (pct < 80 ? 'medium' : 'high');
+    const total = toApply.critical + toApply.important + toApply['nice-to-have'];
+    const detail = `${conformeAll}/${evaluatedAll} déjà OK`;
 
-    const toApply = evaluatedAll - conformeAll;
-    let summary;
-    if (toApply === 0) summary = '✓ Toutes les règles sont déjà conformes';
-    else if (pct < 50) summary = `${toApply} règle(s) à renforcer — protection insuffisante`;
-    else if (pct < 80) summary = `${toApply} règle(s) à renforcer pour aller plus loin`;
-    else summary = `${toApply} règle(s) restantes pour une couverture maximale`;
-    $('#dash-summary').textContent = summary;
+    if (total === 0) {
+        dashboard.classList.add('level-ok');
+        $('#dash-icon').textContent = '✓';
+        $('#dash-headline').textContent = 'Système conforme — toutes les règles évaluées sont OK';
+        $('#dash-detail').textContent = detail;
+        return;
+    }
 
-    // Mini-bars par sévérité.
-    const bars = [
-        { sev: 'critical',     label: 'Critique',  data: counts.critical },
-        { sev: 'important',    label: 'Important', data: counts.important },
-        { sev: 'nice-to-have', label: 'Optionnel', data: counts['nice-to-have'] },
-    ];
-    $('#dash-bars').innerHTML = bars.map(b => {
-        const conformePct = b.data.evaluated > 0 ? (b.data.conforme / b.data.evaluated) * 100 : 0;
-        return `
-            <div class="dash-bar">
-                <span class="dash-bar-label">${escapeHtml(b.label)}</span>
-                <div class="dash-bar-track"><div class="dash-bar-fill ${b.sev}" style="width:${conformePct}%"></div></div>
-                <span class="dash-bar-count">${b.data.conforme} / ${b.data.evaluated || b.data.total}</span>
-            </div>
-        `;
-    }).join('');
+    // Construit la headline en priorisant le critique.
+    let headline = '';
+    let level = 'level-light';
+    let icon = '⚪';
+
+    if (toApply.critical > 0) {
+        headline = `${toApply.critical} règle${toApply.critical > 1 ? 's' : ''} critique${toApply.critical > 1 ? 's' : ''} à renforcer`;
+        level = 'level-critical';
+        icon = '🔴';
+    } else if (toApply.important > 0) {
+        headline = `${toApply.important} règle${toApply.important > 1 ? 's' : ''} importante${toApply.important > 1 ? 's' : ''} à renforcer`;
+        level = 'level-medium';
+        icon = '🟡';
+    } else {
+        headline = `${toApply['nice-to-have']} règle${toApply['nice-to-have'] > 1 ? 's' : ''} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''} à renforcer`;
+        level = 'level-light';
+        icon = '⚪';
+    }
+
+    // Si plusieurs niveaux ont des trucs à faire, ajouter un suffixe discret.
+    const others = [];
+    if (toApply.critical > 0 && (toApply.important > 0 || toApply['nice-to-have'] > 0)) {
+        if (toApply.important > 0) others.push(`${toApply.important} importante${toApply.important > 1 ? 's' : ''}`);
+        if (toApply['nice-to-have'] > 0) others.push(`${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}`);
+    } else if (toApply.important > 0 && toApply['nice-to-have'] > 0) {
+        others.push(`${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}`);
+    }
+    if (others.length > 0) {
+        headline += ` (+ ${others.join(', ')})`;
+    }
+
+    dashboard.classList.add(level);
+    $('#dash-icon').textContent = icon;
+    $('#dash-headline').textContent = headline;
+    $('#dash-detail').textContent = detail;
 }
 
 function selectedSections() {

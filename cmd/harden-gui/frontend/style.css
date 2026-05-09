@@ -204,86 +204,41 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     color: #4fc3ff;
 }
 
-/* Dashboard maturité */
+/* Dashboard maturité — minimaliste : 1 ligne qui guide vers l'action */
 #dashboard {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 20px;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, #15203a 0%, #1a2748 100%);
-    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #15203a;
+    border-radius: 4px;
     margin-bottom: 10px;
-    border: 1px solid #2c3a55;
+    border-left: 4px solid #2c3a55;
+    font-size: 13px;
 }
 
 #dashboard.hidden { display: none; }
 
-.dash-score {
-    text-align: center;
-    border-right: 1px solid #2c3a55;
-    padding-right: 20px;
-}
-.dash-score-label {
-    color: #8fa1be;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 4px;
-}
-.dash-score-value {
-    font-size: 42px;
-    font-weight: 600;
-    color: #4fc3ff;
+#dashboard.level-ok       { border-left-color: #5fcf6f; background: #15281e; }
+#dashboard.level-light    { border-left-color: #4fc3ff; background: #15243a; }
+#dashboard.level-medium   { border-left-color: #ffaa00; background: #2a1f0e; }
+#dashboard.level-critical { border-left-color: #ff6b7e; background: #2a0e15; }
+
+.dash-icon {
+    font-size: 18px;
     line-height: 1;
 }
-#dash-percent[data-level="low"]    { color: #ff6b7e; }
-#dash-percent[data-level="medium"] { color: #ffaa00; }
-#dash-percent[data-level="high"]   { color: #5fcf6f; }
 
-.dash-score-suffix {
-    font-size: 22px;
-    color: #8fa1be;
-    margin-left: 2px;
+.dash-headline {
+    font-weight: 500;
+    color: #e6e6e6;
+    flex: 1;
 }
-.dash-score-sub {
+
+.dash-detail {
     color: #8fa1be;
     font-size: 11px;
-    margin-top: 6px;
-}
-
-.dash-bars {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    justify-content: center;
-}
-
-.dash-bar {
-    display: grid;
-    grid-template-columns: 90px 1fr 70px;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-}
-.dash-bar-label { color: #c0c8d8; }
-.dash-bar-track {
-    height: 8px;
-    background: #11192a;
-    border-radius: 4px;
-    overflow: hidden;
-}
-.dash-bar-fill {
-    height: 100%;
-    transition: width 0.4s ease-out;
-}
-.dash-bar-fill.critical { background: linear-gradient(90deg, #ff6b7e 0%, #ff9099 100%); }
-.dash-bar-fill.important { background: linear-gradient(90deg, #ffaa00 0%, #ffd770 100%); }
-.dash-bar-fill.nice-to-have { background: linear-gradient(90deg, #4fc3ff 0%, #aabfd9 100%); }
-.dash-bar-count {
     font-family: monospace;
-    color: #8fa1be;
-    font-size: 11px;
-    text-align: right;
 }
 
 /* Barre de filtres */
