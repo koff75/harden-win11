@@ -49,6 +49,10 @@ type Options struct {
 	// filtre (toutes les rules tournent). Sinon : seules les rules dont
 	// rule.profiles contient cette valeur (ou rule.profiles vide) tournent.
 	Profile string
+	// Severity filtre par rule.severity (critical | important | nice-to-have).
+	// Vide = toutes les severities. Permet à l'utilisateur de faire des vagues
+	// manuelles : `--severity critical` puis reboot puis `--severity important`.
+	Severity string
 	// ExcludedRuleIDs : rule_ids à skipper explicitement (cas où l'utilisateur
 	// décoche manuellement des règles dans la GUI). Appliqué après le filtre
 	// profile.
@@ -99,6 +103,16 @@ func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error)
 		filtered := make([]manifest.Rule, 0, len(rules))
 		for _, r := range rules {
 			if r.AppliesToProfile(opts.Profile) {
+				filtered = append(filtered, r)
+			}
+		}
+		rules = filtered
+	}
+	// Filtre par severity (vagues progressives : critical → important → nice-to-have).
+	if opts.Severity != "" {
+		filtered := make([]manifest.Rule, 0, len(rules))
+		for _, r := range rules {
+			if r.Severity == opts.Severity {
 				filtered = append(filtered, r)
 			}
 		}
@@ -281,7 +295,7 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 	actionPath := resolvePath(opts.BasePath, rule.Action)
 	ev := baseEvent(rule, opts, "apply")
 
-	// 1. Test : skip si déjà conforme.
+	// 1. Test : skip si déjà conforme OU si la feature est en cours d'utilisation.
 	testOut, testDur, testErr := runPS(ctx, opts.Runner, testPath, nil, timeout)
 	if testErr != nil {
 		ev["duration_ms"] = testDur.Milliseconds()
@@ -306,6 +320,22 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 		sum.Skipped++
 		return ev, false
 	}
+	// Détection "feature en cours d'utilisation" : si .test.ps1 retourne
+	// feature_in_use=true (ex: session RDP active, partage SMB legacy connecté,
+	// proxy WPAD utilisé), on refuse de casser à chaud — mieux vaut un skip
+	// qu'une coupure brutale. L'utilisateur doit manuellement fermer la session
+	// et réessayer.
+	if inUse, ok := testOut["feature_in_use"].(bool); ok && inUse {
+		ev["status"] = "skipped"
+		ev["reason"] = "feature_in_use"
+		ev["current_state"] = testOut["current"]
+		ev["duration_ms"] = testDur.Milliseconds()
+		if msg, ok := testOut["feature_in_use_reason"].(string); ok {
+			ev["feature_in_use_reason"] = msg
+		}
+		sum.Skipped++
+		return ev, false
+	}
 
 	// 2. Action : lance .action.ps1.
 	actionStart := time.Now()
@@ -313,33 +343,77 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 	totalDur := time.Since(actionStart) + testDur
 	ev["duration_ms"] = totalDur.Milliseconds()
 
+	// Re-test post-apply : double barrière indépendante. Une action qui retourne
+	// ok=true peut quand même n'avoir rien changé si une GPO ré-écrase, ou si la
+	// règle ment. On relance .test.ps1 ; si non-conforme malgré ok=true → on
+	// considère l'apply comme failed et on déclenche un rollback (best-effort).
 	if actionErr == nil {
-		ev["status"] = "applied"
-		ev["before"] = actionOut["before"]
-		ev["after"] = actionOut["after"]
-		sum.Applied++
-		return ev, false
+		recheckOut, _, recheckErr := runPS(ctx, opts.Runner, testPath, nil, timeout)
+		if recheckErr != nil {
+			// Re-test a planté (cas rare). On garde "applied" mais on log la raison.
+			ev["status"] = "applied"
+			ev["before"] = actionOut["before"]
+			ev["after"] = actionOut["after"]
+			ev["recheck"] = "test_failed"
+			ev["recheck_error"] = recheckErr.Error()
+			sum.Applied++
+			return ev, false
+		}
+		recheckCompliant, _, _ := evalCompliant(recheckOut)
+		if recheckCompliant {
+			ev["status"] = "applied"
+			ev["before"] = actionOut["before"]
+			ev["after"] = actionOut["after"]
+			ev["recheck"] = "compliant"
+			sum.Applied++
+			return ev, false
+		}
+		// Action ok mais re-test non-conforme → action menteuse / GPO re-écrase / etc.
+		// On bascule en mode "failed" et on tombe dans le path rollback ci-dessous.
+		ev["error"] = "action.ps1 returned ok=true but post-apply re-test reports non-compliant (GPO override or silent failure)"
+		ev["recheck"] = "non_compliant"
+		ev["recheck_state"] = recheckOut["current"]
+	} else {
+		// 3. Action a vraiment planté → fall-through vers rollback.
+		ev["error"] = fmt.Sprintf("action.ps1: %v", actionErr)
 	}
-
-	// 3. Action a planté → tenter auto-rollback.
 	ev["status"] = "failed"
-	ev["error"] = fmt.Sprintf("action.ps1: %v", actionErr)
 
-	// Le before pour le rollback : on n'a pas eu le retour de l'action (qui aurait
-	// contenu before). On peut pas restaurer l'état. On émet juste un rollback_result
-	// disant qu'on n'a pas pu rollback.
+	// Tenter auto-rollback. Best-effort : si la rule est irreversible ou n'a pas
+	// d'undo, on ne peut rien faire, on remonte juste l'erreur.
 	if rule.Undo == "" || rule.Irreversible {
 		ev["rollback"] = "skipped (rule is irreversible or has no undo)"
 		sum.Failed++
 		return ev, true
 	}
 
-	// On utilise le testOut.current comme proxy pour le before (l'état avant
-	// l'action est ce que test a vu juste avant de lancer l'action).
-	rollbackInput := testOut["current"]
+	// Le before pour le rollback : on prend en priorité actionOut.before (capturé
+	// par .action.ps1 juste avant la modif), sinon testOut.current (état observé
+	// par .test.ps1 avant l'apply).
+	var rollbackInput any
+	if actionOut != nil {
+		if before, ok := actionOut["before"]; ok && before != nil {
+			rollbackInput = before
+		}
+	}
+	if rollbackInput == nil {
+		rollbackInput = testOut["current"]
+	}
 	undoPath := resolvePath(opts.BasePath, rule.Undo)
 	_, undoDur, undoErr := runPS(ctx, opts.Runner, undoPath, rollbackInput, timeout)
 
+	// actionErr peut être nil si on est arrivé ici via le path "recheck_failed"
+	// (action ok=true mais le re-test post-apply dit non-conforme).
+	triggerErr := ""
+	trigger := "action_failed"
+	if actionErr != nil {
+		triggerErr = actionErr.Error()
+	} else {
+		trigger = "recheck_failed"
+		if errStr, ok := ev["error"].(string); ok {
+			triggerErr = errStr
+		}
+	}
 	rollbackEv := map[string]any{
 		"type":         "rollback_result",
 		"run_id":       opts.RunID,
@@ -347,8 +421,8 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 		"rule_id":      rule.ID,
 		"timestamp":    time.Now().UTC().Format(time.RFC3339),
 		"duration_ms":  undoDur.Milliseconds(),
-		"trigger":      "action_failed",
-		"trigger_err":  actionErr.Error(),
+		"trigger":      trigger,
+		"trigger_err":  triggerErr,
 	}
 	if undoErr != nil {
 		rollbackEv["status"] = "rollback_failed"

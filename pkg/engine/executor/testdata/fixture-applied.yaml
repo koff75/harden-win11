@@ -17,6 +17,6 @@ rules:
     profile_when: always
     depends_on: []
     irreversible: false
-    action: ./pkg/engine/executor/testdata/success.action.ps1
-    test: ./pkg/engine/executor/testdata/never_compliant.test.ps1
-    undo: ./pkg/engine/executor/testdata/noop.undo.ps1
+    action: ./pkg/engine/executor/testdata/stateful.action.ps1
+    test: ./pkg/engine/executor/testdata/stateful.test.ps1
+    undo: ./pkg/engine/executor/testdata/stateful.undo.ps1

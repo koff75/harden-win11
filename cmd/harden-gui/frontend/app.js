@@ -98,21 +98,36 @@ async function refreshProfiles() {
         return;
     }
 
-    // Détection auto du contexte → suggestion de profil par défaut.
+    // Détection auto du contexte → suggestion de profil + auto-exclusion
+    // des rules qui casseraient quelque chose sur cette machine spécifique.
     let suggestion = null;
     try {
         suggestion = await window.go.main.App.DetectContext();
         if (suggestion && suggestion.suggestedProfile) {
             currentProfile = suggestion.suggestedProfile;
         }
+        if (suggestion && Array.isArray(suggestion.autoSkipRules)) {
+            for (const entry of suggestion.autoSkipRules) {
+                excludedRules.add(entry.ruleId);
+            }
+        }
     } catch (err) {
         // pas grave : on garde le défaut 'personal'.
     }
 
+    const autoSkipBlock = (suggestion && suggestion.autoSkipRules && suggestion.autoSkipRules.length)
+        ? `<div class="auto-skip-block">
+             ${suggestion.autoSkipRules.length} règle(s) pré-décochée(s) automatiquement :
+             <ul>${suggestion.autoSkipRules.map(e =>
+                `<li><code>${escapeHtml(e.ruleId)}</code> — ${escapeHtml(e.reason)}</li>`
+             ).join('')}</ul>
+           </div>`
+        : '';
     const suggestionBanner = suggestion
         ? `<div class="profile-suggestion" title="${escapeHtml(suggestion.reason)}">
               💡 Suggéré : <strong>${escapeHtml(profileTitleFromID(suggestion.suggestedProfile))}</strong>
               <div class="profile-suggestion-reason">${escapeHtml(suggestion.reason)}</div>
+              ${autoSkipBlock}
            </div>`
         : '';
 
@@ -558,6 +573,17 @@ function bindWailsEvents() {
     window.runtime.EventsOn('run_end', (summary) => {
         const cls = summary.cancelled || summary.aborted ? 'aborted' : 'success';
         setStatus(cls, summarizeStatus(summary));
+    });
+    window.runtime.EventsOn('restore_point_started', () => {
+        setStatus('running', 'Création d\'un Restore Point Windows (peut prendre 30-60s)…');
+    });
+    window.runtime.EventsOn('restore_point_done', (payload) => {
+        if (payload && payload.created) {
+            setStatus('running', `Restore Point créé en ${Math.round((payload.durationMs || 0)/1000)}s. Démarrage de l'apply…`);
+        } else {
+            const why = payload && payload.reason ? `(${payload.reason})` : '';
+            setStatus('running', `Restore Point non créé ${why} — l'apply continue (rollback via journal disponible).`);
+        }
     });
 }
 

@@ -18,6 +18,7 @@ import (
 	"github.com/koff75/harden-win11/pkg/engine/journal"
 	"github.com/koff75/harden-win11/pkg/engine/manifest"
 	"github.com/koff75/harden-win11/pkg/engine/ndjson"
+	"github.com/koff75/harden-win11/pkg/engine/restorepoint"
 	"github.com/koff75/harden-win11/pkg/engine/runner"
 	"github.com/koff75/harden-win11/pkg/engine/winadmin"
 	"github.com/spf13/cobra"
@@ -38,9 +39,11 @@ var (
 	flagYes         bool
 	flagRunID       string
 	flagRuleID      string
-	flagProfile     string
-	flagAudit       bool
-	flagParallel    int
+	flagProfile          string
+	flagAudit            bool
+	flagParallel         int
+	flagSkipRestorePoint bool
+	flagSeverity         string
 )
 
 func main() {
@@ -284,6 +287,29 @@ func applyCmd() *cobra.Command {
 				"journal_path":     journalPath,
 			})
 
+			// Restore Point Windows : ceinture-bretelles avant un apply réel.
+			// Best-effort : si ça plante, on log et on continue (le journal NDJSON +
+			// .undo.ps1 restent les voies principales de rollback).
+			if mode == executor.ModeApply && !flagSkipRestorePoint {
+				fmt.Fprintln(os.Stderr, "Création d'un Windows System Restore Point (peut prendre 30-60s)...")
+				st := restorepoint.Create(ctx, runID, 90*time.Second)
+				rpEv := map[string]any{
+					"type":         "restore_point",
+					"run_id":       runID,
+					"created":      st.Created,
+					"description":  st.Description,
+					"duration_ms":  st.Duration.Milliseconds(),
+				}
+				if !st.Created {
+					rpEv["reason"] = st.Reason
+					rpEv["error"] = st.Error
+					fmt.Fprintf(os.Stderr, "Note : Restore Point non créé (%s) — l'apply continue (rollback via journal NDJSON disponible).\n", st.Reason)
+				} else {
+					fmt.Fprintln(os.Stderr, "Restore Point créé.")
+				}
+				_ = w.Emit(rpEv)
+			}
+
 			var total executor.Summary
 			var aborted bool
 			var abortedSection string
@@ -302,6 +328,7 @@ func applyCmd() *cobra.Command {
 					RuleTimeout: flagRuleTimeout,
 					Profile:     flagProfile,
 					Parallel:    flagParallel,
+					Severity:    flagSeverity,
 				})
 				total.Skipped += summary.Skipped
 				total.Applied += summary.Applied
@@ -351,6 +378,8 @@ func applyCmd() *cobra.Command {
 	cmd.Flags().StringVar(&flagProfile, "profile", "", "Profil de risque (personal | business | maximal). Vide = toutes les règles.")
 	cmd.Flags().BoolVar(&flagAudit, "audit", false, "Mode audit pour ASR / Network Protection (n'applique pas mais log les events)")
 	cmd.Flags().IntVar(&flagParallel, "parallel", 1, "Nombre de règles dry-run exécutées en parallèle (default 1 = séquentiel). Sans effet en apply réel.")
+	cmd.Flags().BoolVar(&flagSkipRestorePoint, "skip-restore-point", false, "Ne pas créer de Windows System Restore Point avant l'apply (par défaut on en crée un, ceinture-bretelles en cas de panne globale).")
+	cmd.Flags().StringVar(&flagSeverity, "severity", "", "Filtre par sévérité (critical | important | nice-to-have). Permet d'appliquer en vagues : --severity critical d'abord, reboot, puis --severity important.")
 	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", executor.DefaultRuleTimeout, "Timeout maximum par règle (ex: 30s, 1m)")
 	cmd.Flags().BoolVar(&flagYes, "yes", false, "Skip la confirmation interactive avant apply réel")
 	return cmd

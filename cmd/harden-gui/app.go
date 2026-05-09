@@ -17,6 +17,7 @@ import (
 	"github.com/koff75/harden-win11/pkg/engine/journal"
 	"github.com/koff75/harden-win11/pkg/engine/manifest"
 	"github.com/koff75/harden-win11/pkg/engine/ndjson"
+	"github.com/koff75/harden-win11/pkg/engine/restorepoint"
 	"github.com/koff75/harden-win11/pkg/engine/runner"
 	"github.com/koff75/harden-win11/pkg/engine/winadmin"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -251,13 +252,26 @@ func (a *App) GetCoverage() *baseline.CoverageReport {
 	return rep
 }
 
-// ContextDetection : info de contexte machine pour suggérer un profil.
+// ContextDetection : info de contexte machine pour suggérer un profil
+// + des rules à auto-exclure (qui casseraient des choses sur cette machine).
 type ContextDetection struct {
-	ADJoined         bool   `json:"adJoined"`
-	PrinterCount     int    `json:"printerCount"`
-	NetworkPrinters  bool   `json:"networkPrinters"`
-	SuggestedProfile string `json:"suggestedProfile"`
-	Reason           string `json:"reason"`
+	ADJoined         bool     `json:"adJoined"`
+	IsLaptop         bool     `json:"isLaptop"`
+	HasBattery       bool     `json:"hasBattery"`
+	PrinterCount     int      `json:"printerCount"`
+	NetworkPrinters  bool     `json:"networkPrinters"`
+	SuggestedProfile string   `json:"suggestedProfile"`
+	Reason           string   `json:"reason"`
+	// AutoSkipRules : rule_ids que la GUI doit pré-cocher comme exclus parce
+	// qu'ils casseraient une fonctionnalité utilisée sur cette machine
+	// (ex: rename_admin sur AD-joined, hibernate_off sur laptop).
+	AutoSkipRules []AutoSkipEntry `json:"autoSkipRules"`
+}
+
+// AutoSkipEntry décrit une rule auto-exclue + la raison user-facing.
+type AutoSkipEntry struct {
+	RuleID string `json:"ruleId"`
+	Reason string `json:"reason"`
 }
 
 // DetectContext spawn un PS qui détecte le contexte machine (AD-joined,
@@ -269,11 +283,25 @@ func (a *App) DetectContext() ContextDetection {
 	// le besoin de manifest dédié).
 	psScript := `
 $adJoined = $false
+$isLaptop = $false
+$hasBattery = $false
 $printerCount = 0
 $networkPrinters = $false
 try {
     $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue
     if ($cs) { $adJoined = [bool]$cs.PartOfDomain }
+} catch {}
+try {
+    # ChassisTypes : 8=Portable, 9=Laptop, 10=Notebook, 14=Sub Notebook, 30=Tablet, 31=Convertible, 32=Detachable
+    $enc = Get-CimInstance Win32_SystemEnclosure -ErrorAction SilentlyContinue
+    if ($enc) {
+        $laptopTypes = @(8, 9, 10, 14, 30, 31, 32)
+        $isLaptop = [bool]($enc.ChassisTypes | Where-Object { $laptopTypes -contains $_ })
+    }
+} catch {}
+try {
+    $bat = @(Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue)
+    $hasBattery = ($bat.Count -gt 0)
 } catch {}
 try {
     $printers = @(Get-Printer -ErrorAction SilentlyContinue)
@@ -282,6 +310,8 @@ try {
 } catch {}
 @{
     adJoined = $adJoined
+    isLaptop = $isLaptop
+    hasBattery = $hasBattery
     printerCount = $printerCount
     networkPrinters = $networkPrinters
 } | ConvertTo-Json -Compress
@@ -306,6 +336,12 @@ try {
 	if v, ok := out["adJoined"].(bool); ok {
 		d.ADJoined = v
 	}
+	if v, ok := out["isLaptop"].(bool); ok {
+		d.IsLaptop = v
+	}
+	if v, ok := out["hasBattery"].(bool); ok {
+		d.HasBattery = v
+	}
 	if v, ok := out["printerCount"].(float64); ok {
 		d.PrinterCount = int(v)
 	}
@@ -324,6 +360,21 @@ try {
 		d.SuggestedProfile = "personal"
 		d.Reason = "Pas de domaine AD, peu d'imprimantes — usage perso probable."
 	}
+
+	// Auto-skip rules : règles incompatibles avec ce contexte spécifique.
+	if d.ADJoined {
+		d.AutoSkipRules = append(d.AutoSkipRules, AutoSkipEntry{
+			RuleID: "accounts.rename_admin",
+			Reason: "Machine AD-joined : la GPO du domaine peut écraser le rename. Renommage à faire via politique AD plutôt qu'en local.",
+		})
+	}
+	if d.IsLaptop || d.HasBattery {
+		d.AutoSkipRules = append(d.AutoSkipRules, AutoSkipEntry{
+			RuleID: "system_settings.hibernate_off",
+			Reason: "Laptop détecté : l'hibernation est utile pour préserver la batterie en mobilité (sleep prolongé consomme).",
+		})
+	}
+
 	logf("app.DetectContext: %+v", d)
 	return d
 }
@@ -545,6 +596,27 @@ func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string,
 		a.runMu.Unlock()
 		cancel()
 	}()
+
+	// Apply réel : tente un Restore Point Windows (best-effort).
+	if mode == executor.ModeApply {
+		a.emit("restore_point_started", map[string]any{"runId": runID})
+		st := restorepoint.Create(runCtx, runID, 90*time.Second)
+		rpPayload := map[string]any{
+			"runId":      runID,
+			"created":    st.Created,
+			"durationMs": st.Duration.Milliseconds(),
+			"reason":     st.Reason,
+			"error":      st.Error,
+		}
+		a.emit("restore_point_done", rpPayload)
+		if journalFile != nil {
+			rpJSON := fmt.Sprintf(`{"type":"restore_point","run_id":%q,"created":%t,"reason":%q,"duration_ms":%d}`+"\n",
+				runID, st.Created, st.Reason, st.Duration.Milliseconds())
+			_, _ = journalFile.WriteString(rpJSON)
+			_ = journalFile.Sync()
+		}
+		logf("runEngine: restore point created=%v reason=%q duration=%v", st.Created, st.Reason, st.Duration)
+	}
 
 	r := runner.New()
 	if auditMode {

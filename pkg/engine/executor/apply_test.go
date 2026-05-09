@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -52,12 +53,19 @@ func TestRun_ApplyMode_Applied(t *testing.T) {
 	repo := mustFindRepo(t)
 	manifestPath := filepath.Join(repo, "pkg", "engine", "executor", "testdata", "fixture-applied.yaml")
 
+	// Marker file pour la fixture stateful — cleanup avant + après pour idempotence.
+	markerPath := filepath.Join(t.TempDir(), "stateful.marker")
+	t.Setenv("HARDEN_TEST_MARKER", markerPath)
+	_ = os.Remove(markerPath)
+
 	var buf bytes.Buffer
 	w := ndjson.NewWriter(&buf)
+	r := runner.New()
+	r.Env = map[string]string{"HARDEN_TEST_MARKER": markerPath}
 	summary, err := Run(context.Background(), manifestPath, Options{
 		Mode:     ModeApply,
 		BasePath: repo,
-		Runner:   runner.New(),
+		Runner:   r,
 		Writer:   w,
 		RunID:    "test-apply-applied",
 	})
@@ -81,6 +89,45 @@ func TestRun_ApplyMode_Applied(t *testing.T) {
 				t.Error("expected 'after' field in applied event")
 			}
 		}
+	}
+}
+
+// TestRun_ApplyMode_RecheckFails : l'action retourne ok=true mais le re-test
+// post-apply dit non-conforme (action menteuse / GPO override). Le moteur
+// doit déclencher un rollback comme si l'action avait planté.
+func TestRun_ApplyMode_RecheckFails(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Windows only")
+	}
+	repo := mustFindRepo(t)
+	manifestPath := filepath.Join(repo, "pkg", "engine", "executor", "testdata", "fixture-recheck-fails.yaml")
+
+	var buf bytes.Buffer
+	w := ndjson.NewWriter(&buf)
+	summary, err := Run(context.Background(), manifestPath, Options{
+		Mode:     ModeApply,
+		BasePath: repo,
+		Runner:   runner.New(),
+		Writer:   w,
+		RunID:    "test-apply-recheck-fails",
+	})
+	if !errors.Is(err, ErrAborted) {
+		t.Fatalf("expected ErrAborted, got %v", err)
+	}
+	if summary.RolledBack != 1 {
+		t.Errorf("expected RolledBack=1 (recheck triggered rollback), got %+v", summary)
+	}
+	events := parseEvents(t, buf.Bytes())
+	var sawNonCompliant bool
+	for _, ev := range events {
+		if ev["type"] == "action_result" && ev["rule_id"] == "fixture.lying_action" {
+			if ev["recheck"] == "non_compliant" {
+				sawNonCompliant = true
+			}
+		}
+	}
+	if !sawNonCompliant {
+		t.Error("expected recheck=non_compliant on action_result event")
 	}
 }
 
