@@ -1,5 +1,5 @@
 # advanced_ransomware_protection.test.ps1
-# Conforme = la rÃ¨gle ASR C1DB55AB-C21A-4637-BB3F-A12568109D35 est en mode Block (1).
+# Conforme = la règle ASR C1DB55AB-C21A-4637-BB3F-A12568109D35 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

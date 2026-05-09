@@ -1,5 +1,5 @@
 # block_office_child_processes.test.ps1
-# Conforme = la rÃ¨gle ASR D4F940AB-401B-4EFC-AADC-AD5F3C50688A est en mode Block (1).
+# Conforme = la règle ASR D4F940AB-401B-4EFC-AADC-AD5F3C50688A est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

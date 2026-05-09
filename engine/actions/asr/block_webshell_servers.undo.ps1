@@ -1,8 +1,8 @@
 # block_webshell_servers.undo.ps1
-# Restaure l'Ã©tat AsrAction de la rÃ¨gle A8F5898E-1DC8-49A9-9878-85004B8A61E6 selon 'before'.
+# Restaure l'état AsrAction de la règle A8F5898E-1DC8-49A9-9878-85004B8A61E6 selon 'before'.
 # Input : { "AsrAction": <int|null> }
-# Si AsrAction Ã©tait null (rÃ¨gle absente), on Remove-MpPreference.
-# Sinon on rÃ©-Add-MpPreference avec la valeur prÃ©cÃ©dente.
+# Si AsrAction était null (règle absente), on Remove-MpPreference.
+# Sinon on ré-Add-MpPreference avec la valeur précédente.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -13,7 +13,7 @@ $state = $inputJson | ConvertFrom-Json
 
 $guid = 'A8F5898E-1DC8-49A9-9878-85004B8A61E6'
 
-# Toujours retirer d'abord (pour ne pas accumuler de doublons cÃ´tÃ© Defender)
+# Toujours retirer d'abord (pour ne pas accumuler de doublons côté Defender)
 Remove-MpPreference -AttackSurfaceReductionRules_Ids $guid -ErrorAction SilentlyContinue
 
 if ($null -ne $state.AsrAction) {

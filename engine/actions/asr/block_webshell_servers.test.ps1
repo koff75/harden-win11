@@ -1,5 +1,5 @@
 # block_webshell_servers.test.ps1
-# Conforme = la rÃ¨gle ASR A8F5898E-1DC8-49A9-9878-85004B8A61E6 est en mode Block (1).
+# Conforme = la règle ASR A8F5898E-1DC8-49A9-9878-85004B8A61E6 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

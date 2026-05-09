@@ -1,5 +1,5 @@
 # llmnr_disable.action.ps1
-# LLMNR dÃ©sactivÃ© (anti-Responder).
+# LLMNR désactivé (anti-Responder).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

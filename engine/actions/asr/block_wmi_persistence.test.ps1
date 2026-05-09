@@ -1,5 +1,5 @@
 # block_wmi_persistence.test.ps1
-# Conforme = la rÃ¨gle ASR E6DB77E5-3DF2-4CF1-B95A-636979351E5B est en mode Block (1).
+# Conforme = la règle ASR E6DB77E5-3DF2-4CF1-B95A-636979351E5B est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

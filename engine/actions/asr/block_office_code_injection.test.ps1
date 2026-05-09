@@ -1,5 +1,5 @@
 # block_office_code_injection.test.ps1
-# Conforme = la rÃ¨gle ASR 75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84 est en mode Block (1).
+# Conforme = la règle ASR 75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

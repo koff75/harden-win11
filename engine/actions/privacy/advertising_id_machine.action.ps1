@@ -1,5 +1,5 @@
 # advertising_id_machine.action.ps1
-# AdvertisingID dÃ©sactivÃ© machine-wide.
+# AdvertisingID désactivé machine-wide.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

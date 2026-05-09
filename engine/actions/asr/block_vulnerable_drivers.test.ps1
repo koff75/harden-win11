@@ -1,5 +1,5 @@
 # block_vulnerable_drivers.test.ps1
-# Conforme = la rÃ¨gle ASR 56A863A9-875E-4185-98A7-B882C64B5CE5 est en mode Block (1).
+# Conforme = la règle ASR 56A863A9-875E-4185-98A7-B882C64B5CE5 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

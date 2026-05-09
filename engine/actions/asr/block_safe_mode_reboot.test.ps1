@@ -1,5 +1,5 @@
 # block_safe_mode_reboot.test.ps1
-# Conforme = la rÃ¨gle ASR 33DDEDF1-C6E0-47CB-833E-DE6133960387 est en mode Block (1).
+# Conforme = la règle ASR 33DDEDF1-C6E0-47CB-833E-DE6133960387 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

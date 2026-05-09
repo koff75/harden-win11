@@ -1,5 +1,5 @@
 # mdns_disable.action.ps1
-# mDNS dÃ©sactivÃ©.
+# mDNS désactivé.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

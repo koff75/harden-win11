@@ -1,8 +1,8 @@
 # block_win32_api_office_macros.undo.ps1
-# Restaure l'Ã©tat AsrAction de la rÃ¨gle 92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B selon 'before'.
+# Restaure l'état AsrAction de la règle 92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B selon 'before'.
 # Input : { "AsrAction": <int|null> }
-# Si AsrAction Ã©tait null (rÃ¨gle absente), on Remove-MpPreference.
-# Sinon on rÃ©-Add-MpPreference avec la valeur prÃ©cÃ©dente.
+# Si AsrAction était null (règle absente), on Remove-MpPreference.
+# Sinon on ré-Add-MpPreference avec la valeur précédente.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -13,7 +13,7 @@ $state = $inputJson | ConvertFrom-Json
 
 $guid = '92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B'
 
-# Toujours retirer d'abord (pour ne pas accumuler de doublons cÃ´tÃ© Defender)
+# Toujours retirer d'abord (pour ne pas accumuler de doublons côté Defender)
 Remove-MpPreference -AttackSurfaceReductionRules_Ids $guid -ErrorAction SilentlyContinue
 
 if ($null -ne $state.AsrAction) {

@@ -1,5 +1,5 @@
 # block_lsass_credential_theft.test.ps1
-# Conforme = la rÃ¨gle ASR 9E6C4E1F-7D60-472F-BA1A-A39EF669E4B2 est en mode Block (1).
+# Conforme = la règle ASR 9E6C4E1F-7D60-472F-BA1A-A39EF669E4B2 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

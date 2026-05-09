@@ -1,5 +1,5 @@
 # block_unprevalent_executables.test.ps1
-# Conforme = la rÃ¨gle ASR 01443614-CD74-433A-B99E-2ECDC07BFC25 est en mode Block (1).
+# Conforme = la règle ASR 01443614-CD74-433A-B99E-2ECDC07BFC25 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

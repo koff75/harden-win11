@@ -1,5 +1,5 @@
 # recall_off.action.ps1
-# Windows Recall dÃ©sactivÃ© (prÃ©ventif).
+# Windows Recall désactivé (préventif).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

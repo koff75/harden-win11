@@ -1,5 +1,5 @@
 # wpad_disable.action.ps1
-# WPAD dÃ©sactivÃ© (anti-poisoning).
+# WPAD désactivé (anti-poisoning).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

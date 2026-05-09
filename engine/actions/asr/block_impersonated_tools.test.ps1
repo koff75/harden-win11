@@ -1,5 +1,5 @@
 # block_impersonated_tools.test.ps1
-# Conforme = la rÃ¨gle ASR C0033C00-D16D-4114-A5A0-DC9B3A7D2CEB est en mode Block (1).
+# Conforme = la règle ASR C0033C00-D16D-4114-A5A0-DC9B3A7D2CEB est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

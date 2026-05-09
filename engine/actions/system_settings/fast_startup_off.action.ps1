@@ -1,5 +1,5 @@
 # fast_startup_off.action.ps1
-# Power : dÃ©sactive Fast Startup.
+# Power : désactive Fast Startup.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

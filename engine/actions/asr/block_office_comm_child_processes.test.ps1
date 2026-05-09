@@ -1,5 +1,5 @@
 # block_office_comm_child_processes.test.ps1
-# Conforme = la rÃ¨gle ASR 26190899-1602-49E8-8B27-EB1D0A1CE869 est en mode Block (1).
+# Conforme = la règle ASR 26190899-1602-49E8-8B27-EB1D0A1CE869 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

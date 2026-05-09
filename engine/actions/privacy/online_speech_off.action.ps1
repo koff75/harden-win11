@@ -1,5 +1,5 @@
 # online_speech_off.action.ps1
-# Online Speech dÃ©sactivÃ©.
+# Online Speech désactivé.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

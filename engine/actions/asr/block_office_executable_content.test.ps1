@@ -1,5 +1,5 @@
 # block_office_executable_content.test.ps1
-# Conforme = la rÃ¨gle ASR 3B576869-A4EC-4529-8536-B80A7769E899 est en mode Block (1).
+# Conforme = la règle ASR 3B576869-A4EC-4529-8536-B80A7769E899 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

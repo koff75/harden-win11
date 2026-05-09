@@ -1,5 +1,5 @@
 # block_js_vbs_launch.test.ps1
-# Conforme = la rÃ¨gle ASR D3E037E1-3EB8-44C8-A917-57927947596D est en mode Block (1).
+# Conforme = la règle ASR D3E037E1-3EB8-44C8-A917-57927947596D est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

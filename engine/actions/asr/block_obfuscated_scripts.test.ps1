@@ -1,5 +1,5 @@
 # block_obfuscated_scripts.test.ps1
-# Conforme = la rÃ¨gle ASR 5BEB7EFE-FD9A-4556-801D-275E5FFC04CC est en mode Block (1).
+# Conforme = la règle ASR 5BEB7EFE-FD9A-4556-801D-275E5FFC04CC est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

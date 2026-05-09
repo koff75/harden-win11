@@ -1,5 +1,5 @@
 # block_email_executable_content.test.ps1
-# Conforme = la rÃ¨gle ASR BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550 est en mode Block (1).
+# Conforme = la règle ASR BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

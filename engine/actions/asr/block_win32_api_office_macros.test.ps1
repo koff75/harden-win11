@@ -1,5 +1,5 @@
 # block_win32_api_office_macros.test.ps1
-# Conforme = la rÃ¨gle ASR 92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B est en mode Block (1).
+# Conforme = la règle ASR 92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

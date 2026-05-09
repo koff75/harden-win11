@@ -1,5 +1,5 @@
 # cortana_off.action.ps1
-# Cortana dÃ©sactivÃ©e.
+# Cortana désactivée.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

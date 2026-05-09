@@ -1,5 +1,5 @@
 # block_psexec_wmi.test.ps1
-# Conforme = la rÃ¨gle ASR D1E49AAC-8F56-4280-B9BA-993A6D77406C est en mode Block (1).
+# Conforme = la règle ASR D1E49AAC-8F56-4280-B9BA-993A6D77406C est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

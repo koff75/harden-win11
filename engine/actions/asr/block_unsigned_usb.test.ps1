@@ -1,5 +1,5 @@
 # block_unsigned_usb.test.ps1
-# Conforme = la rÃ¨gle ASR B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4 est en mode Block (1).
+# Conforme = la règle ASR B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4 est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

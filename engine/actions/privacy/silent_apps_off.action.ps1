@@ -1,5 +1,5 @@
 # silent_apps_off.action.ps1
-# HKCU : pas de rÃ©install silencieuse.
+# HKCU : pas de réinstall silencieuse.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

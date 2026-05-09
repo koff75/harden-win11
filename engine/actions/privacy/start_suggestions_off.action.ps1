@@ -1,5 +1,5 @@
 # start_suggestions_off.action.ps1
-# HKCU : suggestions menu DÃ©marrer off.
+# HKCU : suggestions menu Démarrer off.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

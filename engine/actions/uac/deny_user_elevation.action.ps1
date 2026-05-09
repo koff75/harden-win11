@@ -1,5 +1,5 @@
 # deny_user_elevation.action.ps1
-# UAC : refuser Ã©lÃ©vation pour comptes standard.
+# UAC : refuser élévation pour comptes standard.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

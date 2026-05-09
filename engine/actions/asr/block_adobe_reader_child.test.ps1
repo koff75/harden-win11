@@ -1,5 +1,5 @@
 # block_adobe_reader_child.test.ps1
-# Conforme = la rÃ¨gle ASR 7674BA52-37EB-4A4F-A9A1-F0F9A1619A2C est en mode Block (1).
+# Conforme = la règle ASR 7674BA52-37EB-4A4F-A9A1-F0F9A1619A2C est en mode Block (1).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
