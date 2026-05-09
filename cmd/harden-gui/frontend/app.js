@@ -314,6 +314,11 @@ function bindEvents() {
         $('#loader-title').textContent = 'Annulation en cours…';
     });
 
+    // Tooltip riche (sur cellules Niveau + Règle uniquement) qui suit la souris.
+    document.body.addEventListener('mouseover', onRowHover);
+    document.body.addEventListener('mouseout', onRowOut);
+    document.body.addEventListener('mousemove', onMouseMove);
+
     // Filtres
     $$('.filter-severity').forEach(cb => cb.addEventListener('change', applyFilters));
     $$('.filter-status').forEach(cb => cb.addEventListener('change', applyFilters));
@@ -396,11 +401,6 @@ function rerenderAllRows() {
         if (statusCell) statusCell.textContent = humanStatus(status, ruleID);
         const actionCell = tr.querySelector('.action-cell');
         if (actionCell) actionCell.innerHTML = formatActionCell(rule, status, ev);
-        const tipText = buildUserTooltipText(rule, ev);
-        const sevCell = tr.querySelector('td:nth-child(2)');
-        const ruleCell = tr.querySelector('.rule-name');
-        if (sevCell)  sevCell.title  = tipText;
-        if (ruleCell) ruleCell.title = tipText;
     });
 }
 
@@ -777,15 +777,9 @@ function renderRuleRow(rule, status, ev) {
         <td><span class="status ${status}">${escapeHtml(humanStatus(status, rule.id))}</span></td>
         <td class="action-cell">${formatActionCell(rule, status, ev)}</td>
     `;
-    // Tooltip natif HTML : suit la souris naturellement.
-    // Posé sur les cellules Niveau (severity) et Règle (rule-name) — pas
-    // sur État ni Action (qui sont déjà self-explanatory et où un tooltip
-    // bouge serait gênant pendant qu'on lit la cellule).
-    const tipText = buildUserTooltipText(rule, ev);
-    const sevCell = tr.querySelector('td:nth-child(2)');  // colonne Niveau
-    const ruleCell = tr.querySelector('.rule-name');       // colonne Règle
-    if (sevCell)  sevCell.title  = tipText;
-    if (ruleCell) ruleCell.title = tipText;
+    // Pas de title natif HTML : le tooltip riche custom (#rule-tooltip)
+    // est attaché globalement via mouseover et limité aux cellules Niveau
+    // (col 2) et Règle (col 3) par isHoverableCell().
     return tr;
 }
 
@@ -809,12 +803,8 @@ function updateRuleRow(ev) {
     statusCell.textContent = humanStatus(status, ruleID);
     const actionCell = tr.querySelector('.action-cell');
     actionCell.innerHTML = formatActionCell(rule, status, ev);
-    // Refresh tooltip natif sur les colonnes Niveau + Règle (pas sur Action).
-    const tipText = buildUserTooltipText(rule, ev);
-    const sevCell = tr.querySelector('td:nth-child(2)');
-    const ruleCell = tr.querySelector('.rule-name');
-    if (sevCell)  sevCell.title  = tipText;
-    if (ruleCell) ruleCell.title = tipText;
+    // Le tooltip riche custom se rafraîchit automatiquement au mouseover
+    // (il lit rulesByID + eventByRuleID en live), pas besoin de refresh ici.
     // ré-applique les filtres pour le cas où la rule devient (in)visible avec son nouveau status.
     applyFilters();
     renderDashboard();
@@ -826,81 +816,8 @@ function updateRuleRow(ev) {
 //
 // L'idée : pas de JSON brut. On dit clairement ce qui se passerait pour la
 // règle dans son état actuel.
-// buildUserTooltipText : contenu plain-text du tooltip natif HTML (attribut
-// `title`), affiché par le navigateur au survol des cellules Niveau et Règle.
-// Suit le curseur naturellement. C'est le SEUL tooltip de l'app — le détail
-// riche en HTML (carte custom) a été supprimé car il faisait doublon.
-function buildUserTooltipText(rule, ev) {
-    const verb = contextualVerb(rule);
-    const title = rule.title || rule.id || '';
-    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
-
-    const today  = lang === 'en' ? (rule.userTodayEn  || rule.userToday)  : rule.userToday;
-    const after  = lang === 'en' ? (rule.userAfterEn  || rule.userAfter)  : rule.userAfter;
-    const forWho = lang === 'en' ? (rule.userForWhoEn || rule.userForWho) : rule.userForWho;
-    const risk   = lang === 'en' ? (rule.userRiskEn   || rule.userRisk)   : rule.userRisk;
-
-    const lines = [];
-    lines.push(`${verb.toUpperCase()} · ${title}`);
-    lines.push('─'.repeat(50));
-
-    // Bloc principal : 4 lignes user-friendly (français accessible).
-    if (today && after) {
-        lines.push(`${t('tooltip.today')} : ${today}`);
-        lines.push('');
-        lines.push(`${t('tooltip.after')} : ${after}`);
-        if (forWho) {
-            lines.push('');
-            lines.push(`${t('tooltip.forwho')} : ${forWho}`);
-        }
-        if (risk) {
-            lines.push('');
-            lines.push(`${t('tooltip.risk')} : ${risk}`);
-        }
-    } else if (rule.description) {
-        lines.push(`${t('tooltip.description')} : ${rule.description}`);
-    }
-
-    // État actuel observé (si on a déjà fait un dryrun ou un apply).
-    if (ev && ev.current_state) {
-        const entries = Object.entries(ev.current_state).slice(0, 3);
-        const stateText = entries.map(([k, v]) => `${k}=${v}`).join(', ');
-        if (stateText) {
-            lines.push('');
-            lines.push(`${t('tooltip.currentstate')} : ${stateText}`);
-        }
-    }
-
-    // Casse si tu utilises (breaks).
-    if (rule.breaks && rule.breaks.length > 0) {
-        lines.push('');
-        const breakLabel = lang === 'en' ? '⚠ Breaks if you use' : '⚠ Casse si tu utilises';
-        lines.push(`${breakLabel} :`);
-        for (const b of rule.breaks) {
-            lines.push(`  • ${b}`);
-        }
-    }
-
-    // Reboot requis.
-    if (rule.requiresReboot) {
-        lines.push('');
-        lines.push(lang === 'en'
-            ? '⚙ Reboot required after applying'
-            : '⚙ Redémarrage requis après application');
-    }
-
-    // Irréversible (rares cas comme bloatware).
-    if (rule.irreversible) {
-        lines.push('');
-        const irrLabel = lang === 'en' ? '⚠ Irreversible' : '⚠ Irréversible';
-        const irrReason = rule.irreversibleReason || (lang === 'en'
-            ? "This rule can't be reverted via undo."
-            : "Cette règle ne peut pas être annulée par undo.");
-        lines.push(`${irrLabel} : ${irrReason}`);
-    }
-
-    return lines.join('\n');
-}
+// (buildUserTooltipText removed — replaced by the rich HTML tooltip
+// rendered through showTooltip into <div id="rule-tooltip">.)
 
 // contextualVerb : verbe lisible selon le type de rule. Délègue au système
 // i18n pour la traduction.
@@ -1025,9 +942,137 @@ function setStatus(kind, message) {
     el.textContent = message;
 }
 
-// Tooltip removed: there is no longer an absolute-positioned big tooltip
-// at hover. The only tooltip is the native HTML one on .rule-name and
-// the severity cell, set via title="..." in renderRuleRow / updateRuleRow.
+// ─────────────────────────────────────────────────────────────────
+// Tooltip riche au survol (suit la souris). Limité aux cellules
+// "Niveau" (colonne 2) et "Règle" (colonne 3).
+// ─────────────────────────────────────────────────────────────────
+
+// hoverEnabled : true seulement si e.target est dans une des 2 colonnes
+// autorisées. Le user veut explicitement pas de tooltip sur Status/Action.
+function isHoverableCell(target) {
+    if (!target || !target.closest) return false;
+    const td = target.closest('td');
+    if (!td) return false;
+    const tr = td.closest('tr.row');
+    if (!tr) return false;
+    // Index de la cellule dans la row (0-based).
+    const idx = Array.prototype.indexOf.call(tr.children, td);
+    // Colonnes : 0 = include checkbox, 1 = severity (Niveau), 2 = rule-name (Règle),
+    // 3 = status (État), 4 = action (Action proposée).
+    return idx === 1 || idx === 2;
+}
+
+function onRowHover(e) {
+    if (!isHoverableCell(e.target)) {
+        hideTooltip();
+        return;
+    }
+    const tr = e.target.closest('tr.row');
+    const ruleID = tr.dataset.ruleId;
+    const rule = rulesByID[ruleID];
+    if (!rule) return hideTooltip();
+    const status = tr.dataset.status || 'pending';
+    const ev = eventByRuleID[ruleID];
+    const currentState = ev && ev.current_state ? ev.current_state : null;
+    showTooltip(rule, status, currentState);
+}
+
+function onRowOut(e) {
+    // Cache si on quitte vers un élément qui n'est pas dans une cellule hoverable.
+    if (!isHoverableCell(e.relatedTarget)) {
+        hideTooltip();
+    }
+}
+
+function onMouseMove(e) {
+    const tt = $('#rule-tooltip');
+    if (tt.classList.contains('hidden')) return;
+    const margin = 16;
+    let x = e.clientX + margin;
+    let y = e.clientY + margin;
+    const ttW = tt.offsetWidth;
+    const ttH = tt.offsetHeight;
+    if (x + ttW > window.innerWidth - 10) x = e.clientX - ttW - margin;
+    if (y + ttH > window.innerHeight - 10) y = e.clientY - ttH - margin;
+    tt.style.left = `${x}px`;
+    tt.style.top = `${y}px`;
+}
+
+function showTooltip(rule, status, currentState) {
+    const tt = $('#rule-tooltip');
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+
+    // Champs user-friendly localisés (avec fallback FR si EN absent).
+    const today  = lang === 'en' ? (rule.userTodayEn  || rule.userToday)  : rule.userToday;
+    const after  = lang === 'en' ? (rule.userAfterEn  || rule.userAfter)  : rule.userAfter;
+    const forWho = lang === 'en' ? (rule.userForWhoEn || rule.userForWho) : rule.userForWho;
+    const risk   = lang === 'en' ? (rule.userRiskEn   || rule.userRisk)   : rule.userRisk;
+
+    // Bloc principal user-friendly (Aujourd'hui / Si tu actives / Pour qui / Risque).
+    let userFriendlySection = '';
+    if (today && after) {
+        userFriendlySection = `
+            <div class="tt-row">
+                <span class="tt-key">${escapeHtml(t('tooltip.today'))}</span>
+                <span class="tt-val tt-current">${escapeHtml(today)}</span>
+            </div>
+            <div class="tt-row">
+                <span class="tt-key">${escapeHtml(t('tooltip.after'))}</span>
+                <span class="tt-val tt-target">${escapeHtml(after)}</span>
+            </div>
+            ${forWho ? `<div class="tt-row">
+                <span class="tt-key">${escapeHtml(t('tooltip.forwho'))}</span>
+                <span class="tt-val tt-benefit">${escapeHtml(forWho)}</span>
+            </div>` : ''}
+            ${risk ? `<div class="tt-row">
+                <span class="tt-key">${escapeHtml(t('tooltip.risk'))}</span>
+                <span class="tt-val tt-side">${escapeHtml(risk)}</span>
+            </div>` : ''}
+        `;
+    }
+
+    // État actuel observé (après dryrun).
+    let currentSection = '';
+    if (currentState && status && status !== 'pending') {
+        const stateBlurb = humanStateBlurb(currentState);
+        if (stateBlurb) {
+            currentSection = `<div class="tt-row">
+                <span class="tt-key">${escapeHtml(t('tooltip.currentstate'))}</span>
+                <span class="tt-val tt-current">${stateBlurb}</span>
+            </div>`;
+        }
+    }
+
+    const breaksSection = rule.breaks && rule.breaks.length > 0
+        ? `<div class="tt-section tt-breaks">
+              <div class="tt-label tt-breaks-label">${lang === 'en' ? '⚠ Breaks if you use' : '⚠ Casse si tu utilises'}</div>
+              <ul class="tt-breaks-list">${rule.breaks.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>
+           </div>`
+        : '';
+
+    const rebootSection = rule.requiresReboot
+        ? `<div class="tt-section" style="color:#ffd770;font-size:11px">⚙ ${lang === 'en' ? 'Reboot required after applying' : 'Redémarrage requis après application'}</div>`
+        : '';
+
+    const irreversibleSection = rule.irreversible
+        ? `<div class="tt-irreversible">⚠ ${lang === 'en' ? 'Irreversible' : 'Irréversible'} : ${escapeHtml(rule.irreversibleReason || (lang === 'en' ? "This rule can't be reverted via undo." : "Cette règle ne peut pas être annulée par undo."))}</div>`
+        : '';
+
+    tt.innerHTML = `
+        <h4>${escapeHtml(rule.title)} <span class="severity ${rule.severity}" style="margin-left:6px;font-size:9px;vertical-align:middle">${escapeHtml(humanSeverity(rule.severity))}</span></h4>
+        ${userFriendlySection}
+        ${currentSection}
+        ${breaksSection}
+        ${rebootSection}
+        ${irreversibleSection}
+    `;
+    tt.classList.remove('hidden');
+}
+
+function hideTooltip() {
+    const tt = $('#rule-tooltip');
+    if (tt) tt.classList.add('hidden');
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers
