@@ -119,14 +119,18 @@ const I18N = {
     },
 };
 
-// Détection au boot.
+// Détection au boot. Default = FR (pas EN) car le projet est français à
+// l'origine ; la version EN est une traduction. Si l'utilisateur a explicitement
+// switché via le bouton, on respecte son choix (localStorage).
 let currentLang = (function() {
     try {
         const saved = localStorage.getItem('harden-lang');
         if (saved === 'fr' || saved === 'en') return saved;
     } catch {}
-    const nav = (navigator.language || 'en').toLowerCase();
-    return nav.startsWith('fr') ? 'fr' : 'en';
+    const nav = (navigator.language || '').toLowerCase();
+    // Seul navigator.language commençant par 'en' bascule en EN.
+    // Tout le reste (fr, par défaut, undefined) → FR.
+    return nav.startsWith('en') ? 'en' : 'fr';
 })();
 
 function t(key, params) {

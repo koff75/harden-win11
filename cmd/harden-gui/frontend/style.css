@@ -55,34 +55,6 @@
 }
 .btn-watchlist-detail:hover { background: #ffc040; }
 
-.coach-icon {
-    cursor: pointer;
-    margin-left: 6px;
-    opacity: 0.7;
-    font-size: 14px;
-    transition: opacity 0.15s, transform 0.15s;
-}
-.coach-icon:hover { opacity: 1; transform: scale(1.2); }
-.coach-scenario {
-    background: #1f2c3a;
-    border-left: 3px solid #ffd060;
-    padding: 14px 16px;
-    border-radius: 4px;
-    line-height: 1.55;
-    color: #e6e6e6;
-    margin: 12px 0;
-}
-.coach-breaks {
-    background: #2a1f0e;
-    border-left: 3px solid #ffaa00;
-    padding: 10px 14px;
-    border-radius: 4px;
-    margin: 8px 0;
-    font-size: 12px;
-}
-.coach-breaks ul { margin: 6px 0 0 18px; }
-.coach-breaks li { color: #ffd0a0; }
-
 .btn-maturity {
     background: #2c5a7f;
     color: #e6e6e6;

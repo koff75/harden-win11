@@ -762,26 +762,16 @@ function renderRuleRow(rule, status, ev) {
     const severity = rule.severity || 'nice-to-have';
     const excluded = excludedRules.has(rule.id);
     if (excluded) tr.classList.add('excluded');
-    const coachIcon = rule.coachExample
-        ? `<span class="coach-icon" title="Pourquoi cette règle ? Cliquer pour un exemple concret." data-rule-id="${escapeHtml(rule.id)}">💡</span>`
-        : '';
     tr.innerHTML = `
         <td class="col-include"><input type="checkbox" class="include-rule" data-rule-id="${escapeHtml(rule.id)}" ${excluded ? '' : 'checked'} title="Décocher pour exclure cette règle"></td>
         <td><span class="severity ${severity}">${humanSeverity(severity)}</span></td>
         <td class="rule-name">
-            ${escapeHtml(rule.title || rule.id)} ${coachIcon}
+            ${escapeHtml(rule.title || rule.id)}
             <span class="rule-id-tech">${escapeHtml(rule.id)}</span>
         </td>
         <td><span class="status ${status}">${escapeHtml(humanStatus(status, rule.id))}</span></td>
         <td class="action-cell">${formatActionCell(rule, status, ev)}</td>
     `;
-    const icon = tr.querySelector('.coach-icon');
-    if (icon) {
-        icon.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showCoachModal(rule);
-        });
-    }
     // Tooltip natif HTML : suit la souris naturellement, ergonomique.
     // Posé sur la cellule "Action proposée" (la cellule la plus large qui
     // déclenchera le tooltip dès qu'on survole l'info action).
@@ -790,31 +780,6 @@ function renderRuleRow(rule, status, ev) {
         actionCell.title = buildUserTooltipText(rule, ev);
     }
     return tr;
-}
-
-function showCoachModal(rule) {
-    const breaksBlock = (rule.breaks && rule.breaks.length)
-        ? `<div class="coach-breaks">
-             <strong>⚠ Ce que cette règle peut casser :</strong>
-             <ul>${rule.breaks.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>
-           </div>`
-        : '';
-    const html = `
-        <div class="cov-modal" id="coach-modal-overlay">
-            <div class="cov-modal-content" style="max-width:680px">
-                <span class="cov-close" id="coach-modal-close">✕</span>
-                <h3>💡 ${escapeHtml(rule.title || rule.id)}</h3>
-                <p class="muted small"><code>${escapeHtml(rule.id)}</code> · sévérité <strong>${escapeHtml(rule.severity || 'nice-to-have')}</strong></p>
-                <div class="coach-scenario">${escapeHtml(rule.coachExample)}</div>
-                ${breaksBlock}
-                <p class="muted small" style="margin-top:14px"><em>Cas d'usage concret pour t'aider à décider si tu veux activer cette règle. Pas une théorie générique.</em></p>
-            </div>
-        </div>`;
-    document.body.insertAdjacentHTML('beforeend', html);
-    const overlay = $('#coach-modal-overlay');
-    const close = () => overlay.remove();
-    $('#coach-modal-close').addEventListener('click', close);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 function updateRuleRow(ev) {
