@@ -19,6 +19,7 @@ import (
 	"github.com/koff75/harden-win11/pkg/engine/ndjson"
 	"github.com/koff75/harden-win11/pkg/engine/restorepoint"
 	"github.com/koff75/harden-win11/pkg/engine/runner"
+	"github.com/koff75/harden-win11/pkg/engine/watchlist"
 	"github.com/koff75/harden-win11/pkg/engine/winadmin"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -199,6 +200,42 @@ func (a *App) RelaunchAsAdmin() error {
 		wailsruntime.Quit(a.ctx)
 	}()
 	return nil
+}
+
+// WatchlistAlert : un alert résumé pour le frontend.
+type WatchlistAlert struct {
+	RunID      string `json:"runId"`
+	LogName    string `json:"logName"`
+	Provider   string `json:"provider,omitempty"`
+	CountSeen  int    `json:"countSeen"`
+	Reason     string `json:"reason"`
+	WindowEnd  string `json:"windowEnd"`
+}
+
+// GetWatchlistAlerts retourne les alertes Event Viewer remontées par les
+// runs récents (modifiés dans les 7 derniers jours). La GUI affiche un
+// bandeau si la liste est non-vide.
+func (a *App) GetWatchlistAlerts() []WatchlistAlert {
+	reports, err := watchlist.ListRecent(7 * 24 * time.Hour)
+	if err != nil {
+		logf("GetWatchlistAlerts: %v", err)
+		return nil
+	}
+	out := []WatchlistAlert{}
+	for _, r := range reports {
+		for _, al := range r.Alerts {
+			out = append(out, WatchlistAlert{
+				RunID:     r.RunID,
+				LogName:   al.Source.LogName,
+				Provider:  al.Source.Provider,
+				CountSeen: al.CountSeen,
+				Reason:    al.Source.Reason,
+				WindowEnd: al.WindowEnd,
+			})
+		}
+	}
+	logf("GetWatchlistAlerts: %d alerts across %d reports", len(out), len(reports))
+	return out
 }
 
 // loadAllManifests charge tous les *.yaml d'un dossier sans validation schema

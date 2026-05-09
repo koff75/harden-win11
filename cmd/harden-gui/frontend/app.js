@@ -26,9 +26,59 @@ window.addEventListener('DOMContentLoaded', async () => {
     await refreshSections();
     await refreshRuns();
     await refreshCoverage();
+    await refreshWatchlistAlerts();
     bindEvents();
     bindWailsEvents();
 });
+
+async function refreshWatchlistAlerts() {
+    try {
+        const alerts = await window.go.main.App.GetWatchlistAlerts();
+        if (!alerts || alerts.length === 0) return;
+        const banner = $('#watchlist-banner');
+        const totalEvents = alerts.reduce((sum, a) => sum + (a.countSeen || 0), 0);
+        const sources = new Set(alerts.map(a => a.logName));
+        $('#watchlist-summary').textContent =
+            `${totalEvents} event(s) sur ${sources.size} source(s) — clique pour voir le détail.`;
+        banner.classList.remove('hidden');
+        $('#btn-watchlist-detail').addEventListener('click', () => showWatchlistModal(alerts));
+        $('#btn-watchlist-dismiss').addEventListener('click', () => banner.classList.add('hidden'));
+    } catch (err) {
+        console.warn('GetWatchlistAlerts:', err);
+    }
+}
+
+function showWatchlistModal(alerts) {
+    const rows = alerts.map(a => `
+        <tr>
+            <td><span class="muted small">${escapeHtml(a.runId || '')}</span></td>
+            <td><strong>${escapeHtml(a.logName)}</strong>${a.provider ? `<br><span class="muted small">${escapeHtml(a.provider)}</span>` : ''}</td>
+            <td style="text-align:right">${a.countSeen}</td>
+            <td>${escapeHtml(a.reason || '')}</td>
+        </tr>`).join('');
+    const html = `
+        <div class="cov-modal" id="watchlist-modal-overlay">
+            <div class="cov-modal-content" style="max-width:840px">
+                <span class="cov-close" id="watchlist-modal-close">✕</span>
+                <h3>Anomalies Event Viewer post-apply</h3>
+                <p class="muted small">Détectées par la watchlist 24h après tes derniers apply. Si une source est en pic, c'est qu'une règle harden-win11 casse peut-être quelque chose que tu utilises.</p>
+                <table>
+                    <thead><tr><th>Run</th><th>Source</th><th>Events</th><th>Pourquoi c'est suspect</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <p class="muted small" style="margin-top:12px">
+                    Pour aller plus loin : <code>Get-WinEvent -LogName '&lt;source&gt;' -MaxEvents 50</code>
+                    pour voir les events bruts. Tu peux aussi lancer <code>harden-engine snapshot diff &lt;runID&gt;</code>
+                    pour voir ce qui a été modifié pendant le run.
+                </p>
+            </div>
+        </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    const overlay = $('#watchlist-modal-overlay');
+    const close = () => overlay.remove();
+    $('#watchlist-modal-close').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
 
 let coverageReport = null;
 

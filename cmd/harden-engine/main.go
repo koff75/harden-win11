@@ -20,6 +20,8 @@ import (
 	"github.com/koff75/harden-win11/pkg/engine/ndjson"
 	"github.com/koff75/harden-win11/pkg/engine/restorepoint"
 	"github.com/koff75/harden-win11/pkg/engine/runner"
+	"github.com/koff75/harden-win11/pkg/engine/snapshot"
+	"github.com/koff75/harden-win11/pkg/engine/watchlist"
 	"github.com/koff75/harden-win11/pkg/engine/winadmin"
 	"github.com/spf13/cobra"
 )
@@ -44,6 +46,8 @@ var (
 	flagParallel         int
 	flagSkipRestorePoint bool
 	flagSeverity         string
+	flagSkipSnapshot     bool
+	flagSkipWatchlist    bool
 )
 
 func main() {
@@ -56,7 +60,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&flagSchemaPath, "schema", "schemas/manifest.schema.json", "Chemin du JSONSchema")
 	rootCmd.PersistentFlags().StringVar(&flagJournalDir, "journal-dir", "", "Dossier du journal NDJSON (vide = %ProgramData%\\Harden-Win11\\runs\\)")
 
-	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd(), coverageCmd())
+	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd(), coverageCmd(), snapshotCmd(), watchEventsCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(exitCodeFor(err))
@@ -287,6 +291,21 @@ func applyCmd() *cobra.Command {
 				"journal_path":     journalPath,
 			})
 
+			// Snapshot pre-apply : capture l'état système pertinent pour debug
+			// post-incident. Best-effort, ne plante jamais l'apply.
+			if mode == executor.ModeApply && !flagSkipSnapshot {
+				if path, err := snapshot.Capture(ctx, runID, snapshot.PhasePre, 30*time.Second); err == nil {
+					_ = w.Emit(map[string]any{
+						"type":    "snapshot",
+						"run_id":  runID,
+						"phase":   "pre",
+						"path":    path,
+					})
+				} else {
+					fmt.Fprintf(os.Stderr, "Snapshot pre-apply : %v (continue)\n", err)
+				}
+			}
+
 			// Restore Point Windows : ceinture-bretelles avant un apply réel.
 			// Best-effort : si ça plante, on log et on continue (le journal NDJSON +
 			// .undo.ps1 restent les voies principales de rollback).
@@ -362,6 +381,39 @@ func applyCmd() *cobra.Command {
 				runEnd["aborted"] = true
 				runEnd["aborted_section"] = abortedSection
 			}
+
+			// Snapshot post-apply : capture l'état après les modifications.
+			// Diffable contre le pre-apply via 'harden-engine snapshot diff <runID>'.
+			if mode == executor.ModeApply && !flagSkipSnapshot {
+				if path, err := snapshot.Capture(ctx, runID, snapshot.PhasePost, 30*time.Second); err == nil {
+					_ = w.Emit(map[string]any{
+						"type":    "snapshot",
+						"run_id":  runID,
+						"phase":   "post",
+						"path":    path,
+					})
+				}
+			}
+
+			// Watchlist 24h : enregistre une tâche planifiée Windows qui va
+			// surveiller Event Viewer pendant 24h. Best-effort. L'utilisateur
+			// peut désactiver via --no-watchlist (à venir) ou supprimer la
+			// tâche manuellement (Task Scheduler → harden-watchlist-<runID>).
+			if mode == executor.ModeApply && !flagSkipWatchlist {
+				if exe, err := os.Executable(); err == nil {
+					if err := watchlist.ScheduleTask(ctx, runID, exe, 5, 24); err != nil {
+						fmt.Fprintf(os.Stderr, "Watchlist 24h non programmée : %v (continue)\n", err)
+					} else {
+						fmt.Fprintln(os.Stderr, "Watchlist 24h programmée (tâche planifiée harden-watchlist-"+runID+").")
+						_ = w.Emit(map[string]any{
+							"type":   "watchlist_scheduled",
+							"run_id": runID,
+							"task":   "harden-watchlist-" + runID,
+						})
+					}
+				}
+			}
+
 			_ = w.Emit(runEnd)
 
 			if aborted {
@@ -380,8 +432,129 @@ func applyCmd() *cobra.Command {
 	cmd.Flags().IntVar(&flagParallel, "parallel", 1, "Nombre de règles dry-run exécutées en parallèle (default 1 = séquentiel). Sans effet en apply réel.")
 	cmd.Flags().BoolVar(&flagSkipRestorePoint, "skip-restore-point", false, "Ne pas créer de Windows System Restore Point avant l'apply (par défaut on en crée un, ceinture-bretelles en cas de panne globale).")
 	cmd.Flags().StringVar(&flagSeverity, "severity", "", "Filtre par sévérité (critical | important | nice-to-have). Permet d'appliquer en vagues : --severity critical d'abord, reboot, puis --severity important.")
+	cmd.Flags().BoolVar(&flagSkipSnapshot, "no-snapshot", false, "Ne pas capturer de snapshot avant/après apply (par défaut on en fait un dans %ProgramData%\\Harden-Win11\\snapshots\\, utile pour debug post-incident).")
+	cmd.Flags().BoolVar(&flagSkipWatchlist, "no-watchlist", false, "Ne pas programmer la surveillance Event Viewer 24h (par défaut on enregistre une tâche planifiée qui détecte les anomalies post-apply).")
 	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", executor.DefaultRuleTimeout, "Timeout maximum par règle (ex: 30s, 1m)")
 	cmd.Flags().BoolVar(&flagYes, "yes", false, "Skip la confirmation interactive avant apply réel")
+	return cmd
+}
+
+func watchEventsCmd() *cobra.Command {
+	var (
+		runID      string
+		duration   time.Duration
+		pollEvery  time.Duration
+		sinceISO   string
+	)
+	cmd := &cobra.Command{
+		Use:   "watch-events",
+		Short: "Surveille Event Viewer N heures pour détecter une casse fonctionnelle post-apply",
+		Long: `Lance une boucle de polling de Get-WinEvent sur les sources sensibles
+(SMB, Defender, NetBT, Schannel, PrintService) pour détecter les anomalies
+qui apparaissent après un apply. Écrit les alertes dans
+%ProgramData%\Harden-Win11\watchlist\<runID>.json. La GUI lit ce dossier
+au boot et affiche un bandeau si elle voit des alertes récentes.
+
+Typiquement enregistré comme tâche planifiée par 'apply' réel, mais peut
+aussi être lancé à la main : harden-engine watch-events --run-id myrun --duration 24h`,
+		RunE: func(c *cobra.Command, args []string) error {
+			if runID == "" {
+				return &exitError{code: 4, msg: "--run-id requis"}
+			}
+			since := time.Now().Add(-1 * time.Minute)
+			if sinceISO != "" {
+				t, err := time.Parse(time.RFC3339, sinceISO)
+				if err != nil {
+					return &exitError{code: 4, msg: fmt.Sprintf("--since must be RFC3339: %v", err)}
+				}
+				since = t
+			}
+			fmt.Fprintf(os.Stderr, "watch-events run=%s baseline=%s duration=%s poll=%s\n",
+				runID, since.Format(time.RFC3339), duration, pollEvery)
+			ctx := context.Background()
+			report, err := watchlist.Watch(ctx, runID, since, duration, pollEvery)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "watch done: %d alerts after %d polls\n", len(report.Alerts), report.Polls)
+			b, _ := json.MarshalIndent(report, "", "  ")
+			fmt.Println(string(b))
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&runID, "run-id", "", "Identifiant du run associé (sert de clé pour le fichier report)")
+	cmd.Flags().DurationVar(&duration, "duration", 24*time.Hour, "Durée totale de surveillance (default 24h)")
+	cmd.Flags().DurationVar(&pollEvery, "poll", 1*time.Hour, "Intervalle entre 2 scans Get-WinEvent")
+	cmd.Flags().StringVar(&sinceISO, "since", "", "Timestamp RFC3339 à partir duquel lire les events (default = 1min avant le démarrage)")
+	return cmd
+}
+
+func snapshotCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "snapshot",
+		Short: "Capture / diff snapshots système (debug post-apply)",
+	}
+	cmd.AddCommand(&cobra.Command{
+		Use:   "capture <runID>",
+		Short: "Capture un snapshot ad-hoc (sans apply)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(c *cobra.Command, args []string) error {
+			path, err := snapshot.Capture(context.Background(), args[0], snapshot.PhasePre, 60*time.Second)
+			if err != nil {
+				return err
+			}
+			fmt.Println(path)
+			return nil
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
+		Use:   "diff <runID>",
+		Short: "Affiche les changements entre snapshot pre et post d'un run",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(c *cobra.Command, args []string) error {
+			runID := args[0]
+			pre, err := snapshot.LoadSnapshot(snapshot.Path(runID, snapshot.PhasePre))
+			if err != nil {
+				return fmt.Errorf("load pre snapshot: %w", err)
+			}
+			post, err := snapshot.LoadSnapshot(snapshot.Path(runID, snapshot.PhasePost))
+			if err != nil {
+				return fmt.Errorf("load post snapshot: %w", err)
+			}
+			diffs := snapshot.Diff(pre, post)
+			if len(diffs) == 0 {
+				fmt.Println("Aucune différence entre pre et post.")
+				return nil
+			}
+			fmt.Printf("%d changement(s) entre %s/pre et /post :\n", len(diffs), runID)
+			for _, d := range diffs {
+				fmt.Printf("  [%s/%s] %s : %v → %v\n", d.Kind, d.Change, d.Key, d.Before, d.After)
+			}
+			return nil
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
+		Use:   "list",
+		Short: "Liste les snapshots disponibles",
+		RunE: func(c *cobra.Command, args []string) error {
+			dir := snapshot.DefaultDir()
+			entries, err := os.ReadDir(dir)
+			if err != nil {
+				if os.IsNotExist(err) {
+					fmt.Printf("Aucun snapshot dans %s\n", dir)
+					return nil
+				}
+				return err
+			}
+			fmt.Printf("Snapshots dans %s :\n", dir)
+			for _, e := range entries {
+				if !e.IsDir() {
+					fmt.Printf("  %s\n", e.Name())
+				}
+			}
+			return nil
+		},
+	})
 	return cmd
 }
 

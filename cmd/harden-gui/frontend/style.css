@@ -25,6 +25,36 @@
 }
 .btn-relaunch:hover { background: #ff8593; }
 
+.watchlist-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    background: #4a3a1f;
+    border-bottom: 2px solid #ffaa00;
+    color: #ffeed0;
+    font-size: 13px;
+}
+.watchlist-banner.hidden { display: none; }
+.watchlist-banner-icon { font-size: 18px; }
+.watchlist-banner-text { flex: 1; }
+.watchlist-banner-text strong { color: #ffd060; }
+.btn-watchlist-detail, .btn-watchlist-dismiss {
+    background: #ffaa00;
+    color: #1b2636;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-watchlist-dismiss {
+    background: #2a2a3a;
+    color: #c8b896;
+    padding: 6px 10px;
+}
+.btn-watchlist-detail:hover { background: #ffc040; }
+
 html, body {
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
