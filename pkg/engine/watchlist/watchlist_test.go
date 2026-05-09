@@ -58,3 +58,58 @@ func TestWatch_ContextCancelStopsImmediately(t *testing.T) {
 	// Le test vérifie juste qu'on respecte le context cancel.
 	_ = time.Second
 }
+
+func TestBaseline_AdaptiveThresholdNeverStricter(t *testing.T) {
+	src := Source{LogName: "X", Threshold: 10}
+	bl := &Baseline{Sources: map[string]SourceBaseline{
+		"X|": {DailyCounts: []int{1, 2, 1, 0, 1, 2, 1}, Median: 1, Stddev: 0.7},
+	}}
+	got := bl.AdaptiveThreshold(src)
+	if got != 10 {
+		t.Errorf("expected 10 (static, since adaptive 1+3*0.7=3.1 < 10), got %d", got)
+	}
+}
+
+func TestBaseline_AdaptiveThresholdRelaxesNoisyMachine(t *testing.T) {
+	src := Source{LogName: "X", Threshold: 5}
+	bl := &Baseline{Sources: map[string]SourceBaseline{
+		"X|": {DailyCounts: []int{20, 22, 18, 25, 19, 21, 20}, Median: 20, Stddev: 2.4},
+	}}
+	got := bl.AdaptiveThreshold(src)
+	// 20 + 3*2.4 = 27.2 → ceil 28 ≥ 5 → adaptive wins.
+	if got < 27 || got > 28 {
+		t.Errorf("expected adaptive ~28 (median=20+3σ=7.2), got %d", got)
+	}
+}
+
+func TestBaseline_NilOrEmpty(t *testing.T) {
+	src := Source{LogName: "X", Threshold: 5}
+	if (*Baseline)(nil).AdaptiveThreshold(src) != 5 {
+		t.Error("nil baseline should return static threshold")
+	}
+	bl := &Baseline{Sources: map[string]SourceBaseline{}}
+	if bl.AdaptiveThreshold(src) != 5 {
+		t.Error("empty baseline should return static threshold")
+	}
+}
+
+func TestBaseline_StatsHelpers(t *testing.T) {
+	xs := []int{1, 2, 3, 4, 5}
+	if mean(xs) != 3 {
+		t.Errorf("mean = %v, want 3", mean(xs))
+	}
+	if median(xs) != 3 {
+		t.Errorf("median = %v, want 3", median(xs))
+	}
+	// stddev sample : sqrt(sum((x-3)^2)/4) = sqrt(10/4) = sqrt(2.5) ≈ 1.58
+	got := stddev(xs)
+	if got < 1.5 || got > 1.7 {
+		t.Errorf("stddev = %v, want ~1.58", got)
+	}
+}
+
+func TestBaseline_MedianEvenLength(t *testing.T) {
+	if median([]int{1, 2, 3, 4}) != 2.5 {
+		t.Errorf("median([1,2,3,4]) = %v, want 2.5", median([]int{1, 2, 3, 4}))
+	}
+}

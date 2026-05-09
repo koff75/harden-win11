@@ -61,7 +61,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&flagSchemaPath, "schema", "schemas/manifest.schema.json", "Chemin du JSONSchema")
 	rootCmd.PersistentFlags().StringVar(&flagJournalDir, "journal-dir", "", "Dossier du journal NDJSON (vide = %ProgramData%\\Harden-Win11\\runs\\)")
 
-	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd(), coverageCmd(), snapshotCmd(), watchEventsCmd())
+	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd(), coverageCmd(), snapshotCmd(), watchEventsCmd(), watchlistCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(exitCodeFor(err))
@@ -398,9 +398,27 @@ func applyCmd() *cobra.Command {
 
 			// Watchlist 24h : enregistre une tâche planifiée Windows qui va
 			// surveiller Event Viewer pendant 24h. Best-effort. L'utilisateur
-			// peut désactiver via --no-watchlist (à venir) ou supprimer la
-			// tâche manuellement (Task Scheduler → harden-watchlist-<runID>).
+			// peut désactiver via --no-watchlist ou supprimer la tâche
+			// manuellement (Task Scheduler → harden-watchlist-<runID>).
 			if mode == executor.ModeApply && !flagSkipWatchlist {
+				// Auto-baseline : si pas de baseline ou > 30 jours, apprendre
+				// maintenant pour que la watchlist 24h ait des seuils adaptatifs.
+				bl, _ := watchlist.LoadBaseline()
+				needsLearn := bl == nil
+				if bl != nil {
+					if t, err := time.Parse(time.RFC3339, bl.LearnedAt); err == nil {
+						if time.Since(t) > 30*24*time.Hour {
+							needsLearn = true
+						}
+					}
+				}
+				if needsLearn {
+					fmt.Fprintln(os.Stderr, "Apprentissage de la baseline Event Viewer (peut prendre 1-2 min, exécuté une fois par mois)…")
+					if newBl, err := watchlist.Learn(ctx, watchlist.DefaultSources, 7); err == nil {
+						_ = watchlist.SaveBaseline(newBl)
+						fmt.Fprintf(os.Stderr, "Baseline : %d source(s) apprises sur 7 jours.\n", len(newBl.Sources))
+					}
+				}
 				if exe, err := os.Executable(); err == nil {
 					if err := watchlist.ScheduleTask(ctx, runID, exe, 5, 24); err != nil {
 						fmt.Fprintf(os.Stderr, "Watchlist 24h non programmée : %v (continue)\n", err)
@@ -437,6 +455,72 @@ func applyCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&flagSkipWatchlist, "no-watchlist", false, "Ne pas programmer la surveillance Event Viewer 24h (par défaut on enregistre une tâche planifiée qui détecte les anomalies post-apply).")
 	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", executor.DefaultRuleTimeout, "Timeout maximum par règle (ex: 30s, 1m)")
 	cmd.Flags().BoolVar(&flagYes, "yes", false, "Skip la confirmation interactive avant apply réel")
+	return cmd
+}
+
+func watchlistCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "watchlist",
+		Short: "Gère la baseline adaptive de la watchlist (médiane + σ par source Event Viewer)",
+	}
+
+	var daysBack int
+	learnCmd := &cobra.Command{
+		Use:   "baseline-learn",
+		Short: "Apprend la baseline depuis l'historique Event Viewer (default 7 derniers jours)",
+		Long: `Lit Get-WinEvent jour par jour sur les sources surveillées (SMB, Defender, NetBT, Schannel, PrintService) et calcule médiane + écart-type. Persisté dans %ProgramData%\Harden-Win11\watchlist\baseline.json.
+
+Sans baseline : seuils statiques (5-20 events selon source). Avec : seuils dynamiques `+"`max(static, médiane + 3σ)`"+`. Une machine bruyante (NAS legacy générant 50 SMB errors/jour) n'alerte plus à chaque event ; une machine silencieuse garde le seuil minimal.`,
+		RunE: func(c *cobra.Command, args []string) error {
+			fmt.Fprintf(os.Stderr, "Apprentissage baseline sur %d jours d'historique Event Viewer (peut prendre 1-2 min)…\n", daysBack)
+			bl, err := watchlist.Learn(context.Background(), watchlist.DefaultSources, daysBack)
+			if err != nil {
+				return err
+			}
+			if err := watchlist.SaveBaseline(bl); err != nil {
+				return err
+			}
+			fmt.Printf("Baseline apprise : %d source(s), %d échantillons, fenêtre %d jours.\n", len(bl.Sources), bl.SamplesUsed, bl.WindowDays)
+			for k, s := range bl.Sources {
+				fmt.Printf("  %s : médiane=%.1f σ=%.1f max=%d (%d jours)\n", k, s.Median, s.Stddev, s.Max, len(s.DailyCounts))
+			}
+			return nil
+		},
+	}
+	learnCmd.Flags().IntVar(&daysBack, "days", 7, "Nombre de jours d'historique à analyser (default 7)")
+
+	showCmd := &cobra.Command{
+		Use:   "baseline-show",
+		Short: "Affiche la baseline actuelle (JSON)",
+		RunE: func(c *cobra.Command, args []string) error {
+			bl, err := watchlist.LoadBaseline()
+			if err != nil {
+				return err
+			}
+			if bl == nil {
+				fmt.Println("Aucune baseline. Lance 'watchlist baseline-learn' pour en créer une.")
+				return nil
+			}
+			out, _ := json.MarshalIndent(bl, "", "  ")
+			fmt.Println(string(out))
+			return nil
+		},
+	}
+
+	clearCmd := &cobra.Command{
+		Use:   "baseline-clear",
+		Short: "Supprime la baseline (force le retour aux seuils statiques)",
+		RunE: func(c *cobra.Command, args []string) error {
+			path := watchlist.BaselinePath()
+			if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+				return err
+			}
+			fmt.Println("Baseline supprimée.")
+			return nil
+		},
+	}
+
+	cmd.AddCommand(learnCmd, showCmd, clearCmd)
 	return cmd
 }
 

@@ -176,21 +176,36 @@ func Watch(ctx context.Context, runID string, baselineAt time.Time, duration tim
 }
 
 // scanOnce lance un scan ponctuel via PowerShell Get-WinEvent.
+// Si une baseline est dispo, utilise des seuils adaptatifs (jamais plus
+// stricts que le seuil statique — uniquement plus laxistes pour les
+// machines bruyantes).
 func scanOnce(ctx context.Context, since time.Time, sources []Source) []Alert {
+	bl, _ := LoadBaseline()
+	return scanOnceWithBaseline(ctx, since, sources, bl)
+}
+
+func scanOnceWithBaseline(ctx context.Context, since time.Time, sources []Source, bl *Baseline) []Alert {
 	out := []Alert{}
 	for _, src := range sources {
 		count, samples, err := countEvents(ctx, src, since)
 		if err != nil {
 			continue
 		}
-		if count >= src.Threshold {
-			out = append(out, Alert{
+		threshold := bl.AdaptiveThreshold(src)
+		if count >= threshold {
+			a := Alert{
 				Source:         src,
 				CountSeen:      count,
 				WindowStart:    since.UTC().Format(time.RFC3339),
 				WindowEnd:      time.Now().UTC().Format(time.RFC3339),
 				SampleMessages: samples,
-			})
+			}
+			// Si baseline a été utilisée, l'inclure dans les samples pour
+			// que l'utilisateur sache que c'est anormal MALGRÉ la baseline.
+			if reason := bl.AdaptiveReason(src); reason != "" {
+				a.SampleMessages = append([]string{reason}, a.SampleMessages...)
+			}
+			out = append(out, a)
 		}
 	}
 	return out
