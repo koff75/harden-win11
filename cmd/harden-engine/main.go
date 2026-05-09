@@ -32,15 +32,15 @@ var (
 )
 
 var (
-	flagManifestDir string
-	flagSchemaPath  string
-	flagDryRun      bool
-	flagSection     string
-	flagRuleTimeout time.Duration
-	flagJournalDir  string
-	flagYes         bool
-	flagRunID       string
-	flagRuleID      string
+	flagManifestDir      string
+	flagSchemaPath       string
+	flagDryRun           bool
+	flagSection          string
+	flagRuleTimeout      time.Duration
+	flagJournalDir       string
+	flagYes              bool
+	flagRunID            string
+	flagRuleID           string
 	flagProfile          string
 	flagAudit            bool
 	flagParallel         int
@@ -297,10 +297,10 @@ func applyCmd() *cobra.Command {
 			if mode == executor.ModeApply && !flagSkipSnapshot {
 				if path, err := snapshot.Capture(ctx, runID, snapshot.PhasePre, 30*time.Second); err == nil {
 					_ = w.Emit(map[string]any{
-						"type":    "snapshot",
-						"run_id":  runID,
-						"phase":   "pre",
-						"path":    path,
+						"type":   "snapshot",
+						"run_id": runID,
+						"phase":  "pre",
+						"path":   path,
 					})
 				} else {
 					fmt.Fprintf(os.Stderr, "Snapshot pre-apply : %v (continue)\n", err)
@@ -314,11 +314,11 @@ func applyCmd() *cobra.Command {
 				fmt.Fprintln(os.Stderr, "Création d'un Windows System Restore Point (peut prendre 30-60s)...")
 				st := restorepoint.Create(ctx, runID, 90*time.Second)
 				rpEv := map[string]any{
-					"type":         "restore_point",
-					"run_id":       runID,
-					"created":      st.Created,
-					"description":  st.Description,
-					"duration_ms":  st.Duration.Milliseconds(),
+					"type":        "restore_point",
+					"run_id":      runID,
+					"created":     st.Created,
+					"description": st.Description,
+					"duration_ms": st.Duration.Milliseconds(),
 				}
 				if !st.Created {
 					rpEv["reason"] = st.Reason
@@ -388,10 +388,10 @@ func applyCmd() *cobra.Command {
 			if mode == executor.ModeApply && !flagSkipSnapshot {
 				if path, err := snapshot.Capture(ctx, runID, snapshot.PhasePost, 30*time.Second); err == nil {
 					_ = w.Emit(map[string]any{
-						"type":    "snapshot",
-						"run_id":  runID,
-						"phase":   "post",
-						"path":    path,
+						"type":   "snapshot",
+						"run_id": runID,
+						"phase":  "post",
+						"path":   path,
 					})
 				}
 			}
@@ -470,7 +470,7 @@ func watchlistCmd() *cobra.Command {
 		Short: "Learn baseline from Event Viewer history (default last 7 days)",
 		Long: `Reads Get-WinEvent day by day on watched sources (SMB, Defender, NetBT, Schannel, PrintService) and computes median + stddev. Persisted in %ProgramData%\Harden-Win11\watchlist\baseline.json.
 
-Without baseline: static thresholds (5-20 events per source). With: dynamic thresholds `+"`max(static, median + 3σ)`"+`. A noisy machine (legacy NAS generating 50 SMB errors/day) no longer alerts on every event; a quiet machine keeps the minimum threshold.`,
+Without baseline: static thresholds (5-20 events per source). With: dynamic thresholds ` + "`max(static, median + 3σ)`" + `. A noisy machine (legacy NAS generating 50 SMB errors/day) no longer alerts on every event; a quiet machine keeps the minimum threshold.`,
 		RunE: func(c *cobra.Command, args []string) error {
 			fmt.Fprintf(os.Stderr, "Apprentissage baseline sur %d jours d'historique Event Viewer (peut prendre 1-2 min)…\n", daysBack)
 			bl, err := watchlist.Learn(context.Background(), watchlist.DefaultSources, daysBack)
@@ -526,10 +526,10 @@ Without baseline: static thresholds (5-20 events per source). With: dynamic thre
 
 func watchEventsCmd() *cobra.Command {
 	var (
-		runID      string
-		duration   time.Duration
-		pollEvery  time.Duration
-		sinceISO   string
+		runID     string
+		duration  time.Duration
+		pollEvery time.Duration
+		sinceISO  string
 	)
 	cmd := &cobra.Command{
 		Use:   "watch-events",
@@ -933,10 +933,10 @@ func undoCmd() *cobra.Command {
 			}
 
 			_ = w.Emit(map[string]any{
-				"type":    "run_end",
-				"run_id":  "undo-" + undoRunID,
-				"ok":      ok,
-				"failed":  failed,
+				"type":   "run_end",
+				"run_id": "undo-" + undoRunID,
+				"ok":     ok,
+				"failed": failed,
 			})
 
 			if failed > 0 {

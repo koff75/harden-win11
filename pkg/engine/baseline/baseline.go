@@ -41,19 +41,19 @@ func Load(path string) (*Document, error) {
 // FrameworkStat agrège la couverture par référentiel.
 type FrameworkStat struct {
 	Framework      string   `json:"framework"`
-	Mapped         int      `json:"mapped"`           // règles harden-win11 avec ≥1 ID dans ce framework
-	UnmappedRules  []string `json:"unmapped_rules"`   // rules sans aucun ID (toutes catégories confondues, listées 1×)
-	UniqueControls int      `json:"unique_controls"`  // nb d'IDs distincts couverts dans le framework
+	Mapped         int      `json:"mapped"`          // règles harden-win11 avec ≥1 ID dans ce framework
+	UnmappedRules  []string `json:"unmapped_rules"`  // rules sans aucun ID (toutes catégories confondues, listées 1×)
+	UniqueControls int      `json:"unique_controls"` // nb d'IDs distincts couverts dans le framework
 	SampleControls []string `json:"sample_controls"` // 5 premiers IDs (pour aperçu)
 }
 
 // CoverageReport est le résultat global.
 type CoverageReport struct {
-	TotalRules   int                       `json:"total_rules"`   // total des rules dans le mapping
-	MappedRules  int                       `json:"mapped_rules"`  // rules ayant ≥1 ID dans ≥1 framework
-	Frameworks   map[string]*FrameworkStat `json:"frameworks"`
-	Disclaimer   string                    `json:"disclaimer"`
-	Sources      map[string]string         `json:"sources"`
+	TotalRules  int                       `json:"total_rules"`  // total des rules dans le mapping
+	MappedRules int                       `json:"mapped_rules"` // rules ayant ≥1 ID dans ≥1 framework
+	Frameworks  map[string]*FrameworkStat `json:"frameworks"`
+	Disclaimer  string                    `json:"disclaimer"`
+	Sources     map[string]string         `json:"sources"`
 }
 
 // Compute calcule la couverture à partir d'un document chargé et de la liste

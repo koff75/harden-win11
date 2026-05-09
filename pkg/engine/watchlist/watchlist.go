@@ -60,7 +60,7 @@ var DefaultSources = []Source{
 		LogName:   "Microsoft-Windows-Windows Defender/Operational",
 		Provider:  "Microsoft-Windows-Windows Defender",
 		EventIDs:  []int{1121, 1122}, // ASR rule blocked / audited
-		MaxLevel:  4, // Information OK — on les compte tous
+		MaxLevel:  4,                 // Information OK — on les compte tous
 		Threshold: 20,
 		Reason:    "ASR Defender bloque ou audite des actions. Pic = peut-être une rule ASR trop stricte pour une app que tu utilises.",
 	},
@@ -88,10 +88,10 @@ var DefaultSources = []Source{
 
 // Alert : une anomalie détectée par la watchlist.
 type Alert struct {
-	Source      Source `json:"source"`
-	CountSeen   int    `json:"count_seen"`
-	WindowStart string `json:"window_start"`
-	WindowEnd   string `json:"window_end"`
+	Source         Source   `json:"source"`
+	CountSeen      int      `json:"count_seen"`
+	WindowStart    string   `json:"window_start"`
+	WindowEnd      string   `json:"window_end"`
 	SampleMessages []string `json:"sample_messages,omitempty"`
 }
 
@@ -102,8 +102,8 @@ type Report struct {
 	Completed  string  `json:"completed,omitempty"`
 	Duration   string  `json:"duration"`
 	Alerts     []Alert `json:"alerts"`
-	Polls      int     `json:"polls"`        // nb de scans effectués
-	BaselineAt string  `json:"baseline_at"`  // timestamp à partir duquel on lit
+	Polls      int     `json:"polls"`       // nb de scans effectués
+	BaselineAt string  `json:"baseline_at"` // timestamp à partir duquel on lit
 }
 
 // DefaultDir : %ProgramData%\Harden-Win11\watchlist

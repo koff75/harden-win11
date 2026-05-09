@@ -26,9 +26,9 @@ import (
 type Status struct {
 	Created     bool          `json:"created"`
 	Description string        `json:"description"`
-	Reason      string        `json:"reason,omitempty"`     // si !Created : pourquoi
+	Reason      string        `json:"reason,omitempty"` // si !Created : pourquoi
 	Duration    time.Duration `json:"duration_ns"`
-	Error       string        `json:"error,omitempty"`      // détail technique en cas d'échec
+	Error       string        `json:"error,omitempty"` // détail technique en cas d'échec
 }
 
 // Create lance Checkpoint-Computer via PowerShell. Best-effort : ne renvoie
@@ -61,10 +61,10 @@ try {
     # 2. Capture les warnings (Windows envoie un warning si le 24h-throttle
     #    bloque la création) plutôt que de les perdre.
     $warnings = @()
-    Checkpoint-Computer -Description '` + escapeSingleQuotes(desc) + `' `+ "`" + `
-        -RestorePointType MODIFY_SETTINGS `+ "`" + `
-        -WarningVariable warnings `+ "`" + `
-        -WarningAction SilentlyContinue `+ "`" + `
+    Checkpoint-Computer -Description '` + escapeSingleQuotes(desc) + `' ` + "`" + `
+        -RestorePointType MODIFY_SETTINGS ` + "`" + `
+        -WarningVariable warnings ` + "`" + `
+        -WarningAction SilentlyContinue ` + "`" + `
         -ErrorAction Stop
 
     if ($warnings.Count -gt 0) {

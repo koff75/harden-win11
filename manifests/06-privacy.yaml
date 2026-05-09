@@ -66,6 +66,14 @@ rules:
     user_for_who: "Tout le monde qui n'aime pas le tracking."
 
     user_risk: "Quelques apps Store gratuites peuvent montrer des pubs moins ciblées (= un peu plus de pubs random)."
+
+    user_today_en: "Windows associates a unique advertising ID with your account — shared with Store apps for profiling."
+
+    user_after_en: "Advertising ID disabled by machine policy for ALL users on the PC."
+
+    user_for_who_en: "Everyone who dislikes tracking."
+
+    user_risk_en: "Some free Store apps may show less-targeted ads (i.e., a bit more random ads)."
     action: ./engine/actions/privacy/advertising_id_machine.action.ps1
     test: ./engine/actions/privacy/advertising_id_machine.test.ps1
     undo: ./engine/actions/privacy/advertising_id_machine.undo.ps1
@@ -97,6 +105,14 @@ rules:
     user_for_who: "Tout le monde qui ne fait pas de dictée régulière."
 
     user_risk: "Si tu utilises la dictée vocale Windows, qualité dégradée (modèle local seulement)."
+
+    user_today_en: "Windows sends your voice (voice keyboard, dictation) to Microsoft for cloud-side transcription."
+
+    user_after_en: "Online speech recognition disabled. If you use dictation, it stays local (more basic quality)."
+
+    user_for_who_en: "Everyone who doesn't dictate regularly."
+
+    user_risk_en: "If you use Windows voice dictation, quality degraded (local model only)."
     action: ./engine/actions/privacy/online_speech_off.action.ps1
     test: ./engine/actions/privacy/online_speech_off.test.ps1
     undo: ./engine/actions/privacy/online_speech_off.undo.ps1
@@ -128,6 +144,14 @@ rules:
     user_for_who: "Tout le monde qui n'utilise pas la Timeline."
 
     user_risk: "Plus de Timeline (Win+Tab montre seulement les apps ouvertes maintenant)."
+
+    user_today_en: "Windows records your activity history (apps launched, files opened) locally and syncs to Microsoft cloud."
+
+    user_after_en: "Activity history disabled. No more Timeline in Win+Tab."
+
+    user_for_who_en: "Everyone who doesn't use Timeline."
+
+    user_risk_en: "No more Timeline (Win+Tab only shows currently open apps)."
     action: ./engine/actions/privacy/activity_history_off.action.ps1
     test: ./engine/actions/privacy/activity_history_off.test.ps1
     undo: ./engine/actions/privacy/activity_history_off.undo.ps1
@@ -243,6 +267,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Aucun. Tu peux toujours installer manuellement les apps depuis le Microsoft Store."
+
+    user_today_en: "Windows automatically installs suggested apps (Candy Crush, Spotify, etc.) on new user logon."
+
+    user_after_en: "Windows no longer auto-installs anything — you install what you want from the Store."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "None. You can still manually install apps from Microsoft Store."
     action: ./engine/actions/privacy/consumer_features_off.action.ps1
     test: ./engine/actions/privacy/consumer_features_off.test.ps1
     undo: ./engine/actions/privacy/consumer_features_off.undo.ps1
@@ -274,6 +306,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Aucun."
+
+    user_today_en: "Windows can silently download suggested apps in the background."
+
+    user_after_en: "No more silent downloads. You decide what to install."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "None."
     action: ./engine/actions/privacy/silent_apps_off.action.ps1
     test: ./engine/actions/privacy/silent_apps_off.test.ps1
     undo: ./engine/actions/privacy/silent_apps_off.undo.ps1
@@ -304,6 +344,14 @@ rules:
     user_for_who: "Tout le monde qui n'aime pas le bruit."
 
     user_risk: "Tu pourrais manquer une suggestion de feature utile (rare)."
+
+    user_today_en: "Settings shows 'try this' suggestions and proactive notifications."
+
+    user_after_en: "Settings stays minimal and silent."
+
+    user_for_who_en: "Everyone who dislikes noise."
+
+    user_risk_en: "You might miss a useful feature suggestion (rare)."
     action: ./engine/actions/privacy/settings_suggestions_off.action.ps1
     test: ./engine/actions/privacy/settings_suggestions_off.test.ps1
     undo: ./engine/actions/privacy/settings_suggestions_off.undo.ps1
@@ -334,6 +382,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Aucun."
+
+    user_today_en: "Start menu shows suggestions for Store apps you haven't installed."
+
+    user_after_en: "No more ads in Start menu."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "None."
     action: ./engine/actions/privacy/start_suggestions_off.action.ps1
     test: ./engine/actions/privacy/start_suggestions_off.test.ps1
     undo: ./engine/actions/privacy/start_suggestions_off.undo.ps1
@@ -365,6 +421,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Aucun."
+
+    user_today_en: "Windows shows 'tips' notifications and welcome screens after updates."
+
+    user_after_en: "No more tips notifications, no more welcome screens after update."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "None."
     action: ./engine/actions/privacy/tips_welcome_off.action.ps1
     test: ./engine/actions/privacy/tips_welcome_off.test.ps1
     undo: ./engine/actions/privacy/tips_welcome_off.undo.ps1
@@ -396,6 +460,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Auto-corrections un peu moins précises avec le temps (le modèle de base reste fonctionnel)."
+
+    user_today_en: "Windows collects your handwriting and keyboard input to train its personalized language models (sent to Microsoft)."
+
+    user_after_en: "No more collection of your input. No personalized keyboard learning."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "Auto-corrections slightly less accurate over time (base model still functional)."
     action: ./engine/actions/privacy/ink_text_collection_off.action.ps1
     test: ./engine/actions/privacy/ink_text_collection_off.test.ps1
     undo: ./engine/actions/privacy/ink_text_collection_off.undo.ps1
@@ -426,6 +498,14 @@ rules:
     user_for_who: "Tout le monde — équivalent par-utilisateur de l'option machine-wide."
 
     user_risk: "Idem advertising_id_machine."
+
+    user_today_en: "Your user account has a personal advertising ID used by Store apps."
+
+    user_after_en: "Disabled for your current account."
+
+    user_for_who_en: "Everyone — per-user equivalent of the machine-wide option."
+
+    user_risk_en: "Same as advertising_id_machine."
     action: ./engine/actions/privacy/advertising_id_user.action.ps1
     test: ./engine/actions/privacy/advertising_id_user.test.ps1
     undo: ./engine/actions/privacy/advertising_id_user.undo.ps1

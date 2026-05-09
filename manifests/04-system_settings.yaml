@@ -29,6 +29,10 @@ rules:
     user_after: "L'UAC est forcé activé. Tout programme qui veut admin doit demander explicitement."
     user_for_who: "Tout le monde — c'est la barrière de base contre les malwares qui veulent s'installer."
     user_risk: "Aucun. Quelques fenêtres UAC en plus à l'install de softs."
+    user_today_en: "UAC (User Account Control, the mechanism that asks 'do you want to allow this app to modify the system?') may be disabled."
+    user_after_en: "UAC is forced enabled. Any program wanting admin must ask explicitly."
+    user_for_who_en: "Everyone — basic barrier against malware that wants to install."
+    user_risk_en: "None. A few extra UAC prompts during software installs."
     action: ./engine/actions/uac/enable_lua.action.ps1
     test: ./engine/actions/uac/enable_lua.test.ps1
     undo: ./engine/actions/uac/enable_lua.undo.ps1
@@ -105,6 +109,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Très bref clignotement noir à chaque UAC. Aucun impact fonctionnel."
+
+    user_today_en: "When UAC shows its prompt, the normal desktop stays active behind it — a malware can try to send automated clicks."
+
+    user_after_en: "UAC displays on an isolated 'secure desktop' — no other program can interact with it while you decide."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "Very brief black flicker on each UAC. No functional impact."
     action: ./engine/actions/uac/prompt_secure_desktop.action.ps1
     test: ./engine/actions/uac/prompt_secure_desktop.test.ps1
     undo: ./engine/actions/uac/prompt_secure_desktop.undo.ps1
@@ -222,6 +234,14 @@ rules:
     user_for_who: "Tout le monde qui n'utilise pas RDP. Cohérent avec rdp_disable."
 
     user_risk: "Si tu réactives RDP plus tard, faudra ré-ajouter les règles firewall."
+
+    user_today_en: "Even if RDP service is disabled, firewall rules for port 3389 (Remote Desktop) may stay open."
+
+    user_after_en: "RDP firewall rules are removed — port 3389 closed everywhere."
+
+    user_for_who_en: "Everyone who doesn't use RDP. Consistent with rdp_disable."
+
+    user_risk_en: "If you re-enable RDP later, you'll need to re-add the firewall rules."
     action: ./engine/actions/system_settings/rdp_firewall_disable.action.ps1
     test: ./engine/actions/system_settings/rdp_firewall_disable.test.ps1
     undo: ./engine/actions/system_settings/rdp_firewall_disable.undo.ps1
@@ -305,6 +325,14 @@ rules:
     user_for_who: "Profile maximal. Sur SSD moderne, la différence de boot est négligeable."
 
     user_risk: "Boot 5-10 secondes plus lent. Aucun autre impact."
+
+    user_today_en: "Fast Startup (Windows 8+) keeps the kernel in hibernation for faster boot — but blocks some driver updates and complicates forensics."
+
+    user_after_en: "Fast Startup disabled. Boot a bit slower (5-10s) but clean shutdown, drivers up to date on every start."
+
+    user_for_who_en: "Maximal profile. On modern SSD, the boot difference is negligible."
+
+    user_risk_en: "Boot 5-10 seconds slower. No other impact."
     action: ./engine/actions/system_settings/fast_startup_off.action.ps1
     test: ./engine/actions/system_settings/fast_startup_off.test.ps1
     undo: ./engine/actions/system_settings/fast_startup_off.undo.ps1

@@ -218,13 +218,13 @@ func (a *App) RelaunchAsAdmin() error {
 
 // MaturityInputs : payload du frontend pour calculer le score.
 type MaturityInputs struct {
-	CriticalTotal      int  `json:"criticalTotal"`
-	CriticalCompliant  int  `json:"criticalCompliant"`
-	ImportantTotal     int  `json:"importantTotal"`
-	ImportantCompliant int  `json:"importantCompliant"`
-	NiceTotal          int  `json:"niceTotal"`
-	NiceCompliant      int  `json:"niceCompliant"`
-	UndeterminedCount  int  `json:"undeterminedCount"`
+	CriticalTotal      int `json:"criticalTotal"`
+	CriticalCompliant  int `json:"criticalCompliant"`
+	ImportantTotal     int `json:"importantTotal"`
+	ImportantCompliant int `json:"importantCompliant"`
+	NiceTotal          int `json:"niceTotal"`
+	NiceCompliant      int `json:"niceCompliant"`
+	UndeterminedCount  int `json:"undeterminedCount"`
 }
 
 // ComputeMaturity calcule le score à partir des inputs frontend (compteurs
@@ -275,12 +275,12 @@ if ($rp) {
 
 // WatchlistAlert : un alert résumé pour le frontend.
 type WatchlistAlert struct {
-	RunID      string `json:"runId"`
-	LogName    string `json:"logName"`
-	Provider   string `json:"provider,omitempty"`
-	CountSeen  int    `json:"countSeen"`
-	Reason     string `json:"reason"`
-	WindowEnd  string `json:"windowEnd"`
+	RunID     string `json:"runId"`
+	LogName   string `json:"logName"`
+	Provider  string `json:"provider,omitempty"`
+	CountSeen int    `json:"countSeen"`
+	Reason    string `json:"reason"`
+	WindowEnd string `json:"windowEnd"`
 }
 
 // GetWatchlistAlerts retourne les alertes Event Viewer remontées par les
@@ -363,13 +363,13 @@ func (a *App) GetCoverage() *baseline.CoverageReport {
 // ContextDetection : info de contexte machine pour suggérer un profil
 // + des rules à auto-exclure (qui casseraient des choses sur cette machine).
 type ContextDetection struct {
-	ADJoined         bool     `json:"adJoined"`
-	IsLaptop         bool     `json:"isLaptop"`
-	HasBattery       bool     `json:"hasBattery"`
-	PrinterCount     int      `json:"printerCount"`
-	NetworkPrinters  bool     `json:"networkPrinters"`
-	SuggestedProfile string   `json:"suggestedProfile"`
-	Reason           string   `json:"reason"`
+	ADJoined         bool   `json:"adJoined"`
+	IsLaptop         bool   `json:"isLaptop"`
+	HasBattery       bool   `json:"hasBattery"`
+	PrinterCount     int    `json:"printerCount"`
+	NetworkPrinters  bool   `json:"networkPrinters"`
+	SuggestedProfile string `json:"suggestedProfile"`
+	Reason           string `json:"reason"`
 	// AutoSkipRules : rule_ids que la GUI doit pré-cocher comme exclus parce
 	// qu'ils casseraient une fonctionnalité utilisée sur cette machine
 	// (ex: rename_admin sur AD-joined, hibernate_off sur laptop).
@@ -590,9 +590,9 @@ func (a *App) GetSections(profile string) ([]SectionInfo, error) {
 			Description:   s.Section.Description,
 			TitleEn:       s.Section.TitleEn,
 			DescriptionEn: s.Section.DescriptionEn,
-			RuleCount:   len(rules),
-			ManifestID:  e.Name(),
-			Rules:       rules,
+			RuleCount:     len(rules),
+			ManifestID:    e.Name(),
+			Rules:         rules,
 		})
 	}
 	sort.Slice(sections, func(i, j int) bool {
@@ -887,8 +887,8 @@ func (a *App) emit(name string, payload any) {
 // ─────────────────────────────────────────────────────────────────
 
 // eventWriter dual-écrit chaque ligne NDJSON :
-//   1. émet un event Wails 'engine_event' vers le frontend (live progress)
-//   2. (optionnel) append au fichier journal sur disque (audit trail)
+//  1. émet un event Wails 'engine_event' vers le frontend (live progress)
+//  2. (optionnel) append au fichier journal sur disque (audit trail)
 type eventWriter struct {
 	ctx     context.Context
 	mode    executor.Mode

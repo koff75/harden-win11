@@ -33,14 +33,14 @@ const (
 
 // Snapshot agrège l'état observé à un instant t.
 type Snapshot struct {
-	Timestamp string                 `json:"timestamp"`
-	RunID     string                 `json:"run_id"`
-	Phase     Phase                  `json:"phase"`
-	Registry  []RegEntry             `json:"registry"`
-	Defender  map[string]any         `json:"defender,omitempty"`
-	Services  []ServiceEntry         `json:"services,omitempty"`
-	OSInfo    map[string]string      `json:"os_info,omitempty"`
-	Errors    []string               `json:"errors,omitempty"`
+	Timestamp string            `json:"timestamp"`
+	RunID     string            `json:"run_id"`
+	Phase     Phase             `json:"phase"`
+	Registry  []RegEntry        `json:"registry"`
+	Defender  map[string]any    `json:"defender,omitempty"`
+	Services  []ServiceEntry    `json:"services,omitempty"`
+	OSInfo    map[string]string `json:"os_info,omitempty"`
+	Errors    []string          `json:"errors,omitempty"`
 }
 
 // RegEntry : une clé HKLM avec sa valeur (et un flag exists pour distinguer
@@ -185,11 +185,11 @@ func LoadSnapshot(path string) (*Snapshot, error) {
 
 // Diff agrège les changements entre 2 snapshots.
 type DiffEntry struct {
-	Kind     string `json:"kind"` // "registry" | "service" | "defender"
-	Key      string `json:"key"`
-	Before   any    `json:"before,omitempty"`
-	After    any    `json:"after,omitempty"`
-	Change   string `json:"change"` // "added" | "removed" | "modified"
+	Kind   string `json:"kind"` // "registry" | "service" | "defender"
+	Key    string `json:"key"`
+	Before any    `json:"before,omitempty"`
+	After  any    `json:"after,omitempty"`
+	Change string `json:"change"` // "added" | "removed" | "modified"
 }
 
 // Diff compare 2 snapshots et retourne la liste des changements.

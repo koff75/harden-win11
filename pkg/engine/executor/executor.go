@@ -415,14 +415,14 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 		}
 	}
 	rollbackEv := map[string]any{
-		"type":         "rollback_result",
-		"run_id":       opts.RunID,
-		"section_id":   ev["section_id"],
-		"rule_id":      rule.ID,
-		"timestamp":    time.Now().UTC().Format(time.RFC3339),
-		"duration_ms":  undoDur.Milliseconds(),
-		"trigger":      trigger,
-		"trigger_err":  triggerErr,
+		"type":        "rollback_result",
+		"run_id":      opts.RunID,
+		"section_id":  ev["section_id"],
+		"rule_id":     rule.ID,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+		"duration_ms": undoDur.Milliseconds(),
+		"trigger":     trigger,
+		"trigger_err": triggerErr,
 	}
 	if undoErr != nil {
 		rollbackEv["status"] = "rollback_failed"
@@ -442,12 +442,12 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 
 func baseEvent(rule manifest.Rule, opts Options, mode string) map[string]any {
 	ev := map[string]any{
-		"type":      "action_result",
-		"run_id":    opts.RunID,
+		"type":       "action_result",
+		"run_id":     opts.RunID,
 		"section_id": ruleSectionID(rule),
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
-		"rule_id":   rule.ID,
-		"mode":      mode,
+		"timestamp":  time.Now().UTC().Format(time.RFC3339),
+		"rule_id":    rule.ID,
+		"mode":       mode,
 	}
 	if mode == "dry-run" {
 		ev["dry_run"] = true

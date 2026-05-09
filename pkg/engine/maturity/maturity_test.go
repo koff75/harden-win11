@@ -4,9 +4,9 @@ import "testing"
 
 func TestCompute_PerfectGrade(t *testing.T) {
 	r := Compute(Inputs{
-		CriticalTotal:         10, CriticalCompliant: 10,
-		ImportantTotal:        10, ImportantCompliant: 10,
-		NiceTotal:             10, NiceCompliant: 10,
+		CriticalTotal: 10, CriticalCompliant: 10,
+		ImportantTotal: 10, ImportantCompliant: 10,
+		NiceTotal: 10, NiceCompliant: 10,
 		HasRecentRestorePoint: true,
 		HasWatchlistRunning:   true,
 	})
@@ -20,9 +20,9 @@ func TestCompute_PerfectGrade(t *testing.T) {
 
 func TestCompute_FailGrade(t *testing.T) {
 	r := Compute(Inputs{
-		CriticalTotal:         10, CriticalCompliant: 0,
-		ImportantTotal:        10, ImportantCompliant: 0,
-		NiceTotal:             10, NiceCompliant: 0,
+		CriticalTotal: 10, CriticalCompliant: 0,
+		ImportantTotal: 10, ImportantCompliant: 0,
+		NiceTotal: 10, NiceCompliant: 0,
 		HasRecentRestorePoint: false,
 		HasWatchlistRunning:   false,
 	})
@@ -37,9 +37,9 @@ func TestCompute_FailGrade(t *testing.T) {
 func TestCompute_CriticalDominates(t *testing.T) {
 	// 100% critical compliant mais rien d'autre → devrait quand même être ≥ C.
 	r := Compute(Inputs{
-		CriticalTotal:         10, CriticalCompliant: 10,
-		ImportantTotal:        10, ImportantCompliant: 0,
-		NiceTotal:             10, NiceCompliant: 0,
+		CriticalTotal: 10, CriticalCompliant: 10,
+		ImportantTotal: 10, ImportantCompliant: 0,
+		NiceTotal: 10, NiceCompliant: 0,
 		HasRecentRestorePoint: false,
 		HasWatchlistRunning:   false,
 	})

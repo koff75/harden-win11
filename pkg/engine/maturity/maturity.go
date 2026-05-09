@@ -10,10 +10,11 @@
 //   - watchlist 24h disponible (poids 7)
 //
 // Total max = 100. Bandes :
-//   A : ≥ 90  (excellent)
-//   B : 75-89 (solide)
-//   C : 50-74 (moyen, à améliorer)
-//   D : < 50  (à renforcer urgemment)
+//
+//	A : ≥ 90  (excellent)
+//	B : 75-89 (solide)
+//	C : 50-74 (moyen, à améliorer)
+//	D : < 50  (à renforcer urgemment)
 package maturity
 
 import (
@@ -36,12 +37,12 @@ type Inputs struct {
 	// Comptes par sévérité (parmi les rules effectivement évaluées —
 	// would_skip = compliant, would_apply = non-compliant, would_fail =
 	// indéterminé donc ignoré pour le scoring).
-	CriticalTotal     int
-	CriticalCompliant int
-	ImportantTotal    int
+	CriticalTotal      int
+	CriticalCompliant  int
+	ImportantTotal     int
 	ImportantCompliant int
-	NiceTotal         int
-	NiceCompliant     int
+	NiceTotal          int
+	NiceCompliant      int
 
 	// HasRecentRestorePoint : true si un RP < 30 jours existe.
 	HasRecentRestorePoint bool
@@ -56,17 +57,17 @@ type Inputs struct {
 
 // Component : un sous-score qui contribue à la note finale.
 type Component struct {
-	Name      string  `json:"name"`
-	Weight    int     `json:"weight"`     // sur 100
-	Earned    float64 `json:"earned"`     // 0 → Weight
-	Detail    string  `json:"detail"`
-	Status    string  `json:"status"`     // "ok" | "partial" | "missing"
+	Name   string  `json:"name"`
+	Weight int     `json:"weight"` // sur 100
+	Earned float64 `json:"earned"` // 0 → Weight
+	Detail string  `json:"detail"`
+	Status string  `json:"status"` // "ok" | "partial" | "missing"
 }
 
 // Report : le rapport complet retourné à la GUI.
 type Report struct {
 	Grade       Grade       `json:"grade"`
-	Score       int         `json:"score"`        // 0-100 entier
+	Score       int         `json:"score"` // 0-100 entier
 	Headline    string      `json:"headline"`
 	Components  []Component `json:"components"`
 	NextActions []string    `json:"next_actions"` // 3 max, priorisées

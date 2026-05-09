@@ -153,6 +153,14 @@ rules:
     user_for_who: "Tout le monde, surtout en mobilité."
 
     user_risk: "Aucun en usage standard. Empêche partage SMB sur Wi-Fi public (peu probable cas d'usage)."
+
+    user_today_en: "On public Wi-Fi (café, airport), port 445 (SMB file sharing) remains potentially accessible to other machines on the network."
+
+    user_after_en: "Port 445 is explicitly blocked inbound on Public profiles — last-resort safety net if another rule accidentally opened it."
+
+    user_for_who_en: "Everyone, especially when mobile."
+
+    user_risk_en: "None for standard use. Prevents SMB sharing on public Wi-Fi (unlikely use case)."
     action: ./engine/actions/firewall/block_smb_public.action.ps1
     test: ./engine/actions/firewall/block_smb_public.test.ps1
     undo: ./engine/actions/firewall/block_smb_public.undo.ps1
@@ -187,6 +195,14 @@ rules:
     user_for_who: "Tout le monde, surtout en mobilité."
 
     user_risk: "Aucun. Si tu utilisais NetBIOS sur Wi-Fi public (jamais), il faudrait ajouter une exception."
+
+    user_today_en: "On public Wi-Fi, NetBIOS ports (137-139) remain potentially accessible — classic lateral attack vector."
+
+    user_after_en: "NetBIOS ports blocked inbound on Public profile."
+
+    user_for_who_en: "Everyone, especially when mobile."
+
+    user_risk_en: "None. If you used NetBIOS on public Wi-Fi (never), you'd need an exception."
     action: ./engine/actions/firewall/block_netbios_public.action.ps1
     test: ./engine/actions/firewall/block_netbios_public.test.ps1
     undo: ./engine/actions/firewall/block_netbios_public.undo.ps1

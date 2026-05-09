@@ -109,6 +109,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Aucun en usage normal."
+
+    user_today_en: "Defender doesn't scan files downloaded via Internet Explorer / Outlook at download time."
+
+    user_after_en: "Any file arriving via download is scanned immediately by Defender, before reaching disk."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "None in normal use."
     action: ./engine/actions/defender/ioav.action.ps1
     test: ./engine/actions/defender/ioav.test.ps1
     undo: ./engine/actions/defender/ioav.undo.ps1
@@ -142,6 +150,14 @@ rules:
     user_for_who: "Tout le monde — vrai vecteur de malware moderne (fileless attacks)."
 
     user_risk: "Très rare ralentissement sur des grosses suites de scripts (build CI/CD)."
+
+    user_today_en: "Scripts (PowerShell, JS, VBS) running on your PC are not analyzed by Defender."
+
+    user_after_en: "Defender intercepts and analyzes scripts in memory before they execute."
+
+    user_for_who_en: "Everyone — modern fileless attack vector."
+
+    user_risk_en: "Very rare slowdown on large script suites (CI/CD builds)."
     action: ./engine/actions/defender/script_scanning.action.ps1
     test: ./engine/actions/defender/script_scanning.test.ps1
     undo: ./engine/actions/defender/script_scanning.undo.ps1
@@ -175,6 +191,14 @@ rules:
     user_for_who: "Tout le monde, surtout sur Wi-Fi public."
 
     user_risk: "Très rare faux positif sur du trafic légitime."
+
+    user_today_en: "No network connection inspection system to block known exploits."
+
+    user_after_en: "Defender inspects network traffic in real-time and blocks packets matching known exploits."
+
+    user_for_who_en: "Everyone, especially on public Wi-Fi."
+
+    user_risk_en: "Very rare false positive on legitimate traffic."
     action: ./engine/actions/defender/nis.action.ps1
     test: ./engine/actions/defender/nis.test.ps1
     undo: ./engine/actions/defender/nis.undo.ps1
@@ -208,6 +232,14 @@ rules:
     user_for_who: "Tout le monde — utile contre les bundles d'installeurs."
 
     user_risk: "Quasi nul. Très rare cas d'app légitime mais agressive (CCleaner ancienne version) qui se prend la croix."
+
+    user_today_en: "Potentially Unwanted Applications (toolbars, crapware, hidden miners) are not detected by default."
+
+    user_after_en: "Defender automatically blocks downloads and installations of known PUAs."
+
+    user_for_who_en: "Everyone — useful against installer bundles."
+
+    user_risk_en: "Almost none. Very rare case where a legitimate but aggressive app gets flagged."
     action: ./engine/actions/defender/pua.action.ps1
     test: ./engine/actions/defender/pua.test.ps1
     undo: ./engine/actions/defender/pua.undo.ps1
@@ -339,6 +371,14 @@ rules:
     user_for_who: "Tout le monde qui veut une protection à jour."
 
     user_risk: "Microsoft reçoit des samples (jamais tes documents personnels — uniquement des binaires suspects). Skip si tu es vraiment paranoïaque."
+
+    user_today_en: "When Defender finds a suspicious but unknown file, it doesn't send it to Microsoft for deeper analysis."
+
+    user_after_en: "Suspicious samples (without personal data) are sent to Microsoft for cloud analysis — Defender benefits from collaborative detection."
+
+    user_for_who_en: "Everyone who wants up-to-date protection."
+
+    user_risk_en: "Microsoft receives samples (never your personal documents — only suspicious binaries). Skip if very paranoid."
     action: ./engine/actions/defender/sample_submission.action.ps1
     test: ./engine/actions/defender/sample_submission.test.ps1
     undo: ./engine/actions/defender/sample_submission.undo.ps1
@@ -378,6 +418,14 @@ rules:
     user_for_who: "Tout le monde avec une connexion internet."
 
     user_risk: "Aucun fonctionnel. Petite latence supplémentaire sur certains scans (négligeable)."
+
+    user_today_en: "Defender doesn't query the Microsoft cloud for detections (local-only mode)."
+
+    user_after_en: "Defender queries Microsoft's cloud database on every scan — much more up-to-date detection."
+
+    user_for_who_en: "Everyone with internet."
+
+    user_risk_en: "Functionally none. Slight extra latency on some scans (negligible)."
     action: ./engine/actions/defender/cloud_protection.action.ps1
     test: ./engine/actions/defender/cloud_protection.test.ps1
     undo: ./engine/actions/defender/cloud_protection.undo.ps1
@@ -415,6 +463,14 @@ rules:
     user_for_who: "Tout le monde — un Defender avec signatures vieilles de 2 mois ne sert plus à grand chose."
 
     user_risk: "Aucun."
+
+    user_today_en: "No verification that Defender signatures are recently up to date."
+
+    user_after_en: "We check that signatures were updated in the last 24h. If not, alert."
+
+    user_for_who_en: "Everyone — Defender with 2-month-old signatures isn't very useful."
+
+    user_risk_en: "None."
     action: ./engine/actions/defender/signatures.action.ps1
     test: ./engine/actions/defender/signatures.test.ps1
     profiles:
@@ -454,6 +510,14 @@ rules:
     user_for_who: "Tout le monde."
 
     user_risk: "Aucun (vérification read-only)."
+
+    user_today_en: "No check that Tamper Protection (anti-disabling Defender by malware) is active."
+
+    user_after_en: "We verify it's ON. If disabled, we alert (you must re-enable manually in Windows Security)."
+
+    user_for_who_en: "Everyone."
+
+    user_risk_en: "None (read-only check)."
     action: ./engine/actions/defender/tamper_protection_check.action.ps1
     test: ./engine/actions/defender/tamper_protection_check.test.ps1
     profiles:

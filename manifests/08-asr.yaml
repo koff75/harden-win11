@@ -31,6 +31,10 @@ rules:
     user_after: "Bloque toute création de processus enfant depuis Office. Une macro malveillante ne peut plus lancer Mimikatz, cmd, etc."
     user_for_who: "Tout le monde qui ouvre des Office reçus par mail."
     user_risk: "Si tu as des macros qui appellent cmd/powershell légitimement (rare en perso), à autoriser au cas par cas."
+    user_today_en: "Word/Excel/PowerPoint can launch cmd.exe, PowerShell or any program via macros — classic malware vector."
+    user_after_en: "Blocks any child process creation from Office. A malicious macro can't launch Mimikatz, cmd, etc."
+    user_for_who_en: "Everyone who opens Office files received by email."
+    user_risk_en: "If you have macros legitimately calling cmd/powershell (rare in personal use), authorize on a case-by-case basis."
     action: ./engine/actions/asr/block_office_child_processes.action.ps1
     test: ./engine/actions/asr/block_office_child_processes.test.ps1
     undo: ./engine/actions/asr/block_office_child_processes.undo.ps1
@@ -94,6 +98,10 @@ rules:
     user_after: "Bloque les tentatives d'injection. Un malware Office reste prisonnier de son propre processus."
     user_for_who: "Tout le monde."
     user_risk: "Très rare. Quelques add-ins Office anciens peuvent être affectés."
+    user_today_en: "Office can inject code into other processes — technique used by malware to bypass protections."
+    user_after_en: "Blocks injection attempts. Office malware stays locked in its own process."
+    user_for_who_en: "Everyone."
+    user_risk_en: "Very rare. Some old Office add-ins may be affected."
     action: ./engine/actions/asr/block_office_code_injection.action.ps1
     test: ./engine/actions/asr/block_office_code_injection.test.ps1
     undo: ./engine/actions/asr/block_office_code_injection.undo.ps1
@@ -123,6 +131,10 @@ rules:
     user_after: "Outlook ne peut plus lancer de processus enfant. Si tu cliques par erreur sur une PJ piégée, la chaîne casse."
     user_for_who: "Tout le monde qui utilise Outlook."
     user_risk: "Très rare. Quelques workflows entreprise spécifiques."
+    user_today_en: "Outlook can launch programs (cmd, scripts, etc.) — infection vector via booby-trapped email."
+    user_after_en: "Outlook can no longer launch child processes. If you click a booby-trapped attachment by mistake, the chain breaks."
+    user_for_who_en: "Everyone who uses Outlook."
+    user_risk_en: "Very rare. Some specific corporate workflows."
     action: ./engine/actions/asr/block_office_comm_child_processes.action.ps1
     test: ./engine/actions/asr/block_office_comm_child_processes.test.ps1
     undo: ./engine/actions/asr/block_office_comm_child_processes.undo.ps1
@@ -152,6 +164,10 @@ rules:
     user_after: "Macros bloquées d'appeler les Win32 API. Capacité de nuisance fortement réduite."
     user_for_who: "Tout le monde qui n'écrit pas du VBA expert."
     user_risk: "Si tu programmes en VBA professionnel avec Win32 API, tes macros casseront."
+    user_today_en: "Office VBA macros can call Win32 APIs directly — access to the entire machine."
+    user_after_en: "Macros blocked from calling Win32 APIs. Damage capability strongly reduced."
+    user_for_who_en: "Everyone who doesn't write expert VBA."
+    user_risk_en: "If you write professional VBA with Win32 APIs, your macros will break."
     action: ./engine/actions/asr/block_win32_api_office_macros.action.ps1
     test: ./engine/actions/asr/block_win32_api_office_macros.test.ps1
     undo: ./engine/actions/asr/block_win32_api_office_macros.undo.ps1
@@ -181,6 +197,10 @@ rules:
     user_after: "Les contenus exécutables téléchargés depuis email/webmail sont bloqués. Tu dois explicitement les sauver puis les lancer (et là Defender les scanne)."
     user_for_who: "Tout le monde."
     user_risk: "Quasi nul. Si tu télécharges souvent des installeurs depuis ton webmail, légère friction."
+    user_today_en: "An attachment downloaded from your email can be executed directly (.exe, .bat, .ps1, .vbs...)."
+    user_after_en: "Executable content downloaded from email/webmail is blocked. You must explicitly save then run (and Defender scans them then)."
+    user_for_who_en: "Everyone."
+    user_risk_en: "Almost none. If you often download installers from your webmail, slight friction."
     action: ./engine/actions/asr/block_email_executable_content.action.ps1
     test: ./engine/actions/asr/block_email_executable_content.test.ps1
     undo: ./engine/actions/asr/block_email_executable_content.undo.ps1
@@ -210,6 +230,10 @@ rules:
     user_after: "Defender détecte les patterns d'obfuscation et bloque l'exécution."
     user_for_who: "Tout le monde."
     user_risk: "Très rare faux positif sur des scripts légitimes mais obfusqués (anti-reverse engineering, packers)."
+    user_today_en: "Obfuscated scripts (Base64-encoded, with scrambled strings) can run without alert."
+    user_after_en: "Defender detects obfuscation patterns and blocks execution."
+    user_for_who_en: "Everyone."
+    user_risk_en: "Very rare false positive on legitimate but obfuscated scripts (anti-reverse-engineering, packers)."
     action: ./engine/actions/asr/block_obfuscated_scripts.action.ps1
     test: ./engine/actions/asr/block_obfuscated_scripts.test.ps1
     undo: ./engine/actions/asr/block_obfuscated_scripts.undo.ps1
@@ -239,6 +263,10 @@ rules:
     user_after: "Bloque le lancement d'exe par JS/VBS téléchargés. La chaîne d'attaque casse."
     user_for_who: "Tout le monde."
     user_risk: "Quasi nul."
+    user_today_en: "A downloaded .js or .vbs file can automatically download and launch a .exe (dropper technique)."
+    user_after_en: "Blocks .exe launching by downloaded JS/VBS. The attack chain breaks."
+    user_for_who_en: "Everyone."
+    user_risk_en: "Almost none."
     action: ./engine/actions/asr/block_js_vbs_launch.action.ps1
     test: ./engine/actions/asr/block_js_vbs_launch.test.ps1
     undo: ./engine/actions/asr/block_js_vbs_launch.undo.ps1
@@ -302,6 +330,10 @@ rules:
     user_after: "Defender bloque les processus non-signés/non-trusted lancés depuis une clé USB."
     user_for_who: "Profile business / maximal. Utile en environnement où on échange des clés USB."
     user_risk: "Tes outils portables non-signés sur clé USB ne marcheront plus (utilitaires sysinternals signés OK ; tools custom non-signés KO)."
+    user_today_en: "If you plug in a USB stick, any unsigned .exe on it can run."
+    user_after_en: "Defender blocks unsigned/untrusted processes launched from USB."
+    user_for_who_en: "Business / maximal profile. Useful in environments where USB sticks are exchanged."
+    user_risk_en: "Your unsigned portable tools on USB will not work (Sysinternals signed OK; custom tools unsigned KO)."
     action: ./engine/actions/asr/block_unsigned_usb.action.ps1
     test: ./engine/actions/asr/block_unsigned_usb.test.ps1
     undo: ./engine/actions/asr/block_unsigned_usb.undo.ps1
@@ -332,6 +364,10 @@ rules:
     user_after: "Defender bloque les nouvelles persistances WMI Event Subscription."
     user_for_who: "Profile maximal. Usage WMI légitime rare en perso."
     user_risk: "Si tu utilises WMI Event Subscription pour de la supervision système, casse."
+    user_today_en: "WMI Event Subscription is a malware persistence technique (runs at boot without leaving traces in Run keys)."
+    user_after_en: "Defender blocks new WMI Event Subscription persistence."
+    user_for_who_en: "Maximal profile. Legitimate WMI use rare in personal."
+    user_risk_en: "If you use WMI Event Subscription for system monitoring, breaks."
     action: ./engine/actions/asr/block_wmi_persistence.action.ps1
     test: ./engine/actions/asr/block_wmi_persistence.test.ps1
     undo: ./engine/actions/asr/block_wmi_persistence.undo.ps1
@@ -361,6 +397,10 @@ rules:
     user_after: "Defender bloque la création de processus via PsExec et WMI."
     user_for_who: "Profile maximal. Utile sauf si tu fais de l'admin réseau."
     user_risk: "PsExec ne marche plus pour le dépannage distant. Outils Sysinternals classiques affectés."
+    user_today_en: "PsExec and WMI can launch processes remotely — classic lateral movement techniques used by attackers."
+    user_after_en: "Defender blocks process creation via PsExec and WMI."
+    user_for_who_en: "Maximal profile. Useful unless you do network admin."
+    user_risk_en: "PsExec no longer works for remote troubleshooting. Classic Sysinternals tools affected."
     action: ./engine/actions/asr/block_psexec_wmi.action.ps1
     test: ./engine/actions/asr/block_psexec_wmi.test.ps1
     undo: ./engine/actions/asr/block_psexec_wmi.undo.ps1
@@ -456,6 +496,10 @@ rules:
     user_after: "Adobe Reader ne peut plus lancer d'autre programme. Si tu ouvres un PDF malveillant, la chaîne casse."
     user_for_who: "Tout le monde qui ouvre des PDF inconnus."
     user_risk: "Très rare workflow PDF qui appelle un programme externe."
+    user_today_en: "Adobe Reader can launch child processes — infection vector via booby-trapped PDF."
+    user_after_en: "Adobe Reader can no longer launch other programs. If you open a malicious PDF, the chain breaks."
+    user_for_who_en: "Everyone who opens unknown PDFs."
+    user_risk_en: "Very rare PDF workflow that calls an external program."
     action: ./engine/actions/asr/block_adobe_reader_child.action.ps1
     test: ./engine/actions/asr/block_adobe_reader_child.test.ps1
     undo: ./engine/actions/asr/block_adobe_reader_child.undo.ps1
@@ -485,6 +529,10 @@ rules:
     user_after: "Defender bloque le chargement de la liste connue de drivers vulnérables."
     user_for_who: "Tout le monde."
     user_risk: "Très rare driver hardware ancien qui ne marche plus (à remplacer par version récente)."
+    user_today_en: "Some Windows drivers signed but vulnerable (BYOVD = Bring Your Own Vulnerable Driver) can be exploited to escalate to kernel."
+    user_after_en: "Defender blocks loading of the known vulnerable drivers list."
+    user_for_who_en: "Everyone."
+    user_risk_en: "Very rare old hardware driver no longer working (replace with recent version)."
     action: ./engine/actions/asr/block_vulnerable_drivers.action.ps1
     test: ./engine/actions/asr/block_vulnerable_drivers.test.ps1
     undo: ./engine/actions/asr/block_vulnerable_drivers.undo.ps1
@@ -514,6 +562,10 @@ rules:
     user_after: "Defender bloque les reboots en Safe Mode forcés par un programme."
     user_for_who: "Profile business / maximal."
     user_risk: "Reboot en Safe Mode bloqué (par ex via msconfig). Affecte les workflows de troubleshooting."
+    user_today_en: "An attacker can reboot your PC into Safe Mode to disable Defender and do dirty work."
+    user_after_en: "Defender blocks Safe Mode reboots forced by a program."
+    user_for_who_en: "Business / maximal profile."
+    user_risk_en: "Forced Safe Mode reboot blocked (e.g., via msconfig). Affects troubleshooting workflows."
     action: ./engine/actions/asr/block_safe_mode_reboot.action.ps1
     test: ./engine/actions/asr/block_safe_mode_reboot.test.ps1
     undo: ./engine/actions/asr/block_safe_mode_reboot.undo.ps1
@@ -544,6 +596,10 @@ rules:
     user_after: "Defender détecte les outils système renommés/copiés et bloque leur exécution."
     user_for_who: "Tout le monde."
     user_risk: "Très rare faux positif si tu utilises des outils sysinternals renommés volontairement."
+    user_today_en: "A malware can copy cmd.exe or PowerShell under another name to evade detection."
+    user_after_en: "Defender detects renamed/copied system tools and blocks their execution."
+    user_for_who_en: "Everyone."
+    user_risk_en: "Very rare false positive if you use intentionally renamed Sysinternals tools."
     action: ./engine/actions/asr/block_impersonated_tools.action.ps1
     test: ./engine/actions/asr/block_impersonated_tools.test.ps1
     undo: ./engine/actions/asr/block_impersonated_tools.undo.ps1
@@ -573,6 +629,10 @@ rules:
     user_after: "Defender bloque la création de webshells dans les répertoires web."
     user_for_who: "Serveurs Windows. Inutile sur poste de travail mais sans dommage."
     user_risk: "Aucun sur un poste perso."
+    user_today_en: "On a server, a webshell (ASP, PHP) can be created via a web vulnerability for persistence."
+    user_after_en: "Defender blocks webshell creation in web directories."
+    user_for_who_en: "Windows servers. Useless on workstation but harmless."
+    user_risk_en: "None on a personal PC."
     action: ./engine/actions/asr/block_webshell_servers.action.ps1
     test: ./engine/actions/asr/block_webshell_servers.test.ps1
     undo: ./engine/actions/asr/block_webshell_servers.undo.ps1
