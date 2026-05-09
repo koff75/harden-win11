@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/koff75/harden-win11/pkg/engine/baseline"
 	"github.com/koff75/harden-win11/pkg/engine/executor"
 	"github.com/koff75/harden-win11/pkg/engine/journal"
 	"github.com/koff75/harden-win11/pkg/engine/manifest"
@@ -167,6 +169,86 @@ func (a *App) GetEngineInfo() EngineInfo {
 	}
 	logf("app.GetEngineInfo: %+v", info)
 	return info
+}
+
+// RelaunchAsAdmin relance la GUI avec UAC puis quitte l'instance courante.
+// Best-effort : si le spawn échoue, l'app courante reste ouverte.
+func (a *App) RelaunchAsAdmin() error {
+	exe, err := os.Executable()
+	if err != nil {
+		logf("app.RelaunchAsAdmin: os.Executable: %v", err)
+		return fmt.Errorf("get current exe path: %w", err)
+	}
+	logf("app.RelaunchAsAdmin: spawn UAC %s", exe)
+
+	// Utilise PowerShell Start-Process -Verb RunAs pour déclencher UAC.
+	// Si l'utilisateur clique "No" sur l'UAC, exit 1 mais on quitte quand même
+	// proprement (l'instance courante reste valide jusqu'à ce point).
+	cmd := exec.Command("powershell.exe",
+		"-NoProfile", "-Command",
+		fmt.Sprintf("Start-Process -FilePath '%s' -Verb RunAs", strings.ReplaceAll(exe, "'", "''")))
+	cmd.SysProcAttr = hideWindowAttr()
+	if err := cmd.Start(); err != nil {
+		logf("app.RelaunchAsAdmin: spawn failed: %v", err)
+		return fmt.Errorf("spawn elevated: %w", err)
+	}
+	// Détache puis quitte la GUI courante.
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		wailsruntime.Quit(a.ctx)
+	}()
+	return nil
+}
+
+// loadAllManifests charge tous les *.yaml d'un dossier sans validation schema
+// (pour les usages internes : coverage, etc).
+func loadAllManifests(dir string) ([]*manifest.Section, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	var out []*manifest.Section
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(e.Name()))
+		if ext != ".yaml" && ext != ".yml" {
+			continue
+		}
+		s, err := manifest.Load(filepath.Join(dir, e.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("load %s: %w", e.Name(), err)
+		}
+		out = append(out, s)
+	}
+	return out, nil
+}
+
+// GetCoverage retourne la couverture des règles vs CIS / ANSSI / MS Security Baseline.
+// Source : mappings/baselines.yaml. Retourne nil + log si le fichier est absent
+// (le frontend doit gérer l'absence gracefulement).
+func (a *App) GetCoverage() *baseline.CoverageReport {
+	mappingPath := filepath.Join(a.basePath, "mappings", "baselines.yaml")
+	doc, err := baseline.Load(mappingPath)
+	if err != nil {
+		logf("app.GetCoverage: load %s: %v", mappingPath, err)
+		return nil
+	}
+	sections, err := loadAllManifests(a.manifestDir)
+	if err != nil {
+		logf("app.GetCoverage: loadAllManifests: %v", err)
+		return nil
+	}
+	ids := []string{}
+	for _, s := range sections {
+		for _, r := range s.Rules {
+			ids = append(ids, r.ID)
+		}
+	}
+	rep := baseline.Compute(doc, ids)
+	logf("app.GetCoverage: total=%d mapped=%d", rep.TotalRules, rep.MappedRules)
+	return rep
 }
 
 // ContextDetection : info de contexte machine pour suggérer un profil.
@@ -347,13 +429,13 @@ func (a *App) GetSections(profile string) ([]SectionInfo, error) {
 	return sections, nil
 }
 
-func (a *App) DryRun(sectionIDs []string, profile string, auditMode bool) (*RunSummary, error) {
-	logf("app.DryRun: sections=%v profile=%q audit=%t", sectionIDs, profile, auditMode)
-	return a.runEngine(executor.ModeDry, sectionIDs, profile, auditMode)
+func (a *App) DryRun(sectionIDs []string, profile string, auditMode bool, excludedRules []string) (*RunSummary, error) {
+	logf("app.DryRun: sections=%v profile=%q audit=%t excluded=%d", sectionIDs, profile, auditMode, len(excludedRules))
+	return a.runEngine(executor.ModeDry, sectionIDs, profile, auditMode, excludedRules)
 }
 
-func (a *App) Apply(sectionIDs []string, profile string, auditMode bool) (*RunSummary, error) {
-	logf("app.Apply: sections=%v profile=%q audit=%t", sectionIDs, profile, auditMode)
+func (a *App) Apply(sectionIDs []string, profile string, auditMode bool, excludedRules []string) (*RunSummary, error) {
+	logf("app.Apply: sections=%v profile=%q audit=%t excluded=%d", sectionIDs, profile, auditMode, len(excludedRules))
 	isAdmin, err := winadmin.IsElevated()
 	if err != nil {
 		return nil, fmt.Errorf("admin check: %w", err)
@@ -361,7 +443,7 @@ func (a *App) Apply(sectionIDs []string, profile string, auditMode bool) (*RunSu
 	if !isAdmin {
 		return nil, errors.New("apply requires Administrator privileges. Re-launch the GUI from an elevated PowerShell")
 	}
-	return a.runEngine(executor.ModeApply, sectionIDs, profile, auditMode)
+	return a.runEngine(executor.ModeApply, sectionIDs, profile, auditMode, excludedRules)
 }
 
 // CancelRun annule le run en cours s'il y en a un. Le run termine
@@ -378,7 +460,12 @@ func (a *App) CancelRun() {
 	}
 }
 
-func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string, auditMode bool) (*RunSummary, error) {
+func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string, auditMode bool, excludedRules []string) (*RunSummary, error) {
+	excluded := map[string]bool{}
+	for _, id := range excludedRules {
+		excluded[id] = true
+	}
+
 	allSections, err := a.GetSections(profile)
 	if err != nil {
 		return nil, err
@@ -468,13 +555,14 @@ func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string,
 	var aborted, cancelled bool
 	for _, sct := range sections {
 		summary, err := executor.Run(runCtx, filepath.Join(a.manifestDir, sct.ManifestID), executor.Options{
-			Mode:        mode,
-			ManifestDir: a.manifestDir,
-			BasePath:    a.basePath,
-			Runner:      r,
-			Writer:      w,
-			RunID:       runID,
-			Profile:     profile,
+			Mode:            mode,
+			ManifestDir:     a.manifestDir,
+			BasePath:        a.basePath,
+			Runner:          r,
+			Writer:          w,
+			RunID:           runID,
+			Profile:         profile,
+			ExcludedRuleIDs: excluded,
 		})
 		total.Skipped += summary.Skipped
 		total.Applied += summary.Applied

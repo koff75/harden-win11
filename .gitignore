@@ -34,8 +34,10 @@ go.sum
 /build/
 __debug_bin*
 
-# Local PowerShell modules (Pester install hors PSModulePath standard)
-/tools/
+# Local PowerShell modules (Pester install hors PSModulePath standard).
+# On track les scripts utiles (audit, smoke, sign, release) mais pas
+# les binaires Pester.
+/tools/pester/
 
 # Wails build artifacts
 /cmd/harden-gui/build/

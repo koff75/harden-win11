@@ -8,6 +8,15 @@
 </head>
 <body>
 
+<div id="admin-banner" class="admin-banner hidden">
+    <span class="admin-banner-icon">⚠</span>
+    <span class="admin-banner-text">
+        <strong>Tu n'es pas administrateur.</strong>
+        Tu peux explorer et faire des dry-runs, mais <em>Appliquer</em> et <em>Annuler</em> sont désactivés.
+    </span>
+    <button type="button" id="btn-relaunch-admin" class="btn-relaunch">Relancer en admin</button>
+</div>
+
 <header>
     <h1>harden-win11</h1>
     <span id="engine-info" class="muted">loading…</span>
@@ -22,7 +31,11 @@
 
         <hr>
 
-        <h2>Sections</h2>
+        <h2>Sections <span class="section-toggle-buttons">
+            <button type="button" class="link-btn" id="sections-all">Tout</button>
+            <span class="muted">·</span>
+            <button type="button" class="link-btn" id="sections-none">Aucun</button>
+        </span></h2>
         <div id="sections-list">loading…</div>
 
         <hr>
@@ -60,6 +73,14 @@
             <span id="dash-detail" class="dash-detail"></span>
         </div>
 
+        <div id="coverage-bar" class="coverage-bar hidden" title="Couverture des règles harden-win11 vs référentiels publics. Clique pour le détail.">
+            <span class="cov-label">Couverture standards</span>
+            <span class="cov-pill" data-fw="cis">CIS —</span>
+            <span class="cov-pill" data-fw="anssi">ANSSI —</span>
+            <span class="cov-pill" data-fw="ms_baseline">MS —</span>
+            <span class="cov-disclaimer muted small">mapping draft, à valider par audit externe</span>
+        </div>
+
         <div id="filters">
             <div class="filter-group">
                 <span class="filter-label">Niveau</span>
@@ -82,6 +103,9 @@
             <table id="results-table">
                 <thead>
                     <tr>
+                        <th class="col-include" title="Décoche pour exclure cette règle du prochain run">
+                            <input type="checkbox" id="include-all" checked title="Tout cocher / décocher">
+                        </th>
                         <th class="col-severity">Niveau</th>
                         <th class="col-rule">Règle</th>
                         <th class="col-status">État</th>
@@ -89,7 +113,7 @@
                     </tr>
                 </thead>
                 <tbody id="results-body">
-                    <tr class="empty"><td colspan="4">Aucun résultat encore. Lance un dry-run pour voir l'état actuel.</td></tr>
+                    <tr class="empty"><td colspan="5">Aucun résultat encore. Lance un dry-run pour voir l'état actuel.</td></tr>
                 </tbody>
             </table>
         </div>

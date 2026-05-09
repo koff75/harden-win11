@@ -2,7 +2,7 @@ version: "1.0"
 
 section:
   id: bloatware
-  order: 7
+  order: 9
   title: "Bloatware Microsoft Store"
   description: "Desinstallation des apps Store consommateurs. Tu peux selectionner individuellement celles que tu veux supprimer."
 

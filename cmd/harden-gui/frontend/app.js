@@ -14,6 +14,7 @@ let currentProfile = 'personal';   // profil par défaut, override par l'utilisa
 let availableProfiles = [];
 const rowsByRuleID = {};
 const eventByRuleID = {};   // dernier event reçu par règle (pour le tooltip)
+const excludedRules = new Set();   // rule_ids exclus du prochain run
 
 // ─────────────────────────────────────────────────────────────────
 // Init
@@ -24,9 +25,70 @@ window.addEventListener('DOMContentLoaded', async () => {
     await refreshProfiles();
     await refreshSections();
     await refreshRuns();
+    await refreshCoverage();
     bindEvents();
     bindWailsEvents();
 });
+
+let coverageReport = null;
+
+async function refreshCoverage() {
+    try {
+        coverageReport = await window.go.main.App.GetCoverage();
+    } catch (err) {
+        return;
+    }
+    if (!coverageReport) return;
+    const bar = $('#coverage-bar');
+    if (!bar) return;
+    const fmt = (st) => `${st.mapped}/${coverageReport.total_rules} (${Math.round(st.mapped/coverageReport.total_rules*100)}%)`;
+    const cis = coverageReport.frameworks.cis;
+    const anssi = coverageReport.frameworks.anssi;
+    const ms = coverageReport.frameworks.ms_baseline;
+    bar.querySelector('[data-fw="cis"]').textContent = `CIS ${fmt(cis)}`;
+    bar.querySelector('[data-fw="anssi"]').textContent = `ANSSI ${fmt(anssi)}`;
+    bar.querySelector('[data-fw="ms_baseline"]').textContent = `MS ${fmt(ms)}`;
+    bar.classList.remove('hidden');
+    bar.addEventListener('click', showCoverageModal);
+}
+
+function showCoverageModal() {
+    if (!coverageReport) return;
+    const fw = coverageReport.frameworks;
+    const sources = coverageReport.sources || {};
+    const fwRow = (label, st, src) => `
+        <tr>
+            <td><strong>${label}</strong><br><span class="muted small">${escapeHtml(src || '')}</span></td>
+            <td>${st.mapped}/${coverageReport.total_rules}</td>
+            <td>${st.unique_controls}</td>
+            <td>${st.unmapped_rules.length}</td>
+            <td><span class="muted small">${st.sample_controls.slice(0,3).map(escapeHtml).join('<br>')}</span></td>
+        </tr>`;
+    const html = `
+        <div class="cov-modal" id="cov-modal-overlay">
+            <div class="cov-modal-content">
+                <span class="cov-close" id="cov-close">✕</span>
+                <h3>Couverture vs référentiels publics</h3>
+                <p class="muted small">Total règles harden-win11 : <strong>${coverageReport.total_rules}</strong> · Avec ≥1 mapping : <strong>${coverageReport.mapped_rules}</strong></p>
+                <table>
+                    <thead>
+                        <tr><th>Référentiel</th><th>Couvertes</th><th>Contrôles uniques</th><th>Sans mapping</th><th>Exemples</th></tr>
+                    </thead>
+                    <tbody>
+                        ${fwRow('CIS', fw.cis, sources.cis)}
+                        ${fwRow('ANSSI', fw.anssi, sources.anssi)}
+                        ${fwRow('MS Baseline', fw.ms_baseline, sources.ms_baseline)}
+                    </tbody>
+                </table>
+                <p class="muted small" style="margin-top:16px"><em>${escapeHtml(coverageReport.disclaimer || '')}</em></p>
+            </div>
+        </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    const overlay = $('#cov-modal-overlay');
+    const close = () => overlay.remove();
+    $('#cov-close').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
 
 async function refreshProfiles() {
     try {
@@ -65,7 +127,7 @@ async function refreshProfiles() {
         rb.addEventListener('change', async () => {
             currentProfile = rb.value;
             await refreshSections();
-            $('#results-body').innerHTML = '<tr class="empty"><td colspan="4">Profil changé. Lance un dry-run pour voir l\'état actuel.</td></tr>';
+            $('#results-body').innerHTML = '<tr class="empty"><td colspan="5">Profil changé. Lance un dry-run pour voir l\'état actuel.</td></tr>';
             $('#dashboard').classList.add('hidden');
             Object.keys(rowsByRuleID).forEach(k => delete rowsByRuleID[k]);
             Object.keys(eventByRuleID).forEach(k => delete eventByRuleID[k]);
@@ -99,6 +161,19 @@ async function refreshEngineInfo() {
         $('#btn-apply').title = 'Lance la GUI en admin pour activer';
         $('#btn-undo').disabled = true;
         $('#btn-undo').title = 'Lance la GUI en admin pour activer';
+        $('#admin-banner').classList.remove('hidden');
+        $('#btn-relaunch-admin').addEventListener('click', async () => {
+            const btn = $('#btn-relaunch-admin');
+            btn.disabled = true;
+            btn.textContent = 'Relancement…';
+            try {
+                await window.go.main.App.RelaunchAsAdmin();
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Relancer en admin';
+                alert('Échec du relancement : ' + err);
+            }
+        });
     }
 }
 
@@ -210,13 +285,40 @@ function bindEvents() {
     $$('.filter-severity').forEach(cb => cb.addEventListener('change', applyFilters));
     $$('.filter-status').forEach(cb => cb.addEventListener('change', applyFilters));
     $('#filter-reset').addEventListener('click', () => {
-        // Reset = état initial : tous niveaux cochés, tous états cochés SAUF
-        // 'Conforme' (cohérent avec le focus sur ce qui manque).
         $$('.filter-severity').forEach(cb => cb.checked = true);
         $$('.filter-status').forEach(cb => {
             cb.checked = (cb.value !== 'conforme');
         });
         applyFilters();
+    });
+
+    // Boutons Tout / Aucun pour les sections.
+    $('#sections-all').addEventListener('click', () => {
+        $$('input[name="section"]').forEach(cb => cb.checked = true);
+    });
+    $('#sections-none').addEventListener('click', () => {
+        $$('input[name="section"]').forEach(cb => cb.checked = false);
+    });
+
+    // Cocher / décocher individuellement une règle dans le tableau.
+    document.body.addEventListener('change', (e) => {
+        if (e.target.matches('input.include-rule')) {
+            const ruleID = e.target.dataset.ruleId;
+            if (e.target.checked) {
+                excludedRules.delete(ruleID);
+            } else {
+                excludedRules.add(ruleID);
+            }
+            const tr = rowsByRuleID[ruleID];
+            if (tr) tr.classList.toggle('excluded', !e.target.checked);
+        }
+        if (e.target === $('#include-all')) {
+            const checked = e.target.checked;
+            $$('input.include-rule').forEach(cb => {
+                cb.checked = checked;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        }
     });
 }
 
@@ -371,9 +473,10 @@ async function runEngine(mode) {
 
     try {
         const auditMode = $('#audit-mode').checked;
+        const excluded = Array.from(excludedRules);
         const summary = mode === 'apply'
-            ? await window.go.main.App.Apply(sections, currentProfile, auditMode)
-            : await window.go.main.App.DryRun(sections, currentProfile, auditMode);
+            ? await window.go.main.App.Apply(sections, currentProfile, auditMode, excluded)
+            : await window.go.main.App.DryRun(sections, currentProfile, auditMode, excluded);
         const cls = summary.cancelled ? 'aborted' : (summary.aborted ? 'aborted' : 'success');
         setStatus(cls, summarizeStatus(summary));
         await refreshRuns();
@@ -488,7 +591,7 @@ function prepareTableForRun(sectionIDs) {
     }
     applyFilters();
     if (totalRulesInRun === 0) {
-        tbody.innerHTML = '<tr class="empty"><td colspan="4">Aucune règle dans la sélection.</td></tr>';
+        tbody.innerHTML = '<tr class="empty"><td colspan="5">Aucune règle dans la sélection.</td></tr>';
     }
     // Cacher le dashboard tant qu'on n'a pas évalué.
     $('#dashboard').classList.add('hidden');
@@ -500,13 +603,16 @@ function renderRuleRow(rule, status, ev) {
     tr.dataset.ruleId = rule.id;
     tr.dataset.status = status;
     const severity = rule.severity || 'nice-to-have';
+    const excluded = excludedRules.has(rule.id);
+    if (excluded) tr.classList.add('excluded');
     tr.innerHTML = `
+        <td class="col-include"><input type="checkbox" class="include-rule" data-rule-id="${escapeHtml(rule.id)}" ${excluded ? '' : 'checked'} title="Décocher pour exclure cette règle"></td>
         <td><span class="severity ${severity}">${humanSeverity(severity)}</span></td>
         <td class="rule-name">
             ${escapeHtml(rule.title || rule.id)}
             <span class="rule-id-tech">${escapeHtml(rule.id)}</span>
         </td>
-        <td><span class="status ${status}">${escapeHtml(humanStatus(status))}</span></td>
+        <td><span class="status ${status}">${escapeHtml(humanStatus(status, rule.id))}</span></td>
         <td class="action-cell">${formatActionCell(rule, status, ev)}</td>
     `;
     return tr;
@@ -529,7 +635,7 @@ function updateRuleRow(ev) {
     tr.dataset.status = status;
     const statusCell = tr.querySelector('.status');
     statusCell.className = `status ${status}`;
-    statusCell.textContent = humanStatus(status);
+    statusCell.textContent = humanStatus(status, ruleID);
     tr.querySelector('.action-cell').innerHTML = formatActionCell(rule, status, ev);
     // ré-applique les filtres pour le cas où la rule devient (in)visible avec son nouveau status.
     applyFilters();
@@ -556,9 +662,10 @@ function formatActionCell(rule, status, ev) {
     if (status === 'rolled_back') {
         return `<span class="action-icon fail">↶</span><span class="action-text">Action a échoué → rollback exécuté</span>`;
     }
+    const isBloatware = rule.id && rule.id.startsWith('bloatware.');
     if (status === 'would_skip' || status === 'skipped') {
-        // Déjà conforme : juste rassurer.
-        return `<span class="action-icon ok">✓</span><span class="action-text">Aucune action — déjà conforme</span>`;
+        const txt = isBloatware ? 'Pas installée — rien à faire' : 'Aucune action — déjà conforme';
+        return `<span class="action-icon ok">✓</span><span class="action-text">${txt}</span>`;
     }
     if (status === 'would_apply') {
         const desc = rule.description || 'modification système';
@@ -566,11 +673,13 @@ function formatActionCell(rule, status, ev) {
         const breaksBadge = rule.breaks && rule.breaks.length > 0
             ? `<span class="breaks-badge" title="${escapeHtml(rule.breaks.join('  •  '))}">⚠ casse si…</span>`
             : '';
-        return `<span class="action-icon warn">⚠</span><span class="action-text">À renforcer : ${escapeHtml(desc)}</span> ${breaksBadge}
+        const verb = isBloatware ? 'À supprimer' : 'À renforcer';
+        return `<span class="action-icon warn">⚠</span><span class="action-text">${verb} : ${escapeHtml(desc)}</span> ${breaksBadge}
                 ${stateBlurb ? `<span class="action-state">État actuel : ${stateBlurb}</span>` : ''}`;
     }
     if (status === 'applied') {
-        return `<span class="action-icon ok">✓</span><span class="action-text">Appliquée avec succès</span>`;
+        const txt = isBloatware ? 'Désinstallée ✓' : 'Appliquée avec succès';
+        return `<span class="action-icon ok">✓</span><span class="action-text">${txt}</span>`;
     }
     return '';
 }
@@ -594,7 +703,13 @@ function formatStateValue(v) {
     return truncate(String(v), 40);
 }
 
-function humanStatus(status) {
+function humanStatus(status, ruleID) {
+    const isBloatware = ruleID && ruleID.startsWith('bloatware.');
+    if (isBloatware) {
+        if (status === 'would_skip' || status === 'skipped') return 'Pas installée';
+        if (status === 'would_apply') return 'À supprimer';
+        if (status === 'applied') return 'Désinstallée ✓';
+    }
     return {
         'pending':     'En attente',
         'would_skip':  'OK (déjà conforme)',
