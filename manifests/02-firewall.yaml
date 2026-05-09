@@ -143,6 +143,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "Variant ciblé du Wi-Fi public : interdit explicitement le port 445 (SMB) en inbound sur le profil Public. C'est ceinture-bretelles avec firewall.profile_public — au cas où une autre rule ouvrirait par inadvertance le partage de fichiers."
+
+    user_today: "Sur Wi-Fi public (café, aéroport), le port 445 (partage de fichiers SMB) reste potentiellement accessible aux autres machines du réseau."
+
+    user_after: "Le port 445 est explicitement bloqué en entrée sur les réseaux Public — ceinture-bretelles si une autre rule ouvrait par erreur."
+
+    user_for_who: "Tout le monde, surtout en mobilité."
+
+    user_risk: "Aucun en usage standard. Empêche partage SMB sur Wi-Fi public (peu probable cas d'usage)."
     action: ./engine/actions/firewall/block_smb_public.action.ps1
     test: ./engine/actions/firewall/block_smb_public.test.ps1
     undo: ./engine/actions/firewall/block_smb_public.undo.ps1
@@ -169,6 +177,14 @@ rules:
       - "https://www.sans.org/blog/responder-netbios-poisoning-attacks/"
     tags: [firewall, netbios, lateral-movement]
     added_in: "1.0"
+
+    user_today: "Sur Wi-Fi public, les ports NetBIOS (137-139) restent potentiellement accessibles — vecteur classique d'attaque latérale."
+
+    user_after: "Ports NetBIOS bloqués en entrée sur le profil Public."
+
+    user_for_who: "Tout le monde, surtout en mobilité."
+
+    user_risk: "Aucun. Si tu utilisais NetBIOS sur Wi-Fi public (jamais), il faudrait ajouter une exception."
     action: ./engine/actions/firewall/block_netbios_public.action.ps1
     test: ./engine/actions/firewall/block_netbios_public.test.ps1
     undo: ./engine/actions/firewall/block_netbios_public.undo.ps1

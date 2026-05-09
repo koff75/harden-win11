@@ -25,6 +25,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Word/Excel/PowerPoint peuvent lancer cmd.exe, PowerShell ou n'importe quel programme via macros — vecteur classique de malware."
+    user_after: "Bloque toute création de processus enfant depuis Office. Une macro malveillante ne peut plus lancer Mimikatz, cmd, etc."
+    user_for_who: "Tout le monde qui ouvre des Office reçus par mail."
+    user_risk: "Si tu as des macros qui appellent cmd/powershell légitimement (rare en perso), à autoriser au cas par cas."
     action: ./engine/actions/asr/block_office_child_processes.action.ps1
     test: ./engine/actions/asr/block_office_child_processes.test.ps1
     undo: ./engine/actions/asr/block_office_child_processes.undo.ps1
@@ -84,6 +88,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Office peut injecter du code dans d'autres processus — technique utilisée par des malwares pour contourner les protections."
+    user_after: "Bloque les tentatives d'injection. Un malware Office reste prisonnier de son propre processus."
+    user_for_who: "Tout le monde."
+    user_risk: "Très rare. Quelques add-ins Office anciens peuvent être affectés."
     action: ./engine/actions/asr/block_office_code_injection.action.ps1
     test: ./engine/actions/asr/block_office_code_injection.test.ps1
     undo: ./engine/actions/asr/block_office_code_injection.undo.ps1
@@ -109,6 +117,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Outlook peut lancer des programmes (cmd, scripts, etc.) — vecteur d'infection par mail piégé."
+    user_after: "Outlook ne peut plus lancer de processus enfant. Si tu cliques par erreur sur une PJ piégée, la chaîne casse."
+    user_for_who: "Tout le monde qui utilise Outlook."
+    user_risk: "Très rare. Quelques workflows entreprise spécifiques."
     action: ./engine/actions/asr/block_office_comm_child_processes.action.ps1
     test: ./engine/actions/asr/block_office_comm_child_processes.test.ps1
     undo: ./engine/actions/asr/block_office_comm_child_processes.undo.ps1
@@ -134,6 +146,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Les macros VBA Office peuvent appeler les API Win32 directement — accès à toute la machine."
+    user_after: "Macros bloquées d'appeler les Win32 API. Capacité de nuisance fortement réduite."
+    user_for_who: "Tout le monde qui n'écrit pas du VBA expert."
+    user_risk: "Si tu programmes en VBA professionnel avec Win32 API, tes macros casseront."
     action: ./engine/actions/asr/block_win32_api_office_macros.action.ps1
     test: ./engine/actions/asr/block_win32_api_office_macros.test.ps1
     undo: ./engine/actions/asr/block_win32_api_office_macros.undo.ps1
@@ -159,6 +175,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Une PJ téléchargée depuis ton mail peut être exécutée directement (.exe, .bat, .ps1, .vbs...)."
+    user_after: "Les contenus exécutables téléchargés depuis email/webmail sont bloqués. Tu dois explicitement les sauver puis les lancer (et là Defender les scanne)."
+    user_for_who: "Tout le monde."
+    user_risk: "Quasi nul. Si tu télécharges souvent des installeurs depuis ton webmail, légère friction."
     action: ./engine/actions/asr/block_email_executable_content.action.ps1
     test: ./engine/actions/asr/block_email_executable_content.test.ps1
     undo: ./engine/actions/asr/block_email_executable_content.undo.ps1
@@ -184,6 +204,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Les scripts obfusqués (encodés en Base64, avec des chaînes brouillées) peuvent s'exécuter sans alerte."
+    user_after: "Defender détecte les patterns d'obfuscation et bloque l'exécution."
+    user_for_who: "Tout le monde."
+    user_risk: "Très rare faux positif sur des scripts légitimes mais obfusqués (anti-reverse engineering, packers)."
     action: ./engine/actions/asr/block_obfuscated_scripts.action.ps1
     test: ./engine/actions/asr/block_obfuscated_scripts.test.ps1
     undo: ./engine/actions/asr/block_obfuscated_scripts.undo.ps1
@@ -209,6 +233,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Un fichier .js ou .vbs téléchargé peut télécharger et lancer un .exe automatiquement (technique des droppers)."
+    user_after: "Bloque le lancement d'exe par JS/VBS téléchargés. La chaîne d'attaque casse."
+    user_for_who: "Tout le monde."
+    user_risk: "Quasi nul."
     action: ./engine/actions/asr/block_js_vbs_launch.action.ps1
     test: ./engine/actions/asr/block_js_vbs_launch.test.ps1
     undo: ./engine/actions/asr/block_js_vbs_launch.undo.ps1
@@ -268,6 +296,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Si tu branches une clé USB, n'importe quel .exe non signé dessus peut s'exécuter."
+    user_after: "Defender bloque les processus non-signés/non-trusted lancés depuis une clé USB."
+    user_for_who: "Profile business / maximal. Utile en environnement où on échange des clés USB."
+    user_risk: "Tes outils portables non-signés sur clé USB ne marcheront plus (utilitaires sysinternals signés OK ; tools custom non-signés KO)."
     action: ./engine/actions/asr/block_unsigned_usb.action.ps1
     test: ./engine/actions/asr/block_unsigned_usb.test.ps1
     undo: ./engine/actions/asr/block_unsigned_usb.undo.ps1
@@ -294,6 +326,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "WMI Event Subscription est une technique de persistance malware (s'exécute au démarrage sans laisser de trace dans Run keys)."
+    user_after: "Defender bloque les nouvelles persistances WMI Event Subscription."
+    user_for_who: "Profile maximal. Usage WMI légitime rare en perso."
+    user_risk: "Si tu utilises WMI Event Subscription pour de la supervision système, casse."
     action: ./engine/actions/asr/block_wmi_persistence.action.ps1
     test: ./engine/actions/asr/block_wmi_persistence.test.ps1
     undo: ./engine/actions/asr/block_wmi_persistence.undo.ps1
@@ -319,6 +355,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "PsExec et WMI peuvent lancer des processus à distance — techniques classiques de mouvement latéral des attaquants."
+    user_after: "Defender bloque la création de processus via PsExec et WMI."
+    user_for_who: "Profile maximal. Utile sauf si tu fais de l'admin réseau."
+    user_risk: "PsExec ne marche plus pour le dépannage distant. Outils Sysinternals classiques affectés."
     action: ./engine/actions/asr/block_psexec_wmi.action.ps1
     test: ./engine/actions/asr/block_psexec_wmi.test.ps1
     undo: ./engine/actions/asr/block_psexec_wmi.undo.ps1
@@ -410,6 +450,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Adobe Reader peut lancer des processus enfant — vecteur d'infection via PDF piégé."
+    user_after: "Adobe Reader ne peut plus lancer d'autre programme. Si tu ouvres un PDF malveillant, la chaîne casse."
+    user_for_who: "Tout le monde qui ouvre des PDF inconnus."
+    user_risk: "Très rare workflow PDF qui appelle un programme externe."
     action: ./engine/actions/asr/block_adobe_reader_child.action.ps1
     test: ./engine/actions/asr/block_adobe_reader_child.test.ps1
     undo: ./engine/actions/asr/block_adobe_reader_child.undo.ps1
@@ -435,6 +479,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Certains drivers Windows signés mais vulnérables (BYOVD = Bring Your Own Vulnerable Driver) peuvent être exploités pour grimper en kernel."
+    user_after: "Defender bloque le chargement de la liste connue de drivers vulnérables."
+    user_for_who: "Tout le monde."
+    user_risk: "Très rare driver hardware ancien qui ne marche plus (à remplacer par version récente)."
     action: ./engine/actions/asr/block_vulnerable_drivers.action.ps1
     test: ./engine/actions/asr/block_vulnerable_drivers.test.ps1
     undo: ./engine/actions/asr/block_vulnerable_drivers.undo.ps1
@@ -460,6 +508,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Un attaquant peut reboot ton PC en Safe Mode pour désactiver Defender et faire ses sales coups."
+    user_after: "Defender bloque les reboots en Safe Mode forcés par un programme."
+    user_for_who: "Profile business / maximal."
+    user_risk: "Reboot en Safe Mode bloqué (par ex via msconfig). Affecte les workflows de troubleshooting."
     action: ./engine/actions/asr/block_safe_mode_reboot.action.ps1
     test: ./engine/actions/asr/block_safe_mode_reboot.test.ps1
     undo: ./engine/actions/asr/block_safe_mode_reboot.undo.ps1
@@ -486,6 +538,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Un malware peut copier cmd.exe ou PowerShell sous un autre nom pour échapper à la détection."
+    user_after: "Defender détecte les outils système renommés/copiés et bloque leur exécution."
+    user_for_who: "Tout le monde."
+    user_risk: "Très rare faux positif si tu utilises des outils sysinternals renommés volontairement."
     action: ./engine/actions/asr/block_impersonated_tools.action.ps1
     test: ./engine/actions/asr/block_impersonated_tools.test.ps1
     undo: ./engine/actions/asr/block_impersonated_tools.undo.ps1
@@ -511,6 +567,10 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    user_today: "Sur un serveur, un webshell (ASP, PHP) peut être créé via une vulnérabilité web pour persister."
+    user_after: "Defender bloque la création de webshells dans les répertoires web."
+    user_for_who: "Serveurs Windows. Inutile sur poste de travail mais sans dommage."
+    user_risk: "Aucun sur un poste perso."
     action: ./engine/actions/asr/block_webshell_servers.action.ps1
     test: ./engine/actions/asr/block_webshell_servers.test.ps1
     undo: ./engine/actions/asr/block_webshell_servers.undo.ps1

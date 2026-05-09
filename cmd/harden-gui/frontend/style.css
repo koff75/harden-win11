@@ -105,10 +105,11 @@
 .comp-partial .comp-bar-fill { background: #ffaa00; }
 .comp-missing .comp-bar-fill { background: #ff6b7e; }
 
-/* Tooltip natif HTML uniquement (suit la souris). Pas de tooltip custom :
-   on enrichit le contenu via l'attribut `title` posé en JS sur la cellule
-   .action-cell, avec le format multi-ligne user-friendly. */
-td.action-cell { cursor: help; }
+/* Tooltip natif HTML uniquement (suit la souris). Le `title` est posé en JS
+   sur les cellules Niveau (severity) + Règle (rule-name) — pas sur Action,
+   pour ne pas gêner pendant qu'on lit le détail de l'action. */
+.row td:nth-child(2),
+.row td.rule-name { cursor: help; }
 
 /* Lang switch button */
 .btn-lang {

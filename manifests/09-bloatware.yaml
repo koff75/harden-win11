@@ -26,6 +26,14 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+
+    user_today: "L'app Clipchamp (éditeur vidéo Microsoft) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+
+    user_for_who: "Ceux qui n'utilisent pas Clipchamp (éditeur vidéo Microsoft)."
+
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/clipchamp.action.ps1
     test: ./engine/actions/bloatware/clipchamp.test.ps1
     profiles:
@@ -50,6 +58,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Bing News (l'app actualités) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Bing News (l'app actualités)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/bing_news.action.ps1
     test: ./engine/actions/bloatware/bing_news.test.ps1
     profiles:
@@ -74,6 +86,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Bing Weather (la météo) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Bing Weather (la météo)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/bing_weather.action.ps1
     test: ./engine/actions/bloatware/bing_weather.test.ps1
     profiles:
@@ -98,6 +114,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Get Help (assistant de support Windows) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Get Help (assistant de support Windows)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/get_help.action.ps1
     test: ./engine/actions/bloatware/get_help.test.ps1
     profiles:
@@ -122,6 +142,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Get Started (tutoriel Windows) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Get Started (tutoriel Windows)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/get_started.action.ps1
     test: ./engine/actions/bloatware/get_started.test.ps1
     profiles:
@@ -146,6 +170,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Microsoft Solitaire Collection est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Microsoft Solitaire Collection."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/solitaire.action.ps1
     test: ./engine/actions/bloatware/solitaire.test.ps1
     profiles:
@@ -170,6 +198,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Mixed Reality Portal (casque VR) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Mixed Reality Portal (casque VR)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/mixed_reality.action.ps1
     test: ./engine/actions/bloatware/mixed_reality.test.ps1
     profiles:
@@ -194,6 +226,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app People (carnet d'adresses) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas People (carnet d'adresses)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/people.action.ps1
     test: ./engine/actions/bloatware/people.test.ps1
     profiles:
@@ -218,6 +254,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Skype (messagerie/visio Microsoft) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Skype (messagerie/visio Microsoft)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/skype.action.ps1
     test: ./engine/actions/bloatware/skype.test.ps1
     profiles:
@@ -242,6 +282,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Feedback Hub (envoi de feedback à Microsoft) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Feedback Hub (envoi de feedback à Microsoft)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/feedback_hub.action.ps1
     test: ./engine/actions/bloatware/feedback_hub.test.ps1
     profiles:
@@ -266,6 +310,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Your Phone / Phone Link (lien Android) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Your Phone / Phone Link (lien Android)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/your_phone.action.ps1
     test: ./engine/actions/bloatware/your_phone.test.ps1
     profiles:
@@ -290,6 +338,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Groove Music (lecteur audio) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Groove Music (lecteur audio)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/zune_music.action.ps1
     test: ./engine/actions/bloatware/zune_music.test.ps1
     profiles:
@@ -314,6 +366,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, microsoft]
     added_in: "1.0"
+    user_today: "L'app Films & TV (lecteur vidéo) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Films & TV (lecteur vidéo)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/zune_video.action.ps1
     test: ./engine/actions/bloatware/zune_video.test.ps1
     profiles:
@@ -338,6 +394,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, streaming]
     added_in: "1.0"
+    user_today: "L'app Disney+ est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Disney+."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/disney.action.ps1
     test: ./engine/actions/bloatware/disney.test.ps1
     profiles:
@@ -362,6 +422,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, social]
     added_in: "1.0"
+    user_today: "L'app TikTok est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas TikTok."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/tiktok.action.ps1
     test: ./engine/actions/bloatware/tiktok.test.ps1
     profiles:
@@ -386,6 +450,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, social]
     added_in: "1.0"
+    user_today: "L'app Facebook est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Facebook."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/facebook.action.ps1
     test: ./engine/actions/bloatware/facebook.test.ps1
     profiles:
@@ -410,6 +478,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, social]
     added_in: "1.0"
+    user_today: "L'app Instagram est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Instagram."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/instagram.action.ps1
     test: ./engine/actions/bloatware/instagram.test.ps1
     profiles:
@@ -434,6 +506,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, social]
     added_in: "1.0"
+    user_today: "L'app Twitter / X est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Twitter / X."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/twitter.action.ps1
     test: ./engine/actions/bloatware/twitter.test.ps1
     profiles:
@@ -458,6 +534,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, social]
     added_in: "1.0"
+    user_today: "L'app LinkedIn est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas LinkedIn."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/linkedin.action.ps1
     test: ./engine/actions/bloatware/linkedin.test.ps1
     profiles:
@@ -482,6 +562,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, streaming]
     added_in: "1.0"
+    user_today: "L'app Netflix est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Netflix."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/netflix.action.ps1
     test: ./engine/actions/bloatware/netflix.test.ps1
     profiles:
@@ -506,6 +590,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, games]
     added_in: "1.0"
+    user_today: "L'app Candy Crush Saga est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Candy Crush Saga."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/candy_crush.action.ps1
     test: ./engine/actions/bloatware/candy_crush.test.ps1
     profiles:
@@ -530,6 +618,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, media]
     added_in: "1.0"
+    user_today: "L'app Spotify (version Store) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Spotify (version Store)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/spotify_ab.action.ps1
     test: ./engine/actions/bloatware/spotify_ab.test.ps1
     profiles:
@@ -554,6 +646,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, media]
     added_in: "1.0"
+    user_today: "L'app Spotify est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Spotify."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/spotify.action.ps1
     test: ./engine/actions/bloatware/spotify.test.ps1
     profiles:
@@ -578,6 +674,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, media]
     added_in: "1.0"
+    user_today: "L'app Apple Music est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Apple Music."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/apple_music.action.ps1
     test: ./engine/actions/bloatware/apple_music.test.ps1
     profiles:
@@ -602,6 +702,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, media]
     added_in: "1.0"
+    user_today: "L'app Dolby Access est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas Dolby Access."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/dolby_access.action.ps1
     test: ./engine/actions/bloatware/dolby_access.test.ps1
     profiles:
@@ -626,6 +730,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, oem]
     added_in: "1.0"
+    user_today: "L'app JimmyLin (autres apps tierces préinstallées) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas JimmyLin (autres apps tierces préinstallées)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/jimmylin.action.ps1
     test: ./engine/actions/bloatware/jimmylin.test.ps1
     profiles:
@@ -650,6 +758,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
     tags: [bloatware, store, oem]
     added_in: "1.0"
+    user_today: "L'app App publisher 5319275A (apps tierces préinstallées) est préinstallée ou installée sur ton PC. Elle prend de la place et peut tourner en arrière-plan."
+    user_after: "L'app est désinstallée. Plus de notifications, plus de mises à jour, plus de processus en arrière-plan."
+    user_for_who: "Ceux qui n'utilisent pas App publisher 5319275A (apps tierces préinstallées)."
+    user_risk: "Si tu en as besoin plus tard, tu peux la réinstaller depuis le Microsoft Store. Aucune donnée perdue."
     action: ./engine/actions/bloatware/pub_5319275a.action.ps1
     test: ./engine/actions/bloatware/pub_5319275a.test.ps1
     profiles:

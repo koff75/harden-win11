@@ -25,7 +25,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     await refreshProfiles();
     await refreshSections();
     await refreshRuns();
-    await refreshCoverage();
     await refreshWatchlistAlerts();
     bindEvents();
     bindWailsEvents();
@@ -446,10 +445,12 @@ function rerenderAllRows() {
         const statusCell = tr.querySelector('.status');
         if (statusCell) statusCell.textContent = humanStatus(status, ruleID);
         const actionCell = tr.querySelector('.action-cell');
-        if (actionCell) {
-            actionCell.innerHTML = formatActionCell(rule, status, ev);
-            actionCell.title = buildUserTooltipText(rule, ev);
-        }
+        if (actionCell) actionCell.innerHTML = formatActionCell(rule, status, ev);
+        const tipText = buildUserTooltipText(rule, ev);
+        const sevCell = tr.querySelector('td:nth-child(2)');
+        const ruleCell = tr.querySelector('.rule-name');
+        if (sevCell)  sevCell.title  = tipText;
+        if (ruleCell) ruleCell.title = tipText;
     });
 }
 
@@ -756,6 +757,8 @@ function bindWailsEvents() {
     window.runtime.EventsOn('run_end', (summary) => {
         const cls = summary.cancelled || summary.aborted ? 'aborted' : 'success';
         setStatus(cls, summarizeStatus(summary));
+        // Remonte en haut pour voir le dashboard + premières règles dès que le run termine.
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     window.runtime.EventsOn('restore_point_started', () => {
         setStatus('running', 'Création d\'un Restore Point Windows (peut prendre 30-60s)…');
@@ -824,13 +827,15 @@ function renderRuleRow(rule, status, ev) {
         <td><span class="status ${status}">${escapeHtml(humanStatus(status, rule.id))}</span></td>
         <td class="action-cell">${formatActionCell(rule, status, ev)}</td>
     `;
-    // Tooltip natif HTML : suit la souris naturellement, ergonomique.
-    // Posé sur la cellule "Action proposée" (la cellule la plus large qui
-    // déclenchera le tooltip dès qu'on survole l'info action).
-    const actionCell = tr.querySelector('.action-cell');
-    if (actionCell) {
-        actionCell.title = buildUserTooltipText(rule, ev);
-    }
+    // Tooltip natif HTML : suit la souris naturellement.
+    // Posé sur les cellules Niveau (severity) et Règle (rule-name) — pas
+    // sur État ni Action (qui sont déjà self-explanatory et où un tooltip
+    // bouge serait gênant pendant qu'on lit la cellule).
+    const tipText = buildUserTooltipText(rule, ev);
+    const sevCell = tr.querySelector('td:nth-child(2)');  // colonne Niveau
+    const ruleCell = tr.querySelector('.rule-name');       // colonne Règle
+    if (sevCell)  sevCell.title  = tipText;
+    if (ruleCell) ruleCell.title = tipText;
     return tr;
 }
 
@@ -854,14 +859,17 @@ function updateRuleRow(ev) {
     statusCell.textContent = humanStatus(status, ruleID);
     const actionCell = tr.querySelector('.action-cell');
     actionCell.innerHTML = formatActionCell(rule, status, ev);
-    actionCell.title = buildUserTooltipText(rule, ev); // refresh tooltip natif
+    // Refresh tooltip natif sur les colonnes Niveau + Règle (pas sur Action).
+    const tipText = buildUserTooltipText(rule, ev);
+    const sevCell = tr.querySelector('td:nth-child(2)');
+    const ruleCell = tr.querySelector('.rule-name');
+    if (sevCell)  sevCell.title  = tipText;
+    if (ruleCell) ruleCell.title = tipText;
     // ré-applique les filtres pour le cas où la rule devient (in)visible avec son nouveau status.
     applyFilters();
     renderDashboard();
-    // Scroll seulement si la row est visible (sinon le filtre la cache et scroll est inutile).
-    if (tr.style.display !== 'none') {
-        tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+    // Pas de scrollIntoView ici : le user veut rester en haut de la page,
+    // le scroll-to-top est fait dans run_end (cf. bindWailsEvents).
 }
 
 // formatActionCell — texte user-friendly pour la colonne "Action proposée".
@@ -958,16 +966,13 @@ function formatActionCell(rule, status, ev) {
     }
     if (status === 'would_apply') {
         // Cellule courte : verbe contextuel + 1 ligne synthétique.
-        // Le détail riche (Aujourd'hui / Si tu actives / Pour qui / Risque)
-        // apparaît au hover via le tooltip (cf. setupRuleTooltip).
+        // userAfter d'abord (français accessible), puis title (humain) en
+        // fallback. JAMAIS description (qui contient du jargon registry).
         const verb = contextualVerb(rule);
-        // Synthèse : on prend userAfter (le résultat concret) si dispo,
-        // sinon description (technique mais court).
-        const synth = rule.userAfter || rule.description || 'modification système';
-        const breaksBadge = rule.breaks && rule.breaks.length > 0
-            ? `<span class="breaks-badge" title="${escapeHtml(rule.breaks.join('  •  '))}">⚠ peut casser…</span>`
-            : '';
-        return `<span class="action-icon warn">⚠</span><span class="action-text"><strong>${verb}</strong> · ${escapeHtml(synth)}</span> ${breaksBadge}`;
+        const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+        const userAfter = lang === 'en' ? (rule.userAfterEn || rule.userAfter) : rule.userAfter;
+        const synth = userAfter || rule.title || (lang === 'en' ? 'system change' : 'modification système');
+        return `<span class="action-icon warn">⚠</span><span class="action-text"><strong>${escapeHtml(verb)}</strong> · ${escapeHtml(synth)}</span>`;
     }
     if (status === 'applied') {
         const txt = isBloatware ? 'Désinstallée ✓' : 'Appliquée avec succès';

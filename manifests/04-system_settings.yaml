@@ -23,6 +23,10 @@ rules:
       - "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/settings-and-configuration"
     tags: [uac, hardening]
     added_in: "1.0"
+    user_today: "L'UAC (User Account Control, le mécanisme qui te demande \"voulez-vous autoriser cette app à modifier le système ?\") est peut-être désactivé."
+    user_after: "L'UAC est forcé activé. Tout programme qui veut admin doit demander explicitement."
+    user_for_who: "Tout le monde — c'est la barrière de base contre les malwares qui veulent s'installer."
+    user_risk: "Aucun. Quelques fenêtres UAC en plus à l'install de softs."
     action: ./engine/actions/uac/enable_lua.action.ps1
     test: ./engine/actions/uac/enable_lua.test.ps1
     undo: ./engine/actions/uac/enable_lua.undo.ps1
@@ -91,6 +95,14 @@ rules:
       - "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/settings-and-configuration"
     tags: [uac, hardening]
     added_in: "1.0"
+
+    user_today: "Quand l'UAC affiche sa fenêtre, le bureau normal reste actif derrière — un malware peut tenter d'envoyer des clics auto."
+
+    user_after: "L'UAC s'affiche sur un \"secure desktop\" isolé — aucun autre programme ne peut interagir avec lui pendant que tu décides."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Très bref clignotement noir à chaque UAC. Aucun impact fonctionnel."
     action: ./engine/actions/uac/prompt_secure_desktop.action.ps1
     test: ./engine/actions/uac/prompt_secure_desktop.test.ps1
     undo: ./engine/actions/uac/prompt_secure_desktop.undo.ps1
@@ -200,6 +212,14 @@ rules:
     references: []
     tags: [rdp, firewall, defense-in-depth]
     added_in: "1.0"
+
+    user_today: "Même si RDP service est désactivé, les règles firewall pour le port 3389 (Bureau à distance) peuvent rester ouvertes."
+
+    user_after: "Les règles firewall RDP sont supprimées — port 3389 fermé partout."
+
+    user_for_who: "Tout le monde qui n'utilise pas RDP. Cohérent avec rdp_disable."
+
+    user_risk: "Si tu réactives RDP plus tard, faudra ré-ajouter les règles firewall."
     action: ./engine/actions/system_settings/rdp_firewall_disable.action.ps1
     test: ./engine/actions/system_settings/rdp_firewall_disable.test.ps1
     undo: ./engine/actions/system_settings/rdp_firewall_disable.undo.ps1
@@ -275,6 +295,14 @@ rules:
       - "https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/powering-down"
     tags: [power, boot]
     added_in: "1.0"
+
+    user_today: "Fast Startup (Windows 8+) garde le noyau en hibernation pour booter plus vite — mais empêche certaines mises à jour drivers et complique le forensics."
+
+    user_after: "Fast Startup désactivé. Boot un peu plus lent (5-10s) mais shutdown propre, drivers à jour à chaque démarrage."
+
+    user_for_who: "Profile maximal. Sur SSD moderne, la différence de boot est négligeable."
+
+    user_risk: "Boot 5-10 secondes plus lent. Aucun autre impact."
     action: ./engine/actions/system_settings/fast_startup_off.action.ps1
     test: ./engine/actions/system_settings/fast_startup_off.test.ps1
     undo: ./engine/actions/system_settings/fast_startup_off.undo.ps1

@@ -99,6 +99,14 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
     tags: [malware, defender, email]
     added_in: "1.0"
+
+    user_today: "Defender ne scanne pas les fichiers téléchargés via Internet Explorer / Outlook au moment du téléchargement."
+
+    user_after: "Tout fichier qui arrive via un download est analysé immédiatement par Defender, avant d'arriver sur ton disque."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Aucun en usage normal."
     action: ./engine/actions/defender/ioav.action.ps1
     test: ./engine/actions/defender/ioav.test.ps1
     undo: ./engine/actions/defender/ioav.undo.ps1
@@ -124,6 +132,14 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
     tags: [malware, defender, script]
     added_in: "1.0"
+
+    user_today: "Les scripts (PowerShell, JS, VBS) lancés sur ton PC ne sont pas analysés par Defender."
+
+    user_after: "Defender intercepte et analyse les scripts en mémoire avant qu'ils ne s'exécutent."
+
+    user_for_who: "Tout le monde — vrai vecteur de malware moderne (fileless attacks)."
+
+    user_risk: "Très rare ralentissement sur des grosses suites de scripts (build CI/CD)."
     action: ./engine/actions/defender/script_scanning.action.ps1
     test: ./engine/actions/defender/script_scanning.test.ps1
     undo: ./engine/actions/defender/script_scanning.undo.ps1
@@ -149,6 +165,14 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
     tags: [malware, defender, network]
     added_in: "1.0"
+
+    user_today: "Pas de système d'inspection des connexions réseau pour bloquer les exploits connus."
+
+    user_after: "Defender inspecte le trafic réseau en temps réel et bloque les paquets correspondant à des exploits connus."
+
+    user_for_who: "Tout le monde, surtout sur Wi-Fi public."
+
+    user_risk: "Très rare faux positif sur du trafic légitime."
     action: ./engine/actions/defender/nis.action.ps1
     test: ./engine/actions/defender/nis.test.ps1
     undo: ./engine/actions/defender/nis.undo.ps1
@@ -174,6 +198,14 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/detect-block-potentially-unwanted-apps-microsoft-defender-antivirus"
     tags: [malware, defender, pua]
     added_in: "1.0"
+
+    user_today: "Les Potentially Unwanted Applications (toolbars, crapware, miners cachés) ne sont pas détectées par défaut."
+
+    user_after: "Defender bloque automatiquement le téléchargement et l'installation des PUA connues."
+
+    user_for_who: "Tout le monde — utile contre les bundles d'installeurs."
+
+    user_risk: "Quasi nul. Très rare cas d'app légitime mais agressive (CCleaner ancienne version) qui se prend la croix."
     action: ./engine/actions/defender/pua.action.ps1
     test: ./engine/actions/defender/pua.test.ps1
     undo: ./engine/actions/defender/pua.undo.ps1
@@ -297,6 +329,14 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
     tags: [defender, privacy, cloud]
     added_in: "1.0"
+
+    user_today: "Quand Defender trouve un fichier suspect mais inconnu, il ne l'envoie pas à Microsoft pour analyse approfondie."
+
+    user_after: "Les samples suspects (sans données perso) sont envoyés à Microsoft pour analyse cloud — Defender bénéficie de la détection collaborative."
+
+    user_for_who: "Tout le monde qui veut une protection à jour."
+
+    user_risk: "Microsoft reçoit des samples (jamais tes documents personnels — uniquement des binaires suspects). Skip si tu es vraiment paranoïaque."
     action: ./engine/actions/defender/sample_submission.action.ps1
     test: ./engine/actions/defender/sample_submission.test.ps1
     undo: ./engine/actions/defender/sample_submission.undo.ps1
@@ -328,6 +368,14 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/cloud-protection-microsoft-defender-antivirus"
     tags: [malware, defender, cloud]
     added_in: "1.0"
+
+    user_today: "Defender ne consulte pas le cloud Microsoft pour les détections (mode local-only)."
+
+    user_after: "Defender consulte la base cloud de Microsoft à chaque analyse — détection beaucoup plus à jour."
+
+    user_for_who: "Tout le monde avec une connexion internet."
+
+    user_risk: "Aucun fonctionnel. Petite latence supplémentaire sur certains scans (négligeable)."
     action: ./engine/actions/defender/cloud_protection.action.ps1
     test: ./engine/actions/defender/cloud_protection.test.ps1
     undo: ./engine/actions/defender/cloud_protection.undo.ps1
@@ -357,6 +405,14 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/defender/update-mpsignature"
     tags: [malware, defender, update]
     added_in: "1.0"
+
+    user_today: "Pas de vérification que les signatures Defender sont à jour récemment."
+
+    user_after: "On vérifie que les signatures ont été mises à jour dans les dernières 24h. Si pas, alerte."
+
+    user_for_who: "Tout le monde — un Defender avec signatures vieilles de 2 mois ne sert plus à grand chose."
+
+    user_risk: "Aucun."
     action: ./engine/actions/defender/signatures.action.ps1
     test: ./engine/actions/defender/signatures.test.ps1
     profiles:
@@ -388,6 +444,14 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/prevent-changes-to-security-settings-with-tamper-protection"
     tags: [defender, tamper-protection, manual-step]
     added_in: "1.0"
+
+    user_today: "Aucune vérification que la Tamper Protection (anti-désactivation Defender par malware) est active."
+
+    user_after: "On vérifie qu'elle est ON. Si désactivée, on alerte (tu dois aller la réactiver dans Windows Security manuellement)."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Aucun (vérification read-only)."
     action: ./engine/actions/defender/tamper_protection_check.action.ps1
     test: ./engine/actions/defender/tamper_protection_check.test.ps1
     profiles:

@@ -56,6 +56,14 @@ rules:
     references: []
     tags: [privacy, advertising]
     added_in: "1.0"
+
+    user_today: "Windows associe un identifiant publicitaire unique à ton compte — partagé avec les apps Store pour profiling."
+
+    user_after: "L'Advertising ID est désactivé par stratégie machine pour TOUS les utilisateurs du PC."
+
+    user_for_who: "Tout le monde qui n'aime pas le tracking."
+
+    user_risk: "Quelques apps Store gratuites peuvent montrer des pubs moins ciblées (= un peu plus de pubs random)."
     action: ./engine/actions/privacy/advertising_id_machine.action.ps1
     test: ./engine/actions/privacy/advertising_id_machine.test.ps1
     undo: ./engine/actions/privacy/advertising_id_machine.undo.ps1
@@ -79,6 +87,14 @@ rules:
     references: []
     tags: [privacy, voice]
     added_in: "1.0"
+
+    user_today: "Windows envoie ta voix (clavier vocal, dictée) à Microsoft pour transcription côté cloud."
+
+    user_after: "La reconnaissance vocale en ligne est désactivée. Si tu utilises la dictée, ça reste local (qualité plus basique)."
+
+    user_for_who: "Tout le monde qui ne fait pas de dictée régulière."
+
+    user_risk: "Si tu utilises la dictée vocale Windows, qualité dégradée (modèle local seulement)."
     action: ./engine/actions/privacy/online_speech_off.action.ps1
     test: ./engine/actions/privacy/online_speech_off.test.ps1
     undo: ./engine/actions/privacy/online_speech_off.undo.ps1
@@ -102,6 +118,14 @@ rules:
     references: []
     tags: [privacy, telemetry]
     added_in: "1.0"
+
+    user_today: "Windows enregistre ton historique d'activités (apps lancées, fichiers ouverts) localement et le synchronise vers le cloud Microsoft."
+
+    user_after: "L'historique d'activités est désactivé. Plus de Timeline dans Win+Tab."
+
+    user_for_who: "Tout le monde qui n'utilise pas la Timeline."
+
+    user_risk: "Plus de Timeline (Win+Tab montre seulement les apps ouvertes maintenant)."
     action: ./engine/actions/privacy/activity_history_off.action.ps1
     test: ./engine/actions/privacy/activity_history_off.test.ps1
     undo: ./engine/actions/privacy/activity_history_off.undo.ps1
@@ -209,6 +233,14 @@ rules:
     references: []
     tags: [privacy, bloat]
     added_in: "1.0"
+
+    user_today: "Windows installe automatiquement des apps suggérées (Candy Crush, Spotify, etc.) à la connexion d'un nouvel utilisateur."
+
+    user_after: "Windows n'installe plus rien automatiquement — tu installes ce que tu veux depuis le Store."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Aucun. Tu peux toujours installer manuellement les apps depuis le Microsoft Store."
     action: ./engine/actions/privacy/consumer_features_off.action.ps1
     test: ./engine/actions/privacy/consumer_features_off.test.ps1
     undo: ./engine/actions/privacy/consumer_features_off.undo.ps1
@@ -232,6 +264,14 @@ rules:
     references: []
     tags: [privacy, bloat, hkcu]
     added_in: "1.0"
+
+    user_today: "Windows peut télécharger silencieusement des apps suggérées en arrière-plan."
+
+    user_after: "Plus de download silencieux. Tu décides quoi installer."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Aucun."
     action: ./engine/actions/privacy/silent_apps_off.action.ps1
     test: ./engine/actions/privacy/silent_apps_off.test.ps1
     undo: ./engine/actions/privacy/silent_apps_off.undo.ps1
@@ -254,6 +294,14 @@ rules:
     references: []
     tags: [privacy, bloat, hkcu]
     added_in: "1.0"
+
+    user_today: "Settings affiche des suggestions \"essayez ceci\" et notifications proactives."
+
+    user_after: "Settings reste minimal et silencieux."
+
+    user_for_who: "Tout le monde qui n'aime pas le bruit."
+
+    user_risk: "Tu pourrais manquer une suggestion de feature utile (rare)."
     action: ./engine/actions/privacy/settings_suggestions_off.action.ps1
     test: ./engine/actions/privacy/settings_suggestions_off.test.ps1
     undo: ./engine/actions/privacy/settings_suggestions_off.undo.ps1
@@ -276,6 +324,14 @@ rules:
     references: []
     tags: [privacy, bloat, hkcu]
     added_in: "1.0"
+
+    user_today: "Le menu Start affiche des suggestions d'apps Store que tu n'as pas installées."
+
+    user_after: "Plus de pubs dans le menu Start."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Aucun."
     action: ./engine/actions/privacy/start_suggestions_off.action.ps1
     test: ./engine/actions/privacy/start_suggestions_off.test.ps1
     undo: ./engine/actions/privacy/start_suggestions_off.undo.ps1
@@ -299,6 +355,14 @@ rules:
     references: []
     tags: [privacy, bloat, hkcu]
     added_in: "1.0"
+
+    user_today: "Windows affiche des notifications \"astuces\" et écrans d'accueil après les mises à jour."
+
+    user_after: "Plus de notifications de tips, plus d'écran d'accueil après update."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Aucun."
     action: ./engine/actions/privacy/tips_welcome_off.action.ps1
     test: ./engine/actions/privacy/tips_welcome_off.test.ps1
     undo: ./engine/actions/privacy/tips_welcome_off.undo.ps1
@@ -322,6 +386,14 @@ rules:
     references: []
     tags: [privacy, telemetry, hkcu]
     added_in: "1.0"
+
+    user_today: "Windows collecte ton écriture manuscrite et tes saisies clavier pour entraîner ses modèles linguistiques personnalisés (envoyés à Microsoft)."
+
+    user_after: "Plus de collecte de tes saisies. Pas d'apprentissage personnalisé du clavier."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Auto-corrections un peu moins précises avec le temps (le modèle de base reste fonctionnel)."
     action: ./engine/actions/privacy/ink_text_collection_off.action.ps1
     test: ./engine/actions/privacy/ink_text_collection_off.test.ps1
     undo: ./engine/actions/privacy/ink_text_collection_off.undo.ps1
@@ -344,6 +416,14 @@ rules:
     references: []
     tags: [privacy, advertising, hkcu]
     added_in: "1.0"
+
+    user_today: "Ton compte utilisateur a un identifiant publicitaire personnel utilisé par les apps Store."
+
+    user_after: "Désactivé pour ton compte courant."
+
+    user_for_who: "Tout le monde — équivalent par-utilisateur de l'option machine-wide."
+
+    user_risk: "Idem advertising_id_machine."
     action: ./engine/actions/privacy/advertising_id_user.action.ps1
     test: ./engine/actions/privacy/advertising_id_user.test.ps1
     undo: ./engine/actions/privacy/advertising_id_user.undo.ps1
