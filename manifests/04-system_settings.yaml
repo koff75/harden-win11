@@ -26,6 +26,10 @@ rules:
     action: ./engine/actions/uac/enable_lua.action.ps1
     test: ./engine/actions/uac/enable_lua.test.ps1
     undo: ./engine/actions/uac/enable_lua.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: system_settings.uac_consent_admin
     title: "UAC : ConsentPromptBehaviorAdmin = 5"
@@ -47,6 +51,10 @@ rules:
     action: ./engine/actions/uac/consent_admin.action.ps1
     test: ./engine/actions/uac/consent_admin.test.ps1
     undo: ./engine/actions/uac/consent_admin.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: system_settings.uac_prompt_secure_desktop
     title: "UAC : PromptOnSecureDesktop = 1"
@@ -68,6 +76,10 @@ rules:
     action: ./engine/actions/uac/prompt_secure_desktop.action.ps1
     test: ./engine/actions/uac/prompt_secure_desktop.test.ps1
     undo: ./engine/actions/uac/prompt_secure_desktop.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: system_settings.uac_deny_user_elevation
     title: "UAC : ConsentPromptBehaviorUser = 0 (refuser élévation user)"
@@ -89,6 +101,10 @@ rules:
     action: ./engine/actions/uac/deny_user_elevation.action.ps1
     test: ./engine/actions/uac/deny_user_elevation.test.ps1
     undo: ./engine/actions/uac/deny_user_elevation.undo.ps1
+    profiles:
+      - maximal
+    breaks:
+      - "Le mode Run as administrator depuis un compte standard ne fonctionne plus. Sur PC perso (compte unique = admin), aucun impact."
 
   - id: system_settings.rdp_disable
     title: "RDP : fDenyTSConnections = 1 (désactivation RDP)"
@@ -110,6 +126,11 @@ rules:
     action: ./engine/actions/system_settings/rdp_disable.action.ps1
     test: ./engine/actions/system_settings/rdp_disable.test.ps1
     undo: ./engine/actions/system_settings/rdp_disable.undo.ps1
+    profiles:
+      - personal
+      - maximal
+    breaks:
+      - "Connexion RDP entrante (impossible de se connecter via Bureau a distance). Si tu utilises RDP pour le support distant, laisser active."
 
   - id: system_settings.rdp_firewall_disable
     title: "RDP : firewall rules 'Remote Desktop' désactivées"
@@ -130,6 +151,11 @@ rules:
     action: ./engine/actions/system_settings/rdp_firewall_disable.action.ps1
     test: ./engine/actions/system_settings/rdp_firewall_disable.test.ps1
     undo: ./engine/actions/system_settings/rdp_firewall_disable.undo.ps1
+    profiles:
+      - personal
+      - maximal
+    breaks:
+      - "Idem rdp_disable : ports firewall RDP fermes."
 
   - id: system_settings.hibernate_off
     title: "Hibernation désactivée (libère ~RAM size sur disque)"
@@ -155,6 +181,11 @@ rules:
     action: ./engine/actions/system_settings/hibernate_off.action.ps1
     test: ./engine/actions/system_settings/hibernate_off.test.ps1
     undo: ./engine/actions/system_settings/hibernate_off.undo.ps1
+    profiles:
+      - business
+      - maximal
+    breaks:
+      - "Plus d hibernation possible (sleep et shutdown OK). Sur laptop, verifier que ton flow ne depend pas d hibernation longue."
 
   - id: system_settings.fast_startup_off
     title: "Fast Startup désactivé (HiberbootEnabled = 0)"
@@ -179,3 +210,7 @@ rules:
     action: ./engine/actions/system_settings/fast_startup_off.action.ps1
     test: ./engine/actions/system_settings/fast_startup_off.test.ps1
     undo: ./engine/actions/system_settings/fast_startup_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal

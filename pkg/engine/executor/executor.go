@@ -44,6 +44,10 @@ type Options struct {
 	// RuleTimeout limite la durée d'exécution de chaque .test.ps1 / .action.ps1.
 	// Zéro = DefaultRuleTimeout (30s).
 	RuleTimeout time.Duration
+	// Profile filtre les rules sur leur champ rule.profiles. Vide = pas de
+	// filtre (toutes les rules tournent). Sinon : seules les rules dont
+	// rule.profiles contient cette valeur (ou rule.profiles vide) tournent.
+	Profile string
 }
 
 // Summary agrège les compteurs de statuts d'un Run.
@@ -80,6 +84,18 @@ func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error)
 		return sum, fmt.Errorf("load manifest: %w", err)
 	}
 
+	// Filtrer les rules selon le profil sélectionné.
+	rules := s.Rules
+	if opts.Profile != "" {
+		filtered := make([]manifest.Rule, 0, len(rules))
+		for _, r := range rules {
+			if r.AppliesToProfile(opts.Profile) {
+				filtered = append(filtered, r)
+			}
+		}
+		rules = filtered
+	}
+
 	_ = opts.Writer.Emit(map[string]any{
 		"type":             "section_start",
 		"run_id":           opts.RunID,
@@ -87,8 +103,9 @@ func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error)
 		"section_order":    s.Section.Order,
 		"section_title":    s.Section.Title,
 		"manifest_version": s.Version,
-		"rule_count":       len(s.Rules),
+		"rule_count":       len(rules),
 		"mode":             modeName(opts.Mode),
+		"profile":          opts.Profile,
 	})
 
 	timeout := opts.RuleTimeout
@@ -96,7 +113,7 @@ func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error)
 		timeout = DefaultRuleTimeout
 	}
 
-	for _, rule := range s.Rules {
+	for _, rule := range rules {
 		var (
 			ev      map[string]any
 			aborted bool

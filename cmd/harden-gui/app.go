@@ -110,15 +110,24 @@ type EngineInfo struct {
 }
 
 type RuleInfo struct {
-	ID             string `json:"id"`
-	Title          string `json:"title"`
-	Description    string `json:"description"`
-	Explanation    string `json:"explanation"`
-	Impact         string `json:"impact"`
-	Severity       string `json:"severity"`
-	RequiresReboot bool   `json:"requiresReboot"`
-	Irreversible   bool   `json:"irreversible"`
-	IrreversibleReason string `json:"irreversibleReason,omitempty"`
+	ID                 string   `json:"id"`
+	Title              string   `json:"title"`
+	Description        string   `json:"description"`
+	Explanation        string   `json:"explanation"`
+	Impact             string   `json:"impact"`
+	Severity           string   `json:"severity"`
+	RequiresReboot     bool     `json:"requiresReboot"`
+	Irreversible       bool     `json:"irreversible"`
+	IrreversibleReason string   `json:"irreversibleReason,omitempty"`
+	Profiles           []string `json:"profiles,omitempty"`
+	Breaks             []string `json:"breaks,omitempty"`
+}
+
+// ProfileInfo : descripteur d'un profil pour le sélecteur GUI.
+type ProfileInfo struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
 }
 
 type SectionInfo struct {
@@ -160,12 +169,34 @@ func (a *App) GetEngineInfo() EngineInfo {
 	return info
 }
 
+// GetProfiles retourne la liste des profils utilisables. Hardcodé pour
+// l'instant — les profils sont une convention partagée entre les manifests
+// (champ rule.profiles) et la GUI (sélecteur).
+func (a *App) GetProfiles() []ProfileInfo {
+	return []ProfileInfo{
+		{
+			ID:          "personal",
+			Title:       "PC personnel",
+			Description: "Usage perso, pas de domaine AD, pas de NAS, pas de RDP. Règles agressives OK.",
+		},
+		{
+			ID:          "business",
+			Title:       "Petite entreprise",
+			Description: "Workgroup, NAS / imprimante réseau, possible RDP support. On évite les règles qui cassent les partages locaux.",
+		},
+		{
+			ID:          "maximal",
+			Title:       "Maximal (paranoid)",
+			Description: "Toutes les règles sans exception. Pour machine isolée à protéger au maximum.",
+		},
+	}
+}
+
 // GetSections charge + valide tous les manifests et retourne la liste
-// triée par section.order, avec toutes les rules détaillées (titre,
-// impact, severity, etc.) pour que le frontend puisse afficher des
-// tooltips et des badges.
-func (a *App) GetSections() ([]SectionInfo, error) {
-	logf("app.GetSections: start")
+// triée par section.order. Si profile est non-vide, ne retourne que les
+// rules applicables à ce profil.
+func (a *App) GetSections(profile string) ([]SectionInfo, error) {
+	logf("app.GetSections: profile=%q", profile)
 	validator, err := manifest.NewValidator(a.schemaPath)
 	if err != nil {
 		logf("app.GetSections: schema compile error: %v", err)
@@ -198,6 +229,9 @@ func (a *App) GetSections() ([]SectionInfo, error) {
 		}
 		rules := make([]RuleInfo, 0, len(s.Rules))
 		for _, r := range s.Rules {
+			if profile != "" && !r.AppliesToProfile(profile) {
+				continue
+			}
 			rules = append(rules, RuleInfo{
 				ID:                 r.ID,
 				Title:              r.Title,
@@ -208,14 +242,20 @@ func (a *App) GetSections() ([]SectionInfo, error) {
 				RequiresReboot:     r.RequiresReboot,
 				Irreversible:       r.Irreversible,
 				IrreversibleReason: r.IrreversibleReason,
+				Profiles:           r.Profiles,
+				Breaks:             r.Breaks,
 			})
+		}
+		// Skip les sections qui n'ont aucune rule pour le profil sélectionné.
+		if len(rules) == 0 {
+			continue
 		}
 		sections = append(sections, SectionInfo{
 			ID:          s.Section.ID,
 			Order:       s.Section.Order,
 			Title:       s.Section.Title,
 			Description: s.Section.Description,
-			RuleCount:   len(s.Rules),
+			RuleCount:   len(rules),
 			ManifestID:  e.Name(),
 			Rules:       rules,
 		})
@@ -230,13 +270,13 @@ func (a *App) GetSections() ([]SectionInfo, error) {
 	return sections, nil
 }
 
-func (a *App) DryRun(sectionIDs []string) (*RunSummary, error) {
-	logf("app.DryRun: sections=%v", sectionIDs)
-	return a.runEngine(executor.ModeDry, sectionIDs)
+func (a *App) DryRun(sectionIDs []string, profile string) (*RunSummary, error) {
+	logf("app.DryRun: sections=%v profile=%q", sectionIDs, profile)
+	return a.runEngine(executor.ModeDry, sectionIDs, profile)
 }
 
-func (a *App) Apply(sectionIDs []string) (*RunSummary, error) {
-	logf("app.Apply: sections=%v", sectionIDs)
+func (a *App) Apply(sectionIDs []string, profile string) (*RunSummary, error) {
+	logf("app.Apply: sections=%v profile=%q", sectionIDs, profile)
 	isAdmin, err := winadmin.IsElevated()
 	if err != nil {
 		return nil, fmt.Errorf("admin check: %w", err)
@@ -244,7 +284,7 @@ func (a *App) Apply(sectionIDs []string) (*RunSummary, error) {
 	if !isAdmin {
 		return nil, errors.New("apply requires Administrator privileges. Re-launch the GUI from an elevated PowerShell")
 	}
-	return a.runEngine(executor.ModeApply, sectionIDs)
+	return a.runEngine(executor.ModeApply, sectionIDs, profile)
 }
 
 // CancelRun annule le run en cours s'il y en a un. Le run termine
@@ -261,8 +301,8 @@ func (a *App) CancelRun() {
 	}
 }
 
-func (a *App) runEngine(mode executor.Mode, sectionIDs []string) (*RunSummary, error) {
-	allSections, err := a.GetSections()
+func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string) (*RunSummary, error) {
+	allSections, err := a.GetSections(profile)
 	if err != nil {
 		return nil, err
 	}
@@ -354,6 +394,7 @@ func (a *App) runEngine(mode executor.Mode, sectionIDs []string) (*RunSummary, e
 			Runner:      r,
 			Writer:      w,
 			RunID:       runID,
+			Profile:     profile,
 		})
 		total.Skipped += summary.Skipped
 		total.Applied += summary.Applied

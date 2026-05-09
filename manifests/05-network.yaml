@@ -28,6 +28,11 @@ rules:
     action: ./engine/actions/network/llmnr_disable.action.ps1
     test: ./engine/actions/network/llmnr_disable.test.ps1
     undo: ./engine/actions/network/llmnr_disable.undo.ps1
+    profiles:
+      - personal
+      - maximal
+    breaks:
+      - "Decouverte locale par nom NetBIOS-like (rare en perso). Imprimantes anciennes peuvent ne plus etre decouvertes automatiquement en entreprise."
 
   - id: network.mdns_disable
     title: "mDNS désactivé (EnableMDNS=0)"
@@ -49,6 +54,10 @@ rules:
     action: ./engine/actions/network/mdns_disable.action.ps1
     test: ./engine/actions/network/mdns_disable.test.ps1
     undo: ./engine/actions/network/mdns_disable.undo.ps1
+    profiles:
+      - maximal
+    breaks:
+      - "Chromecast, AirPrint, imprimantes via Bonjour, devices IoT en mDNS. Casse les setups entreprise avec imprimante reseau Apple/multi-fonctions."
 
   - id: network.netbios_off
     title: "NetBIOS over TCP/IP désactivé sur tous les adapters"
@@ -71,6 +80,11 @@ rules:
     action: ./engine/actions/network/netbios_off.action.ps1
     test: ./engine/actions/network/netbios_off.test.ps1
     undo: ./engine/actions/network/netbios_off.undo.ps1
+    profiles:
+      - personal
+      - maximal
+    breaks:
+      - "Partages SMB qui passent par NetBIOS-name (NAS legacy, anciens NAS Synology/QNAP). Si tes partages utilisent FQDN ou IP, aucun impact."
 
   - id: network.wpad_disable
     title: "WPAD désactivé (service WinHttpAutoProxySvc Start=4)"
@@ -93,6 +107,11 @@ rules:
     action: ./engine/actions/network/wpad_disable.action.ps1
     test: ./engine/actions/network/wpad_disable.test.ps1
     undo: ./engine/actions/network/wpad_disable.undo.ps1
+    profiles:
+      - personal
+      - maximal
+    breaks:
+      - "Configuration de proxy automatique via WPAD/PAC (souvent utilise en entreprise). Si tes settings Internet utilisent un proxy auto-discovery, casse l acces web."
 
   - id: network.ntlm_v2_only
     title: "NTLM : LmCompatibilityLevel = 5 (NTLMv2 only)"
@@ -114,6 +133,10 @@ rules:
     action: ./engine/actions/network/ntlm_v2_only.action.ps1
     test: ./engine/actions/network/ntlm_v2_only.test.ps1
     undo: ./engine/actions/network/ntlm_v2_only.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: network.smb_client_signing
     title: "SMB client : signature requise (RequireSecuritySignature=1)"
@@ -134,6 +157,10 @@ rules:
     action: ./engine/actions/network/smb_client_signing.action.ps1
     test: ./engine/actions/network/smb_client_signing.test.ps1
     undo: ./engine/actions/network/smb_client_signing.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: network.smb_server_signing
     title: "SMB server : signature requise (RequireSecuritySignature=1)"
@@ -154,6 +181,10 @@ rules:
     action: ./engine/actions/network/smb_server_signing.action.ps1
     test: ./engine/actions/network/smb_server_signing.test.ps1
     undo: ./engine/actions/network/smb_server_signing.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: network.smbv1_disable
     title: "SMBv1 désactivé (legacy, vulnérable EternalBlue)"
@@ -176,6 +207,10 @@ rules:
     action: ./engine/actions/network/smbv1_disable.action.ps1
     test: ./engine/actions/network/smbv1_disable.test.ps1
     undo: ./engine/actions/network/smbv1_disable.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: network.smb_guest_auth_off
     title: "SMB client : refuser l'auth guest (AllowInsecureGuestAuth=0)"
@@ -197,3 +232,7 @@ rules:
     action: ./engine/actions/network/smb_guest_auth_off.action.ps1
     test: ./engine/actions/network/smb_guest_auth_off.test.ps1
     undo: ./engine/actions/network/smb_guest_auth_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal

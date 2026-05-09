@@ -63,7 +63,16 @@
         "added_in": { "type": "string" },
         "action": { "type": "string", "pattern": "\\.action\\.ps1$" },
         "test": { "type": "string", "pattern": "\\.test\\.ps1$" },
-        "undo": { "type": "string", "pattern": "\\.undo\\.ps1$" }
+        "undo": { "type": "string", "pattern": "\\.undo\\.ps1$" },
+        "profiles": {
+          "type": "array",
+          "items": { "enum": ["personal", "business", "maximal"] },
+          "minItems": 1
+        },
+        "breaks": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
       },
       "if": {
         "properties": { "irreversible": { "const": false } }

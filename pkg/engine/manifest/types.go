@@ -36,4 +36,27 @@ type Rule struct {
 	Action             string   `yaml:"action"`
 	Test               string   `yaml:"test"`
 	Undo               string   `yaml:"undo,omitempty"`
+	// Profiles : liste des profils où cette règle s'applique. Valeurs
+	// autorisées : "personal", "business", "maximal". Si vide ou absent,
+	// la règle est considérée applicable à tous les profils.
+	Profiles []string `yaml:"profiles,omitempty"`
+	// Breaks : liste user-facing de ce que la règle peut casser
+	// (ex: "Chromecast", "NAS legacy", "RDP support distant"). Affichée
+	// dans la GUI pour avertir l'utilisateur.
+	Breaks []string `yaml:"breaks,omitempty"`
+}
+
+// AppliesToProfile retourne true si la règle s'applique au profil donné.
+// Profiles vide = applicable à tous (compat avec les manifests pré-SP3
+// qui n'ont pas le champ profiles).
+func (r Rule) AppliesToProfile(profile string) bool {
+	if len(r.Profiles) == 0 {
+		return true
+	}
+	for _, p := range r.Profiles {
+		if p == profile {
+			return true
+		}
+	}
+	return false
 }

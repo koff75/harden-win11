@@ -26,6 +26,10 @@ rules:
     action: ./engine/actions/defender/realtime.action.ps1
     test: ./engine/actions/defender/realtime.test.ps1
     undo: ./engine/actions/defender/realtime.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.behavior_monitoring
     title: "Behavior Monitoring"
@@ -48,6 +52,10 @@ rules:
     action: ./engine/actions/defender/behavior_monitoring.action.ps1
     test: ./engine/actions/defender/behavior_monitoring.test.ps1
     undo: ./engine/actions/defender/behavior_monitoring.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.ioav
     title: "IOAV (analyse pièces jointes / téléchargements)"
@@ -69,6 +77,10 @@ rules:
     action: ./engine/actions/defender/ioav.action.ps1
     test: ./engine/actions/defender/ioav.test.ps1
     undo: ./engine/actions/defender/ioav.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.script_scanning
     title: "Script scanning"
@@ -90,6 +102,10 @@ rules:
     action: ./engine/actions/defender/script_scanning.action.ps1
     test: ./engine/actions/defender/script_scanning.test.ps1
     undo: ./engine/actions/defender/script_scanning.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.nis
     title: "Network Inspection System (NIS)"
@@ -111,6 +127,10 @@ rules:
     action: ./engine/actions/defender/nis.action.ps1
     test: ./engine/actions/defender/nis.test.ps1
     undo: ./engine/actions/defender/nis.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.pua
     title: "PUA Protection (Potentially Unwanted Apps)"
@@ -132,6 +152,10 @@ rules:
     action: ./engine/actions/defender/pua.action.ps1
     test: ./engine/actions/defender/pua.test.ps1
     undo: ./engine/actions/defender/pua.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.network_protection
     title: "Network Protection"
@@ -154,6 +178,11 @@ rules:
     action: ./engine/actions/defender/network_protection.action.ps1
     test: ./engine/actions/defender/network_protection.test.ps1
     undo: ./engine/actions/defender/network_protection.undo.ps1
+    profiles:
+      - business
+      - maximal
+    breaks:
+      - "Apps qui se connectent a des hotes flagges faux positifs (occasionnel). A auditer dans Event Viewer si une app a un comportement reseau anormal."
 
   - id: defender.controlled_folder_access
     title: "Controlled Folder Access (anti-ransomware)"
@@ -181,6 +210,10 @@ rules:
     action: ./engine/actions/defender/controlled_folder_access.action.ps1
     test: ./engine/actions/defender/controlled_folder_access.test.ps1
     undo: ./engine/actions/defender/controlled_folder_access.undo.ps1
+    profiles:
+      - maximal
+    breaks:
+      - "Office (Word, Excel, PowerPoint), Photoshop, Visual Studio Code, OBS, Firefox profiles, certains jeux. Liste blanche manuelle requise apres activation."
 
   - id: defender.sample_submission
     title: "Sample submission (envoi automatique d'échantillons sûrs)"
@@ -208,6 +241,10 @@ rules:
     action: ./engine/actions/defender/sample_submission.action.ps1
     test: ./engine/actions/defender/sample_submission.test.ps1
     undo: ./engine/actions/defender/sample_submission.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.cloud_protection
     title: "Cloud-delivered protection (HIGH)"
@@ -235,6 +272,10 @@ rules:
     action: ./engine/actions/defender/cloud_protection.action.ps1
     test: ./engine/actions/defender/cloud_protection.test.ps1
     undo: ./engine/actions/defender/cloud_protection.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.signatures
     title: "Signatures antivirus à jour"
@@ -259,6 +300,10 @@ rules:
     added_in: "1.0"
     action: ./engine/actions/defender/signatures.action.ps1
     test: ./engine/actions/defender/signatures.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: defender.tamper_protection_check
     title: "Tamper Protection (check uniquement, à activer manuellement)"
@@ -286,3 +331,7 @@ rules:
     added_in: "1.0"
     action: ./engine/actions/defender/tamper_protection_check.action.ps1
     test: ./engine/actions/defender/tamper_protection_check.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal

@@ -27,6 +27,9 @@ rules:
     action: ./engine/actions/firewall/profile_domain.action.ps1
     test: ./engine/actions/firewall/profile_domain.test.ps1
     undo: ./engine/actions/firewall/profile_domain.undo.ps1
+    profiles:
+      - business
+      - maximal
 
   - id: firewall.profile_private
     title: "Profile Private : enabled + block inbound"
@@ -48,6 +51,10 @@ rules:
     action: ./engine/actions/firewall/profile_private.action.ps1
     test: ./engine/actions/firewall/profile_private.test.ps1
     undo: ./engine/actions/firewall/profile_private.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: firewall.profile_public
     title: "Profile Public : enabled + block inbound"
@@ -69,6 +76,10 @@ rules:
     action: ./engine/actions/firewall/profile_public.action.ps1
     test: ./engine/actions/firewall/profile_public.test.ps1
     undo: ./engine/actions/firewall/profile_public.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: firewall.block_smb_public
     title: "Bloquer SMB (TCP 445) entrant sur Public"
@@ -91,6 +102,10 @@ rules:
     action: ./engine/actions/firewall/block_smb_public.action.ps1
     test: ./engine/actions/firewall/block_smb_public.test.ps1
     undo: ./engine/actions/firewall/block_smb_public.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: firewall.block_netbios_public
     title: "Bloquer NetBIOS (UDP 137-138 + TCP 139) entrant sur Public"
@@ -113,3 +128,7 @@ rules:
     action: ./engine/actions/firewall/block_netbios_public.action.ps1
     test: ./engine/actions/firewall/block_netbios_public.test.ps1
     undo: ./engine/actions/firewall/block_netbios_public.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal

@@ -29,6 +29,10 @@ rules:
     action: ./engine/actions/accounts/disable_unused.action.ps1
     test: ./engine/actions/accounts/disable_unused.test.ps1
     undo: ./engine/actions/accounts/disable_unused.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: accounts.rename_admin
     title: "Renommer le compte SID-500 (Administrator built-in)"
@@ -54,3 +58,8 @@ rules:
     action: ./engine/actions/accounts/rename_admin.action.ps1
     test: ./engine/actions/accounts/rename_admin.test.ps1
     undo: ./engine/actions/accounts/rename_admin.undo.ps1
+    profiles:
+      - personal
+      - maximal
+    breaks:
+      - "Scripts qui hardcodent le nom Administrator (rare en perso, possible en entreprise). Preferer SID-500 ou (point)Administrator par alias."

@@ -10,6 +10,8 @@ let engineInfo = null;
 let isRunning = false;
 let totalRulesInRun = 0;
 let processedRules = 0;
+let currentProfile = 'personal';   // profil par défaut, override par l'utilisateur
+let availableProfiles = [];
 const rowsByRuleID = {};
 const eventByRuleID = {};   // dernier event reçu par règle (pour le tooltip)
 
@@ -19,11 +21,39 @@ const eventByRuleID = {};   // dernier event reçu par règle (pour le tooltip)
 
 window.addEventListener('DOMContentLoaded', async () => {
     await refreshEngineInfo();
+    await refreshProfiles();
     await refreshSections();
     await refreshRuns();
     bindEvents();
     bindWailsEvents();
 });
+
+async function refreshProfiles() {
+    try {
+        availableProfiles = await window.go.main.App.GetProfiles();
+    } catch (err) {
+        $('#profile-list').innerHTML = `<span style="color:#ff9099">Erreur: ${err}</span>`;
+        return;
+    }
+    $('#profile-list').innerHTML = availableProfiles.map(p => `
+        <label class="profile-item" title="${escapeHtml(p.description)}">
+            <input type="radio" name="profile" value="${p.id}" ${p.id === currentProfile ? 'checked' : ''}>
+            <span class="profile-title">${escapeHtml(p.title)}</span>
+            <span class="profile-desc">${escapeHtml(p.description)}</span>
+        </label>
+    `).join('');
+    $$('input[name="profile"]').forEach(rb => {
+        rb.addEventListener('change', async () => {
+            currentProfile = rb.value;
+            await refreshSections();
+            // Reset le tableau et le dashboard quand on change de profil.
+            $('#results-body').innerHTML = '<tr class="empty"><td colspan="4">Profil changé. Lance un dry-run pour voir l\'état actuel.</td></tr>';
+            $('#dashboard').classList.add('hidden');
+            Object.keys(rowsByRuleID).forEach(k => delete rowsByRuleID[k]);
+            Object.keys(eventByRuleID).forEach(k => delete eventByRuleID[k]);
+        });
+    });
+}
 
 async function refreshEngineInfo() {
     try {
@@ -53,7 +83,7 @@ async function refreshSections() {
     const list = $('#sections-list');
     list.innerHTML = '<span class="muted small">chargement…</span>';
     try {
-        currentSections = await window.go.main.App.GetSections();
+        currentSections = await window.go.main.App.GetSections(currentProfile);
     } catch (err) {
         list.innerHTML = `<span style="color:#ff9099">Erreur: ${err}</span>`;
         return;
@@ -312,8 +342,8 @@ async function runEngine(mode) {
 
     try {
         const summary = mode === 'apply'
-            ? await window.go.main.App.Apply(sections)
-            : await window.go.main.App.DryRun(sections);
+            ? await window.go.main.App.Apply(sections, currentProfile)
+            : await window.go.main.App.DryRun(sections, currentProfile);
         const cls = summary.cancelled ? 'aborted' : (summary.aborted ? 'aborted' : 'success');
         setStatus(cls, summarizeStatus(summary));
         await refreshRuns();
@@ -501,10 +531,12 @@ function formatActionCell(rule, status, ev) {
         return `<span class="action-icon ok">✓</span><span class="action-text">Aucune action — déjà conforme</span>`;
     }
     if (status === 'would_apply') {
-        // Le user verra ça sur les règles qu'il pourrait renforcer.
         const desc = rule.description || 'modification système';
         const stateBlurb = ev && ev.current_state ? humanStateBlurb(ev.current_state) : '';
-        return `<span class="action-icon warn">⚠</span><span class="action-text">À renforcer : ${escapeHtml(desc)}</span>
+        const breaksBadge = rule.breaks && rule.breaks.length > 0
+            ? `<span class="breaks-badge" title="${escapeHtml(rule.breaks.join('  •  '))}">⚠ casse si…</span>`
+            : '';
+        return `<span class="action-icon warn">⚠</span><span class="action-text">À renforcer : ${escapeHtml(desc)}</span> ${breaksBadge}
                 ${stateBlurb ? `<span class="action-state">État actuel : ${stateBlurb}</span>` : ''}`;
     }
     if (status === 'applied') {
@@ -664,6 +696,13 @@ function showTooltip(rule, status, currentState) {
         }
     }
 
+    const breaksSection = rule.breaks && rule.breaks.length > 0
+        ? `<div class="tt-section tt-breaks">
+              <div class="tt-label tt-breaks-label">⚠ Casse si tu utilises</div>
+              <ul class="tt-breaks-list">${rule.breaks.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>
+           </div>`
+        : '';
+
     tt.innerHTML = `
         <h4>${escapeHtml(rule.title)} <span class="severity ${rule.severity}" style="margin-left:6px;font-size:9px;vertical-align:middle">${escapeHtml(humanSeverity(rule.severity))}</span></h4>
         <div class="tt-desc">${escapeHtml(rule.description)}</div>
@@ -673,6 +712,7 @@ function showTooltip(rule, status, currentState) {
             <div class="tt-label">Impact concret si appliquée</div>
             <span class="tt-impact">${escapeHtml(rule.impact || '—')}</span>
         </div>
+        ${breaksSection}
         ${rebootSection}
         ${irreversibleSection}
     `;

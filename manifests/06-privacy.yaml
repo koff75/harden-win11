@@ -27,6 +27,10 @@ rules:
     action: ./engine/actions/privacy/telemetry_required.action.ps1
     test: ./engine/actions/privacy/telemetry_required.test.ps1
     undo: ./engine/actions/privacy/telemetry_required.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.advertising_id_machine
     title: "Advertising ID désactivé (machine-wide)"
@@ -47,6 +51,10 @@ rules:
     action: ./engine/actions/privacy/advertising_id_machine.action.ps1
     test: ./engine/actions/privacy/advertising_id_machine.test.ps1
     undo: ./engine/actions/privacy/advertising_id_machine.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.online_speech_off
     title: "Online Speech Recognition désactivée"
@@ -66,6 +74,10 @@ rules:
     action: ./engine/actions/privacy/online_speech_off.action.ps1
     test: ./engine/actions/privacy/online_speech_off.test.ps1
     undo: ./engine/actions/privacy/online_speech_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.activity_history_off
     title: "Activity History désactivée (3 valeurs)"
@@ -85,6 +97,10 @@ rules:
     action: ./engine/actions/privacy/activity_history_off.action.ps1
     test: ./engine/actions/privacy/activity_history_off.test.ps1
     undo: ./engine/actions/privacy/activity_history_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.cortana_off
     title: "Cortana désactivée (AllowCortana = 0)"
@@ -105,6 +121,10 @@ rules:
     action: ./engine/actions/privacy/cortana_off.action.ps1
     test: ./engine/actions/privacy/cortana_off.test.ps1
     undo: ./engine/actions/privacy/cortana_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.recall_off
     title: "Windows Recall désactivé (préventif)"
@@ -127,6 +147,10 @@ rules:
     action: ./engine/actions/privacy/recall_off.action.ps1
     test: ./engine/actions/privacy/recall_off.test.ps1
     undo: ./engine/actions/privacy/recall_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.consumer_features_off
     title: "Consumer features désactivées (anti-bloat machine-wide)"
@@ -146,6 +170,10 @@ rules:
     action: ./engine/actions/privacy/consumer_features_off.action.ps1
     test: ./engine/actions/privacy/consumer_features_off.test.ps1
     undo: ./engine/actions/privacy/consumer_features_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.silent_apps_off
     title: "HKCU : pas de réinstall silencieuse d'apps Store"
@@ -165,6 +193,10 @@ rules:
     action: ./engine/actions/privacy/silent_apps_off.action.ps1
     test: ./engine/actions/privacy/silent_apps_off.test.ps1
     undo: ./engine/actions/privacy/silent_apps_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.settings_suggestions_off
     title: "HKCU : suggestions Settings désactivées"
@@ -183,6 +215,10 @@ rules:
     action: ./engine/actions/privacy/settings_suggestions_off.action.ps1
     test: ./engine/actions/privacy/settings_suggestions_off.test.ps1
     undo: ./engine/actions/privacy/settings_suggestions_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.start_suggestions_off
     title: "HKCU : suggestions menu Démarrer désactivées"
@@ -201,6 +237,10 @@ rules:
     action: ./engine/actions/privacy/start_suggestions_off.action.ps1
     test: ./engine/actions/privacy/start_suggestions_off.test.ps1
     undo: ./engine/actions/privacy/start_suggestions_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.tips_welcome_off
     title: "HKCU : tips/welcome désactivés (3 SubscribedContent)"
@@ -220,6 +260,10 @@ rules:
     action: ./engine/actions/privacy/tips_welcome_off.action.ps1
     test: ./engine/actions/privacy/tips_welcome_off.test.ps1
     undo: ./engine/actions/privacy/tips_welcome_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.ink_text_collection_off
     title: "HKCU : pas de collecte ink/text implicite"
@@ -239,6 +283,10 @@ rules:
     action: ./engine/actions/privacy/ink_text_collection_off.action.ps1
     test: ./engine/actions/privacy/ink_text_collection_off.test.ps1
     undo: ./engine/actions/privacy/ink_text_collection_off.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
 
   - id: privacy.advertising_id_user
     title: "HKCU : Advertising ID désactivé"
@@ -257,3 +305,7 @@ rules:
     action: ./engine/actions/privacy/advertising_id_user.action.ps1
     test: ./engine/actions/privacy/advertising_id_user.test.ps1
     undo: ./engine/actions/privacy/advertising_id_user.undo.ps1
+    profiles:
+      - personal
+      - business
+      - maximal

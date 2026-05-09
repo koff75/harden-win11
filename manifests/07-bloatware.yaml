@@ -34,3 +34,8 @@ rules:
     added_in: "1.0"
     action: ./engine/actions/bloatware/cleanup.action.ps1
     test: ./engine/actions/bloatware/cleanup.test.ps1
+    profiles:
+      - personal
+      - maximal
+    breaks:
+      - "Apps Store desinstallees ne peuvent etre reinstallees que via Microsoft Store + compte Microsoft. Liste : TikTok, Spotify, Disney, CandyCrush, Bing News, Microsoft Solitaire, Skype, etc."
