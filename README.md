@@ -1,187 +1,231 @@
-# harden-win11
+<div align="center">
 
-Outil de hardening Windows 11 — applique une baseline de sécurité reproductible, auditée et **réversible**. **95 règles** couvrant Defender, ASR, Firewall, comptes locaux, UAC/RDP/Power, hardening réseau (LLMNR/NTLM/SMB), privacy/telemetry, et 27 bloatware Microsoft Store individuellement sélectionnables.
+# 🛡️ Harden-Win11
 
-Disponible en **GUI Wails** (clic-clic, dashboard, filtres, exclusion par règle) et en **CLI Go** (scripting, CI, batch).
+**Durcis ton Windows 11 en 1 clic. Sans casser ton PC.**
 
-## Quick start
+95 règles de sécurité, expliquées en français normal. Tu vois exactement ce qui change avant de cliquer. Tu peux tout annuler.
 
-### GUI (recommandé pour usage perso)
+[![Release](https://img.shields.io/github/v/release/koff75/harden-win11?style=flat-square&color=blue)](https://github.com/koff75/harden-win11/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/koff75/harden-win11/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/koff75/harden-win11/actions)
+[![Tests](https://img.shields.io/badge/tests-98%20Pester%20%2B%2011%20Go-green?style=flat-square)](https://github.com/koff75/harden-win11)
+[![Coverage](https://img.shields.io/badge/coverage-CIS%2062%25%20%C2%B7%20ANSSI%2042%25%20%C2%B7%20MS%2065%25-blue?style=flat-square)](https://github.com/koff75/harden-win11)
+[![License](https://img.shields.io/badge/license-WTFPL-lightgrey?style=flat-square)](LICENSE)
 
-Lance `harden-gui.exe` (clic droit → Exécuter en tant qu'administrateur). La GUI :
+[**📥 Télécharger**](https://github.com/koff75/harden-win11/releases/latest) · [**📖 Documentation**](#-documentation) · [**🎯 Pourquoi**](#-pourquoi-cet-outil)
 
-- Détecte le contexte (machine AD-joined ? imprimante réseau ?) et **suggère un profil de risque** (personal / business / maximal)
-- Charge les 95 règles, te montre l'état actuel et ce qui changerait
-- Coverage bar : `CIS X% · ANSSI Y% · MS Z%` vs les référentiels publics
-- Décoche les règles que tu ne veux pas (ex: garder Spotify mais virer TikTok)
-- Apply / Annuler avec auto-rollback si ça plante
+![hero screenshot](docs/screenshots/01-dashboard.png)
 
-Si tu lances la GUI **sans admin**, un bandeau rouge apparaît avec un bouton "Relancer en admin".
+</div>
 
-### CLI
+---
+
+## ⚡ En 30 secondes
 
 ```powershell
-# Voir ce qui serait modifié (pas d'admin requis pour le dry-run)
-.\dist\harden-engine.exe apply --dry-run
+# 1. Télécharge le ZIP depuis Releases
+# 2. Décompresse
+# 3. Double-clic sur run-as-admin.bat
+```
 
-# Vite (dryrun parallèle, ~36s au lieu de 116s)
-.\dist\harden-engine.exe apply --dry-run --parallel 4
+C'est tout. Pas d'installation, pas de service, pas de registre touché tant que tu ne cliques pas.
 
-# Couverture vs CIS / ANSSI / MS Security Baseline
-.\dist\harden-engine.exe coverage
+---
 
-# Apply ciblé sur le profil "personal" (skip les règles trop strictes pour usage perso)
-.\dist\harden-engine.exe apply --profile personal
+## 🎯 Pourquoi cet outil
 
-# ASR en mode audit (log les events Defender sans bloquer)
-.\dist\harden-engine.exe apply --audit --section asr
+La plupart des guides "hardening Windows 11" :
+- ❌ Te demandent d'éditer la base de registre à la main
+- ❌ Liste de 200 paramètres en jargon technique
+- ❌ Tu ne sais pas ce qui va casser tes apps
+- ❌ Pas de retour en arrière propre
 
+**Harden-Win11** :
+- ✅ Une GUI qui t'explique chaque règle en **français normal** ("Aujourd'hui : ..." / "Si tu actives : ..." / "Ce qui peut t'embêter : ...")
+- ✅ **Annule tout** en un clic (journal NDJSON + .undo.ps1 par règle + Restore Point Windows)
+- ✅ Détecte si tu utilises RDP / SMB legacy / etc. et **refuse d'appliquer** une règle qui couperait ton usage en cours
+- ✅ Surveille **24h après** ton apply pour repérer si quelque chose se met à pleurer dans Event Viewer
+- ✅ **Score A/B/C/D** pour mesurer la maturité de ton durcissement
+- ✅ Mappé contre **CIS Win11**, **ANSSI**, **MS Security Baseline** (pas du fait-maison)
+
+---
+
+## 📸 Aperçu
+
+<table>
+<tr>
+<td width="50%">
+
+**Carte action user-friendly** — chaque règle explique en français
+ce qu'elle change concrètement.
+
+![carte action](docs/screenshots/02-action-card.png)
+
+</td>
+<td width="50%">
+
+**Score de maturité** — A/B/C/D pondéré, avec actions concrètes
+pour gagner des points.
+
+![score](docs/screenshots/03-maturity-score.png)
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Coverage standards** — combien de règles sont mappées à
+CIS / ANSSI / MS Security Baseline.
+
+![coverage](docs/screenshots/04-coverage.png)
+
+</td>
+<td>
+
+**Watchlist 24h** — surveille Event Viewer après ton apply pour
+détecter une casse fonctionnelle.
+
+![watchlist](docs/screenshots/05-watchlist.png)
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
+
+### Option 1 : GUI (recommandé)
+
+1. Télécharge `Harden-Win11-X.Y.Z.zip` depuis la [page Release](https://github.com/koff75/harden-win11/releases/latest)
+2. Décompresse où tu veux
+3. Double-clic sur `run-as-admin.bat`
+
+La GUI détecte ton contexte (laptop / fixe / AD-joined), te suggère un profil, et tu décides règle par règle.
+
+### Option 2 : CLI
+
+```powershell
+# Voir ce qui serait modifié — sans rien toucher
+.\harden-engine.exe apply --dry-run --parallel 4
+
+# Score de maturité
+.\harden-engine.exe coverage
+
+# Apply ciblé
+.\harden-engine.exe apply --profile personal --severity critical
+
+# Annuler tout ce qui a été fait dans les 7 derniers jours
+.\harden-engine.exe undo --since 168h
+```
+
+---
+
+## 🔥 Features qui font la différence
+
+### 🛡️ 6 couches de sécurité avant qu'une règle change ton système
+
+1. **Auto-skip contextuel** : laptop ⇒ on ne désactive pas l'hibernation. AD-joined ⇒ on ne renomme pas Administrator.
+2. **Detection feature in-use** : si tu as une session RDP active ⇒ refus de désactiver RDP.
+3. **Restore Point Windows** créé automatiquement avant l'apply.
+4. **Snapshot pre/post** : 25+ clés registre + Defender + Services capturés. `harden-engine snapshot diff <runID>` te montre exactement ce qui a changé.
+5. **Re-test post-apply** : si l'action a réussi mais le test post dit non-conforme (GPO override, action menteuse), rollback automatique.
+6. **Watchlist 24h** : tâche planifiée surveille Event Viewer (SMB / Defender / NetBIOS / Schannel / PrintService) avec **seuils adaptatifs** (apprend ta baseline normale).
+
+### 🧠 Vulgarisation maximale
+
+Chaque règle clé a 4 phrases :
+- **Aujourd'hui** : situation présente
+- **Si tu actives** : ce qui change concrètement
+- **Pour qui** : profil cible
+- **Ce qui peut t'embêter** : impact concret
+
+Aucun jargon, aucun nom de regkey, aucun chiffre brut. Tu décides en 5 secondes.
+
+### 📊 Mesurable
+
+```
+$ harden-engine coverage
+Total règles harden-win11 : 95
+Règles avec ≥1 mapping    : 66 (69%)
+
+[CIS Win11 Enterprise v3.0.0]
+  Règles couvertes : 59 / 95 (62%)
+  Contrôles uniques cités : 65
+
+[ANSSI Windows]
+  Règles couvertes : 40 / 95 (42%)
+
+[MS Security Baseline 24H2]
+  Règles couvertes : 62 / 95 (65%)
+```
+
+### ↩️ Tout annulable
+
+```powershell
 # Annuler le dernier run
-.\dist\harden-engine.exe undo
+harden-engine undo
+
+# Annuler une règle précise
+harden-engine undo --rule-id defender.cloud_protection
+
+# Annuler 7 jours de modifs (LIFO multi-runs)
+harden-engine undo --since 168h
 ```
 
-## Pourquoi v2 ?
+---
 
-Le v1 (`Harden-Win11.ps1`) reste à la racine pour usage simple. Le v2 ajoute :
-
-- **Réversibilité** : chaque règle a un `.undo.ps1` qui restaure l'état avant. La commande `undo` rejoue l'inverse depuis le journal sur disque.
-- **Audit trail** : chaque run est loggé en NDJSON dans `%ProgramData%\Harden-Win11\runs\<run_id>.ndjson` (machine-wide, crash-safe avec `fsync` après chaque event).
-- **Auto-rollback** : si une action plante en cours d'apply, le moteur lance immédiatement le `.undo.ps1` correspondant et stoppe le run. Les règles déjà appliquées restent intactes.
-- **Profils de risque** : `personal` (usage maison), `business` (PME), `maximal` (paranoid). Chaque règle déclare les profils où elle s'applique + un champ `breaks` qui liste user-facing ce qu'elle peut casser (ex: "RDP entrant", "imprimantes Bonjour").
-- **Validation stricte** : JSONSchema 2020-12 + détection collisions cross-fichiers + types stricts.
-- **Mapping baseline** : 66 règles sur 95 mappées vers CIS Win11 / ANSSI / MS Security Baseline. Affichable via `harden-engine coverage`.
-- **GUI Wails** : dashboard, filtres, exclusion par règle, coverage panel, bandeau admin, détection contexte.
-
-## Build
-
-Prérequis : Go 1.26+, Windows 11, PowerShell 5.1+.
-
-```powershell
-git clone https://github.com/koff75/harden-win11.git
-cd harden-win11
-
-# Engine CLI
-go build -o dist/harden-engine.exe ./cmd/harden-engine
-
-# GUI (nécessite wails CLI)
-go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
-cd cmd/harden-gui
-wails build
-```
-
-Pour un release portable (ZIP avec engine + GUI + manifests + run-as-admin.bat) :
-
-```powershell
-pwsh -File tools/build-release.ps1 -Version 0.2.0
-# → build/Harden-Win11-0.2.0.zip + .sha256
-```
-
-## Architecture
+## 🏗️ Architecture
 
 ```
-manifests/                  YAML descriptifs (1 par section)
-  01-defender.yaml          12 règles
-  02-firewall.yaml          5 règles
-  03-accounts.yaml          2 règles
-  04-system_settings.yaml   8 règles (UAC, RDP, Power)
-  05-network.yaml           9 règles (LLMNR, NTLM, SMB)
-  06-privacy.yaml           13 règles (telemetry, AdID, Cortana, Recall)
-  08-asr.yaml               19 règles ASR (Attack Surface Reduction)
-  09-bloatware.yaml         27 règles (TikTok, Spotify, Candy Crush, …)
-
-mappings/baselines.yaml     mapping rule → CIS / ANSSI / MS controls
-
-engine/actions/             snippets PowerShell par règle
-  defender/
-    realtime.action.ps1
-    realtime.test.ps1
-    realtime.undo.ps1
-    realtime.tests.ps1      tests Pester
-  _helpers/
-    reg.psm1                helper registre (factorisation)
-    harden_appx.psm1        helper Appx (bloatware)
-
-cmd/harden-engine/          binaire Go CLI (Cobra)
-cmd/harden-gui/             binaire Wails (GUI)
-pkg/engine/
-  manifest/                 types + loader YAML + validator JSONSchema
-  runner/                   spawn de PS avec I/O JSON
-  executor/                 orchestration dry-run / apply / parallel pool
-  journal/                  lecture/écriture NDJSON
-  ndjson/                   writer thread-safe
-  winadmin/                 détection admin via TokenElevation API
-  baseline/                 calcul couverture vs CIS/ANSSI/MS
-
-schemas/manifest.schema.json   JSONSchema 2020-12, validation stricte
-tools/                          smoke-test, audit-coherence, sign, build-release
-docs/                           smoke-test.md, test-report-2026-05-09.md
+manifests/         95 règles en YAML (1 fichier par section)
+engine/actions/    Snippets PowerShell par règle (action / test / undo)
+pkg/engine/        Library Go : manifest, executor, snapshot, watchlist, ...
+cmd/harden-engine/ Binaire CLI (Cobra)
+cmd/harden-gui/    Binaire Wails (GUI)
+mappings/          Mapping CIS / ANSSI / MS Security Baseline
 ```
 
-## Sécurité du moteur
+11 packages Go, **98 tests Pester + ~50 tests Go** + property-based + fuzz + benchmarks + gosec scan.
 
-- **Validation systématique** : `apply` re-valide les manifests avant de toucher au système (trust + verify).
-- **Détection des collisions** : `section.id` et `rule.id` cross-fichiers refusés à `validate` et `apply`.
-- **YAML strict** : `KnownFields(true)`, refus des multi-documents, types stricts.
-- **Timeout par règle** : 30s par défaut, configurable via `--rule-timeout`.
-- **`fsync` après chaque event** : le journal survit à un crash brutal.
-- **Détection admin via API officielle** : `OpenProcessToken` + `GetTokenInformation(TokenElevation)`. Plus d'heuristique fragile.
-- **Admin requis** pour `apply` réel (sans `--dry-run`) et `undo`.
+---
 
-## Exit codes
+## 🤔 FAQ
 
-| Code | Signification |
-|------|---------------|
-| 0 | OK |
-| 1 | Erreur générique non catégorisée |
-| 2 | Run partiellement échoué (`failed` ou `aborted` après auto-rollback) |
-| 3 | Manifest invalide ou collision détectée |
-| 4 | Input invalide (dossier absent, section inconnue, schema invalide) |
-| 5 | Privilèges admin requis |
-| 6 | Cancelled par l'utilisateur |
+**Est-ce que je risque de casser mon PC ?**
+Faible. Restore Point créé avant l'apply, journal NDJSON crash-safe, undo par règle. Et si l'action a "menti", re-test post-apply déclenche un rollback auto.
 
-## Tests
+**Est-ce que ça marche sur Windows 11 Home ?**
+Oui. La plupart des règles fonctionnent sur Home et Pro. Quelques unes (rename Administrator) ont moins de sens en environnement AD-joined → auto-décochées.
 
-```powershell
-# Tests Go (8 packages)
-go test ./...
+**C'est gratuit / opensource ?**
+Oui. Licence WTFPL — fais ce que tu veux. Mais aucune garantie, tu es responsable de ce que tu lances.
 
-# Tests Pester (98 tests sur les snippets PS)
-Import-Module .\tools\pester\Pester\5.7.1\Pester.psd1 -Force
-Invoke-Pester -Path engine\actions
+**Le binaire n'est pas signé par un éditeur connu, c'est risqué ?**
+Le binaire est self-signé pour identifier la version. Tu peux vérifier le SHA256 publié à côté du ZIP. Build reproductible via `go build` depuis les sources de ce repo + GitHub Actions publique.
 
-# Audit cohérence statique (manifests ↔ scripts)
-.\tools\audit-coherence.ps1
+**Comment contribuer ?**
+Lance les tests (`go test ./... && Invoke-Pester engine/actions`), ouvre une PR. Le format des manifests est documenté dans [`docs/`](docs/).
 
-# Smoke E2E (build + validate + coverage + dryrun)
-pwsh -File tools/smoke-test.ps1
-```
+---
 
-CI GitHub Actions exécute les 4 sur chaque push : `.github/workflows/ci.yml`.
+## 📖 Documentation
 
-Procédure de smoke test sur VM Win11 propre (Home + Pro) : voir [`docs/smoke-test.md`](docs/smoke-test.md).
+- [`docs/smoke-test.md`](docs/smoke-test.md) — checklist VM Win11 Home/Pro avant release
+- [`docs/manual-e2e-checklist.md`](docs/manual-e2e-checklist.md) — vérif manuelle GUI en admin
+- [`docs/test-report-2026-05-09.md`](docs/test-report-2026-05-09.md) — bug hunt session report
+- [`mappings/baselines.yaml`](mappings/baselines.yaml) — mapping détaillé CIS / ANSSI / MS
 
-## Status & roadmap
+---
 
-- ✅ **SP1** — Walking skeleton (engine + 95 règles)
-- ✅ **SP2** — Apply réel + journal + undo + auto-rollback + admin check
-- ✅ **SP3** — Profils de risque + détection contexte + mode audit + bloatware split (27 règles)
-- ✅ **GUI** — Dashboard + filtres + coverage + admin banner + per-rule exclusion
-- ✅ **Baseline** — Mapping CIS / ANSSI / MS Security Baseline (66/95 règles)
-- ✅ **Tooling** — Smoke E2E, audit-coherence, build-release ZIP, sign-release
-- 🟨 **À venir** : Restore Point Windows automatique avant apply, re-test post-apply, vue Historique GUI, persistance préférences
+## 🙋 v1 (script PowerShell legacy)
 
-## v1 (script PowerShell legacy)
+Le script original `Harden-Win11.ps1` reste dans le repo pour usage simple sans build Go. Moins safe que v2 (pas de undo, pas de journal, pas de profils) mais one-file.
 
-Toujours à la racine pour usage simple sans build Go.
+---
 
-```powershell
-.\Harden-Win11.ps1                # menu interactif
-.\Harden-Win11.ps1 -DryRun         # test à blanc
-.\Harden-Win11.ps1 -AsrAuditMode   # ASR en mode audit
-.\Harden-Win11.ps1 -SkipBloatware  # garde les apps Store
-.\Harden-Win11.ps1 -Quiet          # pas de menu (CI)
-```
+<div align="center">
 
-## Licence
+**Tu trouves ça utile ? Une ⭐ sur GitHub aide à le faire connaître.**
 
-WTFPL — Do whatever you want with this. Pas de garantie. Tu es responsable de ce que tu lances sur ta machine.
+</div>

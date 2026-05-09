@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   release:
-    name: Build + Release
+    name: Build engine + GUI + ZIP portable + Release
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,27 +20,109 @@ jobs:
           go-version: '1.26'
           cache: true
 
+      - name: Install Wails CLI v2.12.0
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
       - name: Build harden-engine.exe
         run: |
           $version = "${{ github.ref_name }}"
           go build -ldflags "-X main.Version=$version" -o dist/harden-engine.exe ./cmd/harden-engine
 
+      - name: Build harden-gui.exe (Wails)
+        working-directory: cmd/harden-gui
+        run: wails build
+
       - name: Smoke test
         run: |
           .\dist\harden-engine.exe version
           .\dist\harden-engine.exe validate
+          .\dist\harden-engine.exe coverage
 
-      - name: Compute SHA256
+      - name: Generate portable ZIP
         shell: powershell
         run: |
-          $hash = (Get-FileHash dist/harden-engine.exe -Algorithm SHA256).Hash
-          "$hash  harden-engine.exe" | Out-File -Encoding ascii dist/harden-engine.exe.sha256
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $releaseName = "Harden-Win11-$version"
+          $stagingDir = "build\$releaseName"
+          New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+
+          Copy-Item dist\harden-engine.exe $stagingDir
+          Copy-Item cmd\harden-gui\build\bin\harden-gui.exe $stagingDir
+          Copy-Item manifests $stagingDir -Recurse
+          Copy-Item engine $stagingDir -Recurse -Exclude '*.tests.ps1'
+          Copy-Item schemas $stagingDir -Recurse
+          Copy-Item mappings $stagingDir -Recurse
+
+          $launcher = @'
+          @echo off
+          NET SESSION >nul 2>&1
+          IF %errorlevel% EQU 0 (
+              start "" "%~dp0harden-gui.exe"
+          ) ELSE (
+              powershell -Command "Start-Process -FilePath '%~dp0harden-gui.exe' -Verb RunAs"
+          )
+          '@
+          Set-Content -Path "$stagingDir\run-as-admin.bat" -Value $launcher -Encoding ASCII
+
+          $readme = @"
+          # Harden-Win11 $version (portable)
+
+          ## Lancer
+          Double-clic sur **run-as-admin.bat** — la GUI démarre avec UAC.
+
+          ## Pas d'installation
+          Aucune entrée registre, aucun service. Pour désinstaller : supprime ce dossier.
+
+          ## Vérifier l'intégrité
+          ``Get-FileHash -Algorithm SHA256 Harden-Win11-$version.zip``
+          Compare avec le fichier .sha256 publié sur la page Release.
+
+          Documentation complète : https://github.com/${{ github.repository }}
+          "@
+          Set-Content -Path "$stagingDir\README.txt" -Value $readme -Encoding UTF8
+
+          $zipPath = "build\$releaseName.zip"
+          Compress-Archive -Path "$stagingDir\*" -DestinationPath $zipPath -CompressionLevel Optimal
+
+          $hashZip = (Get-FileHash $zipPath -Algorithm SHA256).Hash
+          "$hashZip  $releaseName.zip" | Out-File -Encoding ascii "$zipPath.sha256"
+
+          $hashEngine = (Get-FileHash dist/harden-engine.exe -Algorithm SHA256).Hash
+          "$hashEngine  harden-engine.exe" | Out-File -Encoding ascii dist/harden-engine.exe.sha256
+
+          $hashGui = (Get-FileHash cmd/harden-gui/build/bin/harden-gui.exe -Algorithm SHA256).Hash
+          "$hashGui  harden-gui.exe" | Out-File -Encoding ascii cmd/harden-gui/build/bin/harden-gui.exe.sha256
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ github.ref_name }}
+          body: |
+            ## 📥 Téléchargement
+
+            **Recommandé — version portable (GUI + CLI + manifests)** :
+            👉 `Harden-Win11-X.Y.Z.zip` ci-dessous. Décompresse, double-clic sur `run-as-admin.bat`.
+
+            **CLI seule** :
+            `harden-engine.exe` pour scripting / CI.
+
+            ## ✅ Vérifier l'intégrité
+
+            ```powershell
+            Get-FileHash -Algorithm SHA256 Harden-Win11-X.Y.Z.zip
+            ```
+
+            Compare avec le `.sha256` à côté du ZIP.
+
+            ## 📝 Changelog
+
+            Voir les commits depuis la dernière release ci-dessous.
           files: |
+            build/Harden-Win11-*.zip
+            build/Harden-Win11-*.zip.sha256
             dist/harden-engine.exe
             dist/harden-engine.exe.sha256
+            cmd/harden-gui/build/bin/harden-gui.exe
+            cmd/harden-gui/build/bin/harden-gui.exe.sha256
           generate_release_notes: true
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
