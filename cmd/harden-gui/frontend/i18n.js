@@ -63,6 +63,56 @@ const I18N = {
         'admin.notadmin':       "Tu n'es pas administrateur.",
         'admin.banner':         'Tu peux explorer et faire des dry-runs, mais Appliquer et Annuler sont désactivés.',
         'admin.relaunch':       'Relancer en admin',
+
+        // Aside
+        'aside.profile':         'Profil',
+        'aside.sections':        'Sections',
+        'aside.actions':         'Actions',
+        'aside.history':         'Historique',
+        'aside.tout':            'Tout',
+        'aside.aucun':           'Aucun',
+        'aside.advanced':        'Options avancées',
+        'aside.audit_label':     "Mode test (n'enregistre que sans bloquer)",
+
+        // Status bar / coverage
+        'status.placeholder':    'Sélectionne des sections puis clique Vérifier ou Appliquer.',
+        'coverage.label':        'Couverture standards',
+        'coverage.disclaimer':   'mapping draft, à valider par audit externe',
+
+        // Filters
+        'filter.level':          'Niveau',
+        'filter.state':          'État',
+        'filter.critical':       'Critique',
+        'filter.important':      'Important',
+        'filter.nice':           'Optionnel',
+        'filter.pending':        'En attente',
+        'filter.compliant':      'Conforme',
+        'filter.toapply':        'À renforcer',
+        'filter.failed':         'Échec',
+        'filter.reset':          'Reset',
+
+        // Table
+        'table.severity':        'Niveau',
+        'table.rule':            'Règle',
+        'table.state':           'État',
+        'table.action':          'Action proposée',
+        'table.empty':           "Aucun résultat encore. Lance un dry-run pour voir l'état actuel.",
+
+        // Loader
+        'loader.analyzing':      'Analyse en cours…',
+        'loader.applying':       'Application en cours…',
+
+        // Modal confirm
+        'modal.confirm_title':   "⚠ Confirmer l'application réelle ?",
+        'modal.confirm_text_pre':'Les actions vont',
+        'modal.confirm_text_strong':'modifier le système',
+        'modal.confirm_text_post':"Un journal est écrit sous le dossier journal et chaque règle peut être annulée individuellement.",
+        'modal.affected':        'Sections affectées :',
+        'modal.confirm_btn':     "Confirmer l'apply",
+
+        // Watchlist banner
+        'watchlist.title':       'Anomalies détectées après un apply récent.',
+        'watchlist.detail':      'Voir détail',
     },
     en: {
         'tooltip.today':       'Today',
@@ -116,6 +166,56 @@ const I18N = {
         'admin.notadmin':       "You are not administrator.",
         'admin.banner':         'You can explore and run dry-runs, but Apply and Undo are disabled.',
         'admin.relaunch':       'Relaunch as admin',
+
+        // Aside
+        'aside.profile':         'Profile',
+        'aside.sections':        'Sections',
+        'aside.actions':         'Actions',
+        'aside.history':         'History',
+        'aside.tout':            'All',
+        'aside.aucun':           'None',
+        'aside.advanced':        'Advanced options',
+        'aside.audit_label':     'Test mode (records only, no blocking)',
+
+        // Status bar / coverage
+        'status.placeholder':    'Select sections then click Check or Apply.',
+        'coverage.label':        'Standards coverage',
+        'coverage.disclaimer':   'draft mapping, requires external audit',
+
+        // Filters
+        'filter.level':          'Level',
+        'filter.state':          'State',
+        'filter.critical':       'Critical',
+        'filter.important':      'Important',
+        'filter.nice':           'Optional',
+        'filter.pending':        'Pending',
+        'filter.compliant':      'Compliant',
+        'filter.toapply':        'To harden',
+        'filter.failed':         'Failed',
+        'filter.reset':          'Reset',
+
+        // Table
+        'table.severity':        'Level',
+        'table.rule':            'Rule',
+        'table.state':           'State',
+        'table.action':          'Proposed action',
+        'table.empty':           'No results yet. Run a dry-run to see the current state.',
+
+        // Loader
+        'loader.analyzing':      'Analyzing…',
+        'loader.applying':       'Applying…',
+
+        // Modal confirm
+        'modal.confirm_title':   '⚠ Confirm real application?',
+        'modal.confirm_text_pre':'These actions will',
+        'modal.confirm_text_strong':'modify the system',
+        'modal.confirm_text_post':'A journal is written and each rule can be undone individually.',
+        'modal.affected':        'Affected sections:',
+        'modal.confirm_btn':     'Confirm apply',
+
+        // Watchlist banner
+        'watchlist.title':       'Anomalies detected after a recent apply.',
+        'watchlist.detail':      'See details',
     },
 };
 

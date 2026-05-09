@@ -410,29 +410,25 @@ function bindEvents() {
 // Filtres
 // ─────────────────────────────────────────────────────────────────
 
-// applyI18nStatic : re-injecte les textes statiques du DOM (titres aside,
-// boutons header, etc.) avec les valeurs t() courantes. Appelé au boot puis
-// à chaque switch de langue.
+// applyI18nStatic : parcourt tous les éléments avec data-i18n="key" et
+// remplace leur textContent par t(key). Couvre tous les libellés statiques
+// du HTML — labels aside, boutons, filtres, headers de tableau, modal, etc.
+// Pour les éléments avec contenu dynamique (admin-banner-text qui mixe
+// strong + texte normal), on assemble explicitement.
 function applyI18nStatic() {
-    // Boutons d'action principaux
-    setTextIf('#btn-dryrun', 'btn.dryrun');
-    setTextIf('#btn-apply', 'btn.apply');
-    setTextIf('#btn-cancel', 'btn.cancel');
-    setTextIf('#btn-undo', 'btn.undo');
-    setTextIf('#btn-maturity', 'btn.score');
-    // Bandeau admin
-    setHTMLIf('#admin-banner .admin-banner-text',
-        `<strong>${escapeHtml(t('admin.notadmin'))}</strong> ${escapeHtml(t('admin.banner'))}`);
-    setTextIf('#btn-relaunch-admin', 'admin.relaunch');
-}
-
-function setTextIf(sel, key) {
-    const el = document.querySelector(sel);
-    if (el) el.textContent = t(key);
-}
-function setHTMLIf(sel, html) {
-    const el = document.querySelector(sel);
-    if (el) el.innerHTML = html;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (!key) return;
+        el.textContent = t(key);
+    });
+    // Cas spécial admin-banner : structure HTML mixte.
+    const adminText = document.querySelector('#admin-banner .admin-banner-text');
+    if (adminText) {
+        adminText.innerHTML = `<strong>${escapeHtml(t('admin.notadmin'))}</strong> ${escapeHtml(t('admin.banner'))}`;
+    }
+    // Bouton lang : afficher la langue VERS laquelle on switche.
+    const langBtn = document.querySelector('#btn-lang-toggle');
+    if (langBtn) langBtn.textContent = getLang() === 'fr' ? 'EN' : 'FR';
 }
 
 // rerenderAllRows : ré-applique humanStatus / formatActionCell / tooltip à

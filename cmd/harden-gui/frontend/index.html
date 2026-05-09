@@ -11,20 +11,17 @@
 
 <div id="admin-banner" class="admin-banner hidden">
     <span class="admin-banner-icon">⚠</span>
-    <span class="admin-banner-text">
-        <strong>Tu n'es pas administrateur.</strong>
-        Tu peux explorer et faire des dry-runs, mais <em>Appliquer</em> et <em>Annuler</em> sont désactivés.
-    </span>
-    <button type="button" id="btn-relaunch-admin" class="btn-relaunch">Relancer en admin</button>
+    <span class="admin-banner-text"></span>
+    <button type="button" id="btn-relaunch-admin" class="btn-relaunch" data-i18n="admin.relaunch">Relancer en admin</button>
 </div>
 
 <div id="watchlist-banner" class="watchlist-banner hidden">
     <span class="watchlist-banner-icon">🔔</span>
     <span class="watchlist-banner-text">
-        <strong>Anomalies détectées après un apply récent.</strong>
+        <strong data-i18n="watchlist.title">Anomalies détectées après un apply récent.</strong>
         <span id="watchlist-summary"></span>
     </span>
-    <button type="button" id="btn-watchlist-detail" class="btn-watchlist-detail">Voir détail</button>
+    <button type="button" id="btn-watchlist-detail" class="btn-watchlist-detail" data-i18n="watchlist.detail">Voir détail</button>
     <button type="button" id="btn-watchlist-dismiss" class="btn-watchlist-dismiss" title="Fermer">✕</button>
 </div>
 
@@ -38,77 +35,77 @@
 
 <main>
     <aside>
-        <h2>Profil</h2>
+        <h2 data-i18n="aside.profile">Profil</h2>
         <div id="profile-list" class="profile-list">loading…</div>
 
         <hr>
 
-        <h2>Sections <span class="section-toggle-buttons">
-            <button type="button" class="link-btn" id="sections-all">Tout</button>
+        <h2><span data-i18n="aside.sections">Sections</span> <span class="section-toggle-buttons">
+            <button type="button" class="link-btn" id="sections-all" data-i18n="aside.tout">Tout</button>
             <span class="muted">·</span>
-            <button type="button" class="link-btn" id="sections-none">Aucun</button>
+            <button type="button" class="link-btn" id="sections-none" data-i18n="aside.aucun">Aucun</button>
         </span></h2>
         <div id="sections-list">loading…</div>
 
         <hr>
 
-        <h2>Actions</h2>
+        <h2 data-i18n="aside.actions">Actions</h2>
         <div class="actions">
-            <button id="btn-dryrun" title="Lit l'état système sans rien modifier (sans admin requis)">
+            <button id="btn-dryrun" title="Lit l'état système sans rien modifier (sans admin requis)" data-i18n="btn.dryrun">
                 🔍 Vérifier (dry-run)
             </button>
-            <button id="btn-apply" class="danger" title="Applique réellement les changements (admin requis)">
+            <button id="btn-apply" class="danger" title="Applique réellement les changements (admin requis)" data-i18n="btn.apply">
                 ⚙️ Appliquer
             </button>
-            <button id="btn-undo" class="warn" title="Annule les changements du dernier run">
+            <button id="btn-undo" class="warn" title="Annule les changements du dernier run" data-i18n="btn.undo">
                 ↶ Annuler le dernier run
             </button>
             <details class="advanced">
-                <summary>Options avancées</summary>
+                <summary data-i18n="aside.advanced">Options avancées</summary>
                 <label class="audit-toggle" title="Pour les protections Microsoft Defender qui peuvent générer des faux positifs (ASR, Network Protection) : active un mode test pendant 1-2 semaines pour voir ce qui serait bloqué dans Event Viewer (events 1121/1122) sans casser tes apps. Une fois sûr qu'aucune app légitime n'est impactée, décoche pour activer le blocage réel.">
                     <input type="checkbox" id="audit-mode">
-                    <span>Mode test (n'enregistre que sans bloquer)</span>
+                    <span data-i18n="aside.audit_label">Mode test (n'enregistre que sans bloquer)</span>
                 </label>
             </details>
         </div>
 
-        <h2>Historique</h2>
+        <h2 data-i18n="aside.history">Historique</h2>
         <div id="runs-list" class="muted small">loading…</div>
     </aside>
 
     <section id="results-pane">
-        <div id="status-bar" class="muted">Sélectionne des sections puis clique <strong>Vérifier</strong> ou <strong>Appliquer</strong>.</div>
+        <div id="status-bar" class="muted" data-i18n="status.placeholder">Sélectionne des sections puis clique Vérifier ou Appliquer.</div>
 
         <div id="dashboard" class="hidden">
             <span id="dash-icon" class="dash-icon">⚠</span>
             <span id="dash-headline" class="dash-headline">—</span>
             <span id="dash-detail" class="dash-detail"></span>
-            <button type="button" id="btn-maturity" class="btn-maturity hidden" title="Voir ton score de maturité hardening (note A/B/C/D)">📊 Score</button>
+            <button type="button" id="btn-maturity" class="btn-maturity hidden" title="Voir ton score de maturité hardening (note A/B/C/D)" data-i18n="btn.score">📊 Score</button>
         </div>
 
         <div id="coverage-bar" class="coverage-bar hidden" title="Couverture des règles harden-win11 vs référentiels publics. Clique pour le détail.">
-            <span class="cov-label">Couverture standards</span>
+            <span class="cov-label" data-i18n="coverage.label">Couverture standards</span>
             <span class="cov-pill" data-fw="cis">CIS —</span>
             <span class="cov-pill" data-fw="anssi">ANSSI —</span>
             <span class="cov-pill" data-fw="ms_baseline">MS —</span>
-            <span class="cov-disclaimer muted small">mapping draft, à valider par audit externe</span>
+            <span class="cov-disclaimer muted small" data-i18n="coverage.disclaimer">mapping draft, à valider par audit externe</span>
         </div>
 
         <div id="filters">
             <div class="filter-group">
-                <span class="filter-label">Niveau</span>
-                <label><input type="checkbox" class="filter-severity" value="critical" checked> <span class="filter-pill critical">Critique</span></label>
-                <label><input type="checkbox" class="filter-severity" value="important" checked> <span class="filter-pill important">Important</span></label>
-                <label><input type="checkbox" class="filter-severity" value="nice-to-have" checked> <span class="filter-pill nice-to-have">Optionnel</span></label>
+                <span class="filter-label" data-i18n="filter.level">Niveau</span>
+                <label><input type="checkbox" class="filter-severity" value="critical" checked> <span class="filter-pill critical" data-i18n="filter.critical">Critique</span></label>
+                <label><input type="checkbox" class="filter-severity" value="important" checked> <span class="filter-pill important" data-i18n="filter.important">Important</span></label>
+                <label><input type="checkbox" class="filter-severity" value="nice-to-have" checked> <span class="filter-pill nice-to-have" data-i18n="filter.nice">Optionnel</span></label>
             </div>
             <div class="filter-group">
-                <span class="filter-label">État</span>
-                <label><input type="checkbox" class="filter-status" value="pending" checked> En attente</label>
-                <label><input type="checkbox" class="filter-status" value="conforme"> Conforme</label>
-                <label><input type="checkbox" class="filter-status" value="to-apply" checked> À renforcer</label>
-                <label><input type="checkbox" class="filter-status" value="failed" checked> Échec</label>
+                <span class="filter-label" data-i18n="filter.state">État</span>
+                <label><input type="checkbox" class="filter-status" value="pending" checked> <span data-i18n="filter.pending">En attente</span></label>
+                <label><input type="checkbox" class="filter-status" value="conforme"> <span data-i18n="filter.compliant">Conforme</span></label>
+                <label><input type="checkbox" class="filter-status" value="to-apply" checked> <span data-i18n="filter.toapply">À renforcer</span></label>
+                <label><input type="checkbox" class="filter-status" value="failed" checked> <span data-i18n="filter.failed">Échec</span></label>
             </div>
-            <button id="filter-reset" class="filter-reset" title="Réinitialiser les filtres">Reset</button>
+            <button id="filter-reset" class="filter-reset" title="Réinitialiser les filtres" data-i18n="filter.reset">Reset</button>
             <span id="filter-count" class="muted small"></span>
         </div>
 
@@ -119,48 +116,49 @@
                         <th class="col-include" title="Décoche pour exclure cette règle du prochain run">
                             <input type="checkbox" id="include-all" checked title="Tout cocher / décocher">
                         </th>
-                        <th class="col-severity">Niveau</th>
-                        <th class="col-rule">Règle</th>
-                        <th class="col-status">État</th>
-                        <th class="col-detail">Action proposée</th>
+                        <th class="col-severity" data-i18n="table.severity">Niveau</th>
+                        <th class="col-rule" data-i18n="table.rule">Règle</th>
+                        <th class="col-status" data-i18n="table.state">État</th>
+                        <th class="col-detail" data-i18n="table.action">Action proposée</th>
                     </tr>
                 </thead>
                 <tbody id="results-body">
-                    <tr class="empty"><td colspan="5">Aucun résultat encore. Lance un dry-run pour voir l'état actuel.</td></tr>
+                    <tr class="empty"><td colspan="5" data-i18n="table.empty">Aucun résultat encore. Lance un dry-run pour voir l'état actuel.</td></tr>
                 </tbody>
             </table>
         </div>
     </section>
 </main>
 
-<!-- Loader overlay pendant un run -->
 <div id="loader" class="overlay hidden">
     <div class="loader-content">
         <div class="spinner"></div>
         <div class="loader-text">
-            <h3 id="loader-title">Analyse en cours…</h3>
-            <div id="loader-progress" class="muted small">0 / 0 règles</div>
+            <h3 id="loader-title" data-i18n="loader.analyzing">Analyse en cours…</h3>
+            <div id="loader-progress" class="muted small">0 / 0</div>
             <div id="loader-current" class="muted small">—</div>
         </div>
-        <button id="btn-cancel" class="warn">Annuler</button>
+        <button id="btn-cancel" class="warn" data-i18n="btn.cancel">Annuler</button>
     </div>
 </div>
 
-<!-- Modal confirmation apply -->
 <div id="modal-confirm" class="overlay hidden">
     <div class="modal-content">
-        <h3>⚠ Confirmer l'application réelle ?</h3>
-        <p>Les actions vont <strong>modifier le système</strong>. Un journal est écrit sous <code id="modal-journal-dir"></code> et chaque règle peut être annulée individuellement.</p>
-        <p>Sections affectées :</p>
+        <h3 data-i18n="modal.confirm_title">⚠ Confirmer l'application réelle ?</h3>
+        <p>
+            <span data-i18n="modal.confirm_text_pre">Les actions vont</span>
+            <strong data-i18n="modal.confirm_text_strong">modifier le système</strong>.
+            <span data-i18n="modal.confirm_text_post">Un journal est écrit sous <code id="modal-journal-dir"></code> et chaque règle peut être annulée individuellement.</span>
+        </p>
+        <p data-i18n="modal.affected">Sections affectées :</p>
         <ul id="modal-sections"></ul>
         <div class="modal-actions">
-            <button id="modal-cancel">Annuler</button>
-            <button id="modal-confirm-btn" class="danger">Confirmer l'apply</button>
+            <button id="modal-cancel" data-i18n="btn.cancel">Annuler</button>
+            <button id="modal-confirm-btn" class="danger" data-i18n="modal.confirm_btn">Confirmer l'apply</button>
         </div>
     </div>
 </div>
 
-<!-- Tooltip flottant pour les règles -->
 <div id="rule-tooltip" class="tooltip hidden"></div>
 
 <script src="/app.js"></script>
