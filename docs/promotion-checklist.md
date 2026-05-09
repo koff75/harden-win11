@@ -59,23 +59,32 @@ C'est ce qui fait que les outils opensource percent : démo vidéo + screenshots
 Configure les topics qui font remonter le repo dans la search GitHub :
 
 ```bash
-# Si tu as gh CLI installée :
-gh repo edit --add-topic windows-hardening
-gh repo edit --add-topic windows-11
-gh repo edit --add-topic security
-gh repo edit --add-topic cybersecurity
-gh repo edit --add-topic open-source
-gh repo edit --add-topic hardening-tool
-gh repo edit --add-topic privacy
-gh repo edit --add-topic defender
-gh repo edit --add-topic powershell
-gh repo edit --add-topic golang
-gh repo edit --add-topic wails
-gh repo edit --add-topic cis-benchmark
-gh repo edit --add-topic anssi
+# 20 topics ciblés couvrant : OS / catégorie / techno / standards / fonctionnalités.
+# GitHub limite à 20 topics par repo. Tu peux toutes les coller via gh CLI :
+gh repo edit \
+  --add-topic windows-11 \
+  --add-topic windows-hardening \
+  --add-topic security \
+  --add-topic cybersecurity \
+  --add-topic infosec \
+  --add-topic hardening-tool \
+  --add-topic privacy \
+  --add-topic defender \
+  --add-topic asr \
+  --add-topic ransomware-protection \
+  --add-topic cis-benchmark \
+  --add-topic anssi \
+  --add-topic ms-security-baseline \
+  --add-topic open-source \
+  --add-topic powershell \
+  --add-topic golang \
+  --add-topic wails \
+  --add-topic gui \
+  --add-topic cli \
+  --add-topic devsecops
 
 # Description visible en haut du repo (EN — vise audience internationale) :
-gh repo edit --description "Harden Windows 11 in one click. 95 security rules in plain English, fully reversible, mapped to CIS/ANSSI/MS Baseline. CLI + GUI. EN/FR."
+gh repo edit --description "🛡️ Harden Windows 11 in 1 click. 95 security rules explained in plain English, fully reversible, mapped to CIS / ANSSI / MS Baseline. Detects post-Windows-Update drift. CLI + GUI. EN/FR."
 ```
 
 Sinon **manuellement** sur https://github.com/koff75/harden-win11/settings (icône engrenage en haut à droite du repo) :
