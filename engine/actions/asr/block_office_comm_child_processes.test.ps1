@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = '26190899-1602-49E8-8B27-EB1D0A1CE869'
-$expected = 1
+$expected = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 $pref = Get-MpPreference
 $ids = @($pref.AttackSurfaceReductionRules_Ids)

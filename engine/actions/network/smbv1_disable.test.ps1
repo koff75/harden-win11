@@ -4,8 +4,18 @@
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$cfg = Get-SmbServerConfiguration -ErrorAction SilentlyContinue
-$feat = Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -ErrorAction SilentlyContinue
+$cfg = $null
+try { $cfg = Get-SmbServerConfiguration -ErrorAction Stop } catch {}
+
+# Get-WindowsOptionalFeature -Online requiert admin (DISM), même en read-only.
+# En non-admin on capture la COMException et on continue sans ce check.
+$feat = $null
+$featPartial = $false
+try {
+    $feat = Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -ErrorAction Stop
+} catch {
+    $featPartial = $true
+}
 
 $smbServerOff   = ($null -eq $cfg) -or (-not $cfg.EnableSMB1Protocol)
 $featureOff     = ($null -eq $feat) -or ($feat.State.ToString() -in @('Disabled', 'DisabledWithPayloadRemoved'))
@@ -16,5 +26,6 @@ $compliant      = $smbServerOff -and $featureOff
     current   = @{
         SmbServerEnableSMB1  = if ($cfg) { [bool]$cfg.EnableSMB1Protocol } else { $null }
         OptionalFeatureState = if ($feat) { $feat.State.ToString() } else { 'Unknown' }
+        PartialScan          = $featPartial
     }
 } | ConvertTo-Json -Compress -Depth 10

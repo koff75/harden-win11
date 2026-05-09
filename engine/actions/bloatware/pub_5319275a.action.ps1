@@ -3,6 +3,6 @@
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-Import-Module (Join-Path $PSScriptRoot '..\_helpers\appx.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot '..\_helpers\harden_appx.psm1') -Force
 
 Invoke-AppxRemove -Pattern '*5319275A*'

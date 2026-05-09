@@ -3,29 +3,44 @@
 package winadmin
 
 import (
-	"os"
-	"path/filepath"
+	"fmt"
+	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
-// isElevatedWindows détecte un process élevé en tentant d'ouvrir en write un
-// fichier dans %SystemRoot%\Temp\ (= C:\Windows\Temp\). Ce dossier accepte les
-// writes uniquement pour les admins. Si la création réussit, on est admin.
+// isElevatedWindows utilise GetTokenInformation(TokenElevation) pour détecter
+// si le process courant tourne avec un token élevé.
 //
-// Cette approche est délibérément low-tech (pas de SYSCALL, pas de dépendance
-// externe). Pour une détection plus robuste, on pourrait utiliser
-// windows.GetCurrentProcessToken + IsElevated, mais on resterait en pratique
-// avec le même résultat et plus de complexité.
+// Précédemment, on utilisait une heuristique "puis-je écrire dans C:\Windows\Temp"
+// — mais sur certaines configs Win11, ce dossier est writable par les Users
+// standards, ce qui produisait un faux-positif admin (bug critique : la GUI
+// activait Apply/Undo pour des sessions non-élevées qui plantaient ensuite à
+// la 1ère écriture HKLM).
+//
+// La nouvelle implémentation interroge le TokenElevation du process courant,
+// qui est l'API Windows officielle (cf. UAC documentation).
 func isElevatedWindows() (bool, error) {
-	sysRoot := os.Getenv("SystemRoot")
-	if sysRoot == "" {
-		sysRoot = `C:\Windows`
+	var token windows.Token
+	if err := windows.OpenProcessToken(
+		windows.CurrentProcess(),
+		windows.TOKEN_QUERY,
+		&token,
+	); err != nil {
+		return false, fmt.Errorf("OpenProcessToken: %w", err)
 	}
-	probe := filepath.Join(sysRoot, "Temp", ".harden-engine-admin-probe")
-	f, err := os.Create(probe)
-	if err != nil {
-		return false, nil
+	defer token.Close()
+
+	var elevation uint32
+	var returnedLen uint32
+	if err := windows.GetTokenInformation(
+		token,
+		windows.TokenElevation,
+		(*byte)(unsafe.Pointer(&elevation)),
+		uint32(unsafe.Sizeof(elevation)),
+		&returnedLen,
+	); err != nil {
+		return false, fmt.Errorf("GetTokenInformation(TokenElevation): %w", err)
 	}
-	_ = f.Close()
-	_ = os.Remove(probe)
-	return true, nil
+	return elevation != 0, nil
 }

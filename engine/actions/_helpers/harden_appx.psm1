@@ -15,16 +15,41 @@ function Get-AppxByPattern {
     [CmdletBinding()]
     param([Parameter(Mandatory)] [string] $Pattern)
 
-    $installed = @(Get-AppxPackage -Name $Pattern -AllUsers -ErrorAction SilentlyContinue)
-    $provisioned = @(Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
-        Where-Object {
-            $_.DisplayName -like $Pattern.Trim('*') -or $_.PackageName -like $Pattern
-        })
+    # Tente d'abord -AllUsers (necessite des droits eleves Appx).
+    # En cas d'Access denied (UAC strict, mode user-only), fallback sans
+    # -AllUsers : retourne les apps du user courant uniquement. Suffit pour
+    # la plupart des bloatware qui sont per-user.
+    $installed = @()
+    $partial = $false
+    try {
+        $installed = @(Get-AppxPackage -Name $Pattern -AllUsers -ErrorAction Stop)
+    } catch {
+        $partial = $true
+        try {
+            $installed = @(Get-AppxPackage -Name $Pattern -ErrorAction Stop)
+        } catch {
+            $installed = @()
+        }
+    }
+
+    $provisioned = @()
+    try {
+        $provisioned = @(Get-AppxProvisionedPackage -Online -ErrorAction Stop |
+            Where-Object {
+                $_.DisplayName -like $Pattern.Trim('*') -or $_.PackageName -like $Pattern
+            })
+    } catch {
+        # Idem : Get-AppxProvisionedPackage -Online necessite admin.
+        # Si fail, on continue sans le pan provisioned.
+        $provisioned = @()
+        $partial = $true
+    }
 
     @{
         Installed    = $installed
         Provisioned  = $provisioned
         Total        = $installed.Count + $provisioned.Count
+        Partial      = $partial
     }
 }
 
@@ -43,6 +68,7 @@ function Invoke-AppxTest {
             AppxInstalled        = $state.Installed.Count
             ProvisionedInstalled = $state.Provisioned.Count
             InstalledNames       = @($state.Installed | ForEach-Object { $_.Name })
+            PartialScan          = $state.Partial
         }
     } | ConvertTo-Json -Compress -Depth 10
 }
