@@ -1,12 +1,16 @@
 # block_safe_mode_reboot.action.ps1
 # ASR : Block rebooting machine in Safe Mode
-# GUID : 33DDEDF1-C6E0-47CB-833E-DE6133960387, Action : 1 (Block)
+# GUID : 33DDEDF1-C6E0-47CB-833E-DE6133960387
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = '33DDEDF1-C6E0-47CB-833E-DE6133960387'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

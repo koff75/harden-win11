@@ -35,7 +35,26 @@ async function refreshProfiles() {
         $('#profile-list').innerHTML = `<span style="color:#ff9099">Erreur: ${err}</span>`;
         return;
     }
-    $('#profile-list').innerHTML = availableProfiles.map(p => `
+
+    // Détection auto du contexte → suggestion de profil par défaut.
+    let suggestion = null;
+    try {
+        suggestion = await window.go.main.App.DetectContext();
+        if (suggestion && suggestion.suggestedProfile) {
+            currentProfile = suggestion.suggestedProfile;
+        }
+    } catch (err) {
+        // pas grave : on garde le défaut 'personal'.
+    }
+
+    const suggestionBanner = suggestion
+        ? `<div class="profile-suggestion" title="${escapeHtml(suggestion.reason)}">
+              💡 Suggéré : <strong>${escapeHtml(profileTitleFromID(suggestion.suggestedProfile))}</strong>
+              <div class="profile-suggestion-reason">${escapeHtml(suggestion.reason)}</div>
+           </div>`
+        : '';
+
+    $('#profile-list').innerHTML = suggestionBanner + availableProfiles.map(p => `
         <label class="profile-item" title="${escapeHtml(p.description)}">
             <input type="radio" name="profile" value="${p.id}" ${p.id === currentProfile ? 'checked' : ''}>
             <span class="profile-title">${escapeHtml(p.title)}</span>
@@ -46,13 +65,17 @@ async function refreshProfiles() {
         rb.addEventListener('change', async () => {
             currentProfile = rb.value;
             await refreshSections();
-            // Reset le tableau et le dashboard quand on change de profil.
             $('#results-body').innerHTML = '<tr class="empty"><td colspan="4">Profil changé. Lance un dry-run pour voir l\'état actuel.</td></tr>';
             $('#dashboard').classList.add('hidden');
             Object.keys(rowsByRuleID).forEach(k => delete rowsByRuleID[k]);
             Object.keys(eventByRuleID).forEach(k => delete eventByRuleID[k]);
         });
     });
+}
+
+function profileTitleFromID(id) {
+    const found = availableProfiles.find(p => p.id === id);
+    return found ? found.title : id;
 }
 
 async function refreshEngineInfo() {
@@ -341,9 +364,10 @@ async function runEngine(mode) {
     disableButtons(true);
 
     try {
+        const auditMode = $('#audit-mode').checked;
         const summary = mode === 'apply'
-            ? await window.go.main.App.Apply(sections, currentProfile)
-            : await window.go.main.App.DryRun(sections, currentProfile);
+            ? await window.go.main.App.Apply(sections, currentProfile, auditMode)
+            : await window.go.main.App.DryRun(sections, currentProfile, auditMode);
         const cls = summary.cancelled ? 'aborted' : (summary.aborted ? 'aborted' : 'success');
         setStatus(cls, summarizeStatus(summary));
         await refreshRuns();

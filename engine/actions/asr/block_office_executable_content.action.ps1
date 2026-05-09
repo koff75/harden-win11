@@ -1,12 +1,16 @@
 # block_office_executable_content.action.ps1
 # ASR : Block Office apps from creating executable content
-# GUID : 3B576869-A4EC-4529-8536-B80A7769E899, Action : 1 (Block)
+# GUID : 3B576869-A4EC-4529-8536-B80A7769E899
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = '3B576869-A4EC-4529-8536-B80A7769E899'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

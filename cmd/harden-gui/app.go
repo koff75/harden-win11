@@ -169,6 +169,83 @@ func (a *App) GetEngineInfo() EngineInfo {
 	return info
 }
 
+// ContextDetection : info de contexte machine pour suggérer un profil.
+type ContextDetection struct {
+	ADJoined         bool   `json:"adJoined"`
+	PrinterCount     int    `json:"printerCount"`
+	NetworkPrinters  bool   `json:"networkPrinters"`
+	SuggestedProfile string `json:"suggestedProfile"`
+	Reason           string `json:"reason"`
+}
+
+// DetectContext spawn un PS qui détecte le contexte machine (AD-joined,
+// imprimantes réseau présentes) et propose un profil.
+func (a *App) DetectContext() ContextDetection {
+	logf("app.DetectContext: start")
+
+	// Heuristiques hardcodées en PS (pas un fichier séparé pour éviter
+	// le besoin de manifest dédié).
+	psScript := `
+$adJoined = $false
+$printerCount = 0
+$networkPrinters = $false
+try {
+    $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue
+    if ($cs) { $adJoined = [bool]$cs.PartOfDomain }
+} catch {}
+try {
+    $printers = @(Get-Printer -ErrorAction SilentlyContinue)
+    $printerCount = $printers.Count
+    $networkPrinters = [bool](@($printers | Where-Object { $_.Type -eq 'Connection' -or $_.PortName -like 'WSD-*' -or $_.PortName -like 'IP_*' }).Count -gt 0)
+} catch {}
+@{
+    adJoined = $adJoined
+    printerCount = $printerCount
+    networkPrinters = $networkPrinters
+} | ConvertTo-Json -Compress
+`
+	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("harden-detect-%d.ps1", time.Now().UnixNano()))
+	if err := os.WriteFile(tmpFile, []byte(psScript), 0o644); err != nil {
+		logf("DetectContext: write tmp script: %v", err)
+		return ContextDetection{SuggestedProfile: "personal", Reason: "détection impossible — défaut PC personnel"}
+	}
+	defer os.Remove(tmpFile)
+
+	r := runner.New()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	out, err := r.RunPS(ctx, tmpFile, nil)
+	if err != nil {
+		logf("DetectContext: PS error: %v", err)
+		return ContextDetection{SuggestedProfile: "personal", Reason: "détection impossible — défaut PC personnel"}
+	}
+
+	d := ContextDetection{}
+	if v, ok := out["adJoined"].(bool); ok {
+		d.ADJoined = v
+	}
+	if v, ok := out["printerCount"].(float64); ok {
+		d.PrinterCount = int(v)
+	}
+	if v, ok := out["networkPrinters"].(bool); ok {
+		d.NetworkPrinters = v
+	}
+
+	// Heuristique du suggestedProfile :
+	if d.ADJoined {
+		d.SuggestedProfile = "business"
+		d.Reason = "Machine jointe à un domaine Active Directory."
+	} else if d.NetworkPrinters || d.PrinterCount >= 3 {
+		d.SuggestedProfile = "business"
+		d.Reason = fmt.Sprintf("%d imprimante(s) détectée(s) dont au moins une réseau — usage probable petite entreprise.", d.PrinterCount)
+	} else {
+		d.SuggestedProfile = "personal"
+		d.Reason = "Pas de domaine AD, peu d'imprimantes — usage perso probable."
+	}
+	logf("app.DetectContext: %+v", d)
+	return d
+}
+
 // GetProfiles retourne la liste des profils utilisables. Hardcodé pour
 // l'instant — les profils sont une convention partagée entre les manifests
 // (champ rule.profiles) et la GUI (sélecteur).
@@ -270,13 +347,13 @@ func (a *App) GetSections(profile string) ([]SectionInfo, error) {
 	return sections, nil
 }
 
-func (a *App) DryRun(sectionIDs []string, profile string) (*RunSummary, error) {
-	logf("app.DryRun: sections=%v profile=%q", sectionIDs, profile)
-	return a.runEngine(executor.ModeDry, sectionIDs, profile)
+func (a *App) DryRun(sectionIDs []string, profile string, auditMode bool) (*RunSummary, error) {
+	logf("app.DryRun: sections=%v profile=%q audit=%t", sectionIDs, profile, auditMode)
+	return a.runEngine(executor.ModeDry, sectionIDs, profile, auditMode)
 }
 
-func (a *App) Apply(sectionIDs []string, profile string) (*RunSummary, error) {
-	logf("app.Apply: sections=%v profile=%q", sectionIDs, profile)
+func (a *App) Apply(sectionIDs []string, profile string, auditMode bool) (*RunSummary, error) {
+	logf("app.Apply: sections=%v profile=%q audit=%t", sectionIDs, profile, auditMode)
 	isAdmin, err := winadmin.IsElevated()
 	if err != nil {
 		return nil, fmt.Errorf("admin check: %w", err)
@@ -284,7 +361,7 @@ func (a *App) Apply(sectionIDs []string, profile string) (*RunSummary, error) {
 	if !isAdmin {
 		return nil, errors.New("apply requires Administrator privileges. Re-launch the GUI from an elevated PowerShell")
 	}
-	return a.runEngine(executor.ModeApply, sectionIDs, profile)
+	return a.runEngine(executor.ModeApply, sectionIDs, profile, auditMode)
 }
 
 // CancelRun annule le run en cours s'il y en a un. Le run termine
@@ -301,7 +378,7 @@ func (a *App) CancelRun() {
 	}
 }
 
-func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string) (*RunSummary, error) {
+func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string, auditMode bool) (*RunSummary, error) {
 	allSections, err := a.GetSections(profile)
 	if err != nil {
 		return nil, err
@@ -383,6 +460,9 @@ func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string)
 	}()
 
 	r := runner.New()
+	if auditMode {
+		r.Env = map[string]string{"HARDEN_ASR_MODE": "audit"}
+	}
 
 	var total executor.Summary
 	var aborted, cancelled bool

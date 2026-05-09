@@ -14,6 +14,10 @@ import (
 type Runner struct {
 	// Path vers powershell.exe. Vide = utilise "powershell.exe" (PATH).
 	PowerShellPath string
+	// Env : variables d'environnement supplémentaires passées à chaque
+	// invocation PS. Utile pour communiquer un mode (ex: HARDEN_ASR_MODE=audit)
+	// que les snippets lisent via $env:HARDEN_ASR_MODE.
+	Env map[string]string
 }
 
 // New retourne un Runner avec les défauts.
@@ -40,6 +44,14 @@ func (r *Runner) RunPS(ctx context.Context, scriptPath string, input any) (map[s
 		"-File", scriptPath,
 	)
 	hideConsoleWindow(cmd)
+
+	if len(r.Env) > 0 {
+		env := os.Environ()
+		for k, v := range r.Env {
+			env = append(env, k+"="+v)
+		}
+		cmd.Env = env
+	}
 
 	// Sérialise input en JSON (ou string vide si nil)
 	var stdin []byte

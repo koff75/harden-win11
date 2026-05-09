@@ -1,12 +1,16 @@
 # block_office_code_injection.action.ps1
 # ASR : Block Office apps from injecting code into other processes
-# GUID : 75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84, Action : 1 (Block)
+# GUID : 75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = '75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

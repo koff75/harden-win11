@@ -1,12 +1,16 @@
 # block_unsigned_usb.action.ps1
 # ASR : Block untrusted/unsigned processes from USB
-# GUID : B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4, Action : 1 (Block)
+# GUID : B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = 'B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

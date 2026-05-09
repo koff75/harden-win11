@@ -1,12 +1,16 @@
 # block_js_vbs_launch.action.ps1
 # ASR : Block JS/VBS from launching downloaded executable
-# GUID : D3E037E1-3EB8-44C8-A917-57927947596D, Action : 1 (Block)
+# GUID : D3E037E1-3EB8-44C8-A917-57927947596D
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = 'D3E037E1-3EB8-44C8-A917-57927947596D'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

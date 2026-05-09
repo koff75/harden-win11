@@ -1,12 +1,16 @@
 # block_office_child_processes.action.ps1
 # ASR : Block Office apps from creating child processes
-# GUID : D4F940AB-401B-4EFC-AADC-AD5F3C50688A, Action : 1 (Block)
+# GUID : D4F940AB-401B-4EFC-AADC-AD5F3C50688A
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = 'D4F940AB-401B-4EFC-AADC-AD5F3C50688A'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

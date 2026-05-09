@@ -1,12 +1,16 @@
 # advanced_ransomware_protection.action.ps1
 # ASR : Use advanced protection against ransomware
-# GUID : C1DB55AB-C21A-4637-BB3F-A12568109D35, Action : 1 (Block)
+# GUID : C1DB55AB-C21A-4637-BB3F-A12568109D35
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = 'C1DB55AB-C21A-4637-BB3F-A12568109D35'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

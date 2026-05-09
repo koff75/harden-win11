@@ -1,0 +1,8 @@
+# linkedin.action.ps1
+# Desinstalle l'app Store 'LinkedIn' (pattern : *LinkedInforWindows*).
+
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Import-Module (Join-Path $PSScriptRoot '..\_helpers\appx.psm1') -Force
+
+Invoke-AppxRemove -Pattern '*LinkedInforWindows*'

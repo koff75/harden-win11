@@ -89,6 +89,22 @@ aside hr {
     margin-bottom: 12px;
 }
 
+.audit-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 11px;
+    color: #c0c8d8;
+    border-top: 1px solid #2c3a55;
+    margin-top: 4px;
+    padding-top: 10px;
+}
+.audit-toggle:hover { color: #4fc3ff; }
+.audit-toggle input[type="checkbox"] { accent-color: #4fc3ff; }
+
 button {
     padding: 8px 12px;
     background: #2c4060;
@@ -135,6 +151,25 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.profile-suggestion {
+    padding: 8px 10px;
+    background: linear-gradient(135deg, #1a3a4f 0%, #1c2c4f 100%);
+    border: 1px solid #2c5a7f;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #aaffbb;
+    margin-bottom: 8px;
+}
+.profile-suggestion strong {
+    color: #4fc3ff;
+}
+.profile-suggestion-reason {
+    color: #8fa1be;
+    font-size: 10px;
+    margin-top: 4px;
+    line-height: 1.4;
 }
 .profile-item {
     display: grid;

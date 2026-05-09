@@ -1,12 +1,16 @@
 # block_vulnerable_drivers.action.ps1
 # ASR : Block abuse of exploited vulnerable signed drivers
-# GUID : 56A863A9-875E-4185-98A7-B882C64B5CE5, Action : 1 (Block)
+# GUID : 56A863A9-875E-4185-98A7-B882C64B5CE5
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = '56A863A9-875E-4185-98A7-B882C64B5CE5'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

@@ -1,12 +1,16 @@
 # block_psexec_wmi.action.ps1
 # ASR : Block process creations from PSExec/WMI commands
-# GUID : D1E49AAC-8F56-4280-B9BA-993A6D77406C, Action : 1 (Block)
+# GUID : D1E49AAC-8F56-4280-B9BA-993A6D77406C
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = 'D1E49AAC-8F56-4280-B9BA-993A6D77406C'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

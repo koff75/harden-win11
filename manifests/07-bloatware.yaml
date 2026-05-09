@@ -4,38 +4,655 @@ section:
   id: bloatware
   order: 7
   title: "Bloatware Microsoft Store"
-  description: "Désinstallation des apps Store consommateurs préinstallées (TikTok, Candy Crush, Bing News, etc.)."
+  description: "Desinstallation des apps Store consommateurs. Tu peux selectionner individuellement celles que tu veux supprimer."
 
 rules:
-  - id: bloatware.cleanup
-    title: "Désinstaller les apps Store bloatware"
-    description: "Supprime les apps préinstallées (Appx + provisioned) listées comme bloatware."
+
+  - id: bloatware.clipchamp
+    title: "Clipchamp (editeur video Microsoft)"
+    description: "Desinstalle 'Clipchamp (editeur video Microsoft)' (Appx + provisioned)."
     explanation: |
-      Win11 préinstalle un paquet d'apps grand public : TikTok, Spotify,
-      Disney, CandyCrush, Microsoft Solitaire, Bing News/Weather, Cortana,
-      Skype, etc. Cette règle les désinstalle (Get-AppxPackage + Get-AppxProvisionedPackage).
-
-      ATTENTION : la règle est marquée irreversible parce que réinstaller
-      des apps Store désinstallées requiert le Microsoft Store + un compte
-      Microsoft connecté. Si tu utilises l'une de ces apps, ne pas appliquer
-      ou ajuster la liste dans engine/actions/bloatware/cleanup.action.ps1.
-
-      Liste actuelle (27 patterns) : voir le fichier action.ps1.
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Clipchamp*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
     severity: nice-to-have
-    impact: "Les apps listées sont supprimées de TOUS les comptes user. Réinstall manuelle via Store si besoin."
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
     requires_reboot: false
     profile_when: always
     depends_on: []
     irreversible: true
-    irreversible_reason: "Réinstaller des apps Store désinstallées requiert le Microsoft Store + compte Microsoft connecté. Pas une opération scriptable de façon fiable."
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
     references:
       - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
-    tags: [bloatware, store]
+    tags: [bloatware, store, microsoft]
     added_in: "1.0"
-    action: ./engine/actions/bloatware/cleanup.action.ps1
-    test: ./engine/actions/bloatware/cleanup.test.ps1
+    action: ./engine/actions/bloatware/clipchamp.action.ps1
+    test: ./engine/actions/bloatware/clipchamp.test.ps1
     profiles:
       - personal
+      - business
       - maximal
-    breaks:
-      - "Apps Store desinstallees ne peuvent etre reinstallees que via Microsoft Store + compte Microsoft. Liste : TikTok, Spotify, Disney, CandyCrush, Bing News, Microsoft Solitaire, Skype, etc."
+  - id: bloatware.bing_news
+    title: "Microsoft Bing News"
+    description: "Desinstalle 'Microsoft Bing News' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.BingNews*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/bing_news.action.ps1
+    test: ./engine/actions/bloatware/bing_news.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.bing_weather
+    title: "Microsoft Bing Weather"
+    description: "Desinstalle 'Microsoft Bing Weather' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.BingWeather*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/bing_weather.action.ps1
+    test: ./engine/actions/bloatware/bing_weather.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.get_help
+    title: "Get Help (assistant Microsoft)"
+    description: "Desinstalle 'Get Help (assistant Microsoft)' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.GetHelp*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/get_help.action.ps1
+    test: ./engine/actions/bloatware/get_help.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.get_started
+    title: "Get Started (tour Win11)"
+    description: "Desinstalle 'Get Started (tour Win11)' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.Getstarted*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/get_started.action.ps1
+    test: ./engine/actions/bloatware/get_started.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.solitaire
+    title: "Microsoft Solitaire Collection"
+    description: "Desinstalle 'Microsoft Solitaire Collection' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.MicrosoftSolitaireCollection*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/solitaire.action.ps1
+    test: ./engine/actions/bloatware/solitaire.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.mixed_reality
+    title: "Mixed Reality Portal (VR)"
+    description: "Desinstalle 'Mixed Reality Portal (VR)' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.MixedReality.Portal*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/mixed_reality.action.ps1
+    test: ./engine/actions/bloatware/mixed_reality.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.people
+    title: "People (carnet d adresses)"
+    description: "Desinstalle 'People (carnet d adresses)' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.People*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/people.action.ps1
+    test: ./engine/actions/bloatware/people.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.skype
+    title: "Skype"
+    description: "Desinstalle 'Skype' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.SkypeApp*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/skype.action.ps1
+    test: ./engine/actions/bloatware/skype.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.feedback_hub
+    title: "Feedback Hub"
+    description: "Desinstalle 'Feedback Hub' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.WindowsFeedbackHub*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/feedback_hub.action.ps1
+    test: ./engine/actions/bloatware/feedback_hub.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.your_phone
+    title: "Your Phone (Phone Link)"
+    description: "Desinstalle 'Your Phone (Phone Link)' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.YourPhone*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/your_phone.action.ps1
+    test: ./engine/actions/bloatware/your_phone.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.zune_music
+    title: "Groove Music (Zune)"
+    description: "Desinstalle 'Groove Music (Zune)' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.ZuneMusic*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/zune_music.action.ps1
+    test: ./engine/actions/bloatware/zune_music.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.zune_video
+    title: "Films & TV (Zune Video)"
+    description: "Desinstalle 'Films & TV (Zune Video)' (Appx + provisioned)."
+    explanation: |
+      App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.ZuneVideo*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, microsoft]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/zune_video.action.ps1
+    test: ./engine/actions/bloatware/zune_video.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.disney
+    title: "Disney+ (preinstalle OEM)"
+    description: "Desinstalle 'Disney+ (preinstalle OEM)' (Appx + provisioned)."
+    explanation: |
+      App Store streaming preinstallee sur Win11 (pattern Appx : *Disney*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, streaming]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/disney.action.ps1
+    test: ./engine/actions/bloatware/disney.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.tiktok
+    title: "TikTok"
+    description: "Desinstalle 'TikTok' (Appx + provisioned)."
+    explanation: |
+      App Store social preinstallee sur Win11 (pattern Appx : *TikTok*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, social]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/tiktok.action.ps1
+    test: ./engine/actions/bloatware/tiktok.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.facebook
+    title: "Facebook"
+    description: "Desinstalle 'Facebook' (Appx + provisioned)."
+    explanation: |
+      App Store social preinstallee sur Win11 (pattern Appx : *Facebook*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, social]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/facebook.action.ps1
+    test: ./engine/actions/bloatware/facebook.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.instagram
+    title: "Instagram"
+    description: "Desinstalle 'Instagram' (Appx + provisioned)."
+    explanation: |
+      App Store social preinstallee sur Win11 (pattern Appx : *Instagram*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, social]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/instagram.action.ps1
+    test: ./engine/actions/bloatware/instagram.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.twitter
+    title: "Twitter / X"
+    description: "Desinstalle 'Twitter / X' (Appx + provisioned)."
+    explanation: |
+      App Store social preinstallee sur Win11 (pattern Appx : *Twitter*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, social]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/twitter.action.ps1
+    test: ./engine/actions/bloatware/twitter.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.linkedin
+    title: "LinkedIn"
+    description: "Desinstalle 'LinkedIn' (Appx + provisioned)."
+    explanation: |
+      App Store social preinstallee sur Win11 (pattern Appx : *LinkedInforWindows*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, social]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/linkedin.action.ps1
+    test: ./engine/actions/bloatware/linkedin.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.netflix
+    title: "Netflix"
+    description: "Desinstalle 'Netflix' (Appx + provisioned)."
+    explanation: |
+      App Store streaming preinstallee sur Win11 (pattern Appx : *Netflix*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, streaming]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/netflix.action.ps1
+    test: ./engine/actions/bloatware/netflix.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.candy_crush
+    title: "Candy Crush"
+    description: "Desinstalle 'Candy Crush' (Appx + provisioned)."
+    explanation: |
+      App Store games preinstallee sur Win11 (pattern Appx : *CandyCrush*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, games]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/candy_crush.action.ps1
+    test: ./engine/actions/bloatware/candy_crush.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.spotify_ab
+    title: "Spotify (variante OEM)"
+    description: "Desinstalle 'Spotify (variante OEM)' (Appx + provisioned)."
+    explanation: |
+      App Store media preinstallee sur Win11 (pattern Appx : *SpotifyAB*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, media]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/spotify_ab.action.ps1
+    test: ./engine/actions/bloatware/spotify_ab.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.spotify
+    title: "Spotify"
+    description: "Desinstalle 'Spotify' (Appx + provisioned)."
+    explanation: |
+      App Store media preinstallee sur Win11 (pattern Appx : *Spotify*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, media]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/spotify.action.ps1
+    test: ./engine/actions/bloatware/spotify.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.apple_music
+    title: "Apple Music"
+    description: "Desinstalle 'Apple Music' (Appx + provisioned)."
+    explanation: |
+      App Store media preinstallee sur Win11 (pattern Appx : *AppleMusicWin*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, media]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/apple_music.action.ps1
+    test: ./engine/actions/bloatware/apple_music.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.dolby_access
+    title: "Dolby Access"
+    description: "Desinstalle 'Dolby Access' (Appx + provisioned)."
+    explanation: |
+      App Store media preinstallee sur Win11 (pattern Appx : *DolbyLaboratories.DolbyAccess*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, media]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/dolby_access.action.ps1
+    test: ./engine/actions/bloatware/dolby_access.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.jimmylin
+    title: "Apps OEM publisher JimmyLin (LiveOS games)"
+    description: "Desinstalle 'Apps OEM publisher JimmyLin (LiveOS games)' (Appx + provisioned)."
+    explanation: |
+      App Store oem preinstallee sur Win11 (pattern Appx : *JimmyLin*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, oem]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/jimmylin.action.ps1
+    test: ./engine/actions/bloatware/jimmylin.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal
+  - id: bloatware.pub_5319275a
+    title: "Apps OEM publisher 5319275A"
+    description: "Desinstalle 'Apps OEM publisher 5319275A' (Appx + provisioned)."
+    explanation: |
+      App Store oem preinstallee sur Win11 (pattern Appx : *5319275A*).
+      Cette regle desinstalle l'app pour TOUS les comptes utilisateur de la
+      machine (Get-AppxPackage -AllUsers + Get-AppxProvisionedPackage).
+    severity: nice-to-have
+    impact: "L'app disparait. Reinstallation manuelle via Microsoft Store."
+    requires_reboot: false
+    profile_when: always
+    depends_on: []
+    irreversible: true
+    irreversible_reason: "Reinstaller une app Store desinstallee requiert le Microsoft Store + un compte Microsoft connecte. Pas une operation scriptable de facon fiable."
+    references:
+      - "https://learn.microsoft.com/en-us/powershell/module/appx/remove-appxpackage"
+    tags: [bloatware, store, oem]
+    added_in: "1.0"
+    action: ./engine/actions/bloatware/pub_5319275a.action.ps1
+    test: ./engine/actions/bloatware/pub_5319275a.test.ps1
+    profiles:
+      - personal
+      - business
+      - maximal

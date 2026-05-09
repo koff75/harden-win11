@@ -1,12 +1,16 @@
 # block_obfuscated_scripts.action.ps1
 # ASR : Block execution of potentially obfuscated scripts
-# GUID : 5BEB7EFE-FD9A-4556-801D-275E5FFC04CC, Action : 1 (Block)
+# GUID : 5BEB7EFE-FD9A-4556-801D-275E5FFC04CC
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = '5BEB7EFE-FD9A-4556-801D-275E5FFC04CC'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

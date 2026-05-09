@@ -1,12 +1,16 @@
 # block_email_executable_content.action.ps1
 # ASR : Block executable content from email/webmail
-# GUID : BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550, Action : 1 (Block)
+# GUID : BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = 'BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference

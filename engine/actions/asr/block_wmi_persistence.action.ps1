@@ -1,12 +1,16 @@
 # block_wmi_persistence.action.ps1
 # ASR : Block persistence through WMI event subscription
-# GUID : E6DB77E5-3DF2-4CF1-B95A-636979351E5B, Action : 1 (Block)
+# GUID : E6DB77E5-3DF2-4CF1-B95A-636979351E5B
+# Action choisie :
+#   - 1 (Block) par defaut
+#   - 2 (Audit) si l'env var HARDEN_ASR_MODE=audit est positionnee (le
+#     runner Go la passe quand l'utilisateur active le mode audit GUI).
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $guid = 'E6DB77E5-3DF2-4CF1-B95A-636979351E5B'
-$action = 1   # 1=Block, 2=Audit, 6=Warn
+$action = if ($env:HARDEN_ASR_MODE -eq 'audit') { 2 } else { 1 }
 
 function Get-AsrAction([string]$g) {
     $pref = Get-MpPreference
