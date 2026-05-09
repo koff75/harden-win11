@@ -27,10 +27,11 @@ jobs:
       - name: go test
         run: go test ./... -count=1 -timeout 5m
 
-      - name: Smoke test (version + validate + dry-run)
+      - name: Smoke test (version + validate + coverage + dry-run)
         run: |
           .\dist\harden-engine.exe version
           .\dist\harden-engine.exe validate
+          .\dist\harden-engine.exe coverage
           .\dist\harden-engine.exe apply --dry-run --section accounts
 
       - name: Upload binary
@@ -71,6 +72,42 @@ jobs:
         with:
           name: pester-results
           path: pester-results.xml
+          retention-days: 30
+
+  audit-coherence:
+    name: Manifest static audit
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run audit-coherence
+        shell: powershell
+        run: |
+          .\tools\audit-coherence.ps1
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "audit-coherence: exit $LASTEXITCODE — voir output ci-dessus"
+              exit $LASTEXITCODE
+          }
+
+  build-gui:
+    name: Build GUI (Wails)
+    runs-on: windows-latest
+    needs: go-build-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+          cache: true
+      - name: Install Wails CLI v2.12.0
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+      - name: Build GUI
+        working-directory: cmd/harden-gui
+        run: wails build
+      - name: Upload GUI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: harden-gui-windows-amd64
+          path: cmd/harden-gui/build/bin/harden-gui.exe
           retention-days: 30
 
   golangci-lint:
