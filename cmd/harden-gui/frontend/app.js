@@ -314,10 +314,6 @@ function bindEvents() {
         $('#loader-title').textContent = 'Annulation en cours…';
     });
 
-    document.body.addEventListener('mouseover', onRowHover);
-    document.body.addEventListener('mouseout', onRowOut);
-    document.body.addEventListener('mousemove', onMouseMove);
-
     // Filtres
     $$('.filter-severity').forEach(cb => cb.addEventListener('change', applyFilters));
     $$('.filter-status').forEach(cb => cb.addEventListener('change', applyFilters));
@@ -831,9 +827,9 @@ function updateRuleRow(ev) {
 // L'idée : pas de JSON brut. On dit clairement ce qui se passerait pour la
 // règle dans son état actuel.
 // buildUserTooltipText : contenu plain-text du tooltip natif HTML (attribut
-// `title`), affiché par le navigateur au survol et qui SUIT le curseur.
-// Plus ergonomique qu'un tooltip custom positionné en absolute (qui se
-// retrouve fixe à un endroit pendant qu'on bouge la souris).
+// `title`), affiché par le navigateur au survol des cellules Niveau et Règle.
+// Suit le curseur naturellement. C'est le SEUL tooltip de l'app — le détail
+// riche en HTML (carte custom) a été supprimé car il faisait doublon.
 function buildUserTooltipText(rule, ev) {
     const verb = contextualVerb(rule);
     const title = rule.title || rule.id || '';
@@ -846,8 +842,9 @@ function buildUserTooltipText(rule, ev) {
 
     const lines = [];
     lines.push(`${verb.toUpperCase()} · ${title}`);
-    lines.push('─'.repeat(40));
+    lines.push('─'.repeat(50));
 
+    // Bloc principal : 4 lignes user-friendly (français accessible).
     if (today && after) {
         lines.push(`${t('tooltip.today')} : ${today}`);
         lines.push('');
@@ -860,19 +857,48 @@ function buildUserTooltipText(rule, ev) {
             lines.push('');
             lines.push(`${t('tooltip.risk')} : ${risk}`);
         }
-    } else {
-        const desc = rule.description || '—';
-        lines.push(`${t('tooltip.description')} : ${desc}`);
-        if (ev && ev.current_state) {
-            // Plain text : juste les clés-valeurs séparées par virgule.
-            const entries = Object.entries(ev.current_state).slice(0, 3);
-            const stateText = entries.map(([k, v]) => `${k}=${v}`).join(', ');
-            if (stateText) {
-                lines.push('');
-                lines.push(`${t('tooltip.currentstate')} : ${stateText}`);
-            }
+    } else if (rule.description) {
+        lines.push(`${t('tooltip.description')} : ${rule.description}`);
+    }
+
+    // État actuel observé (si on a déjà fait un dryrun ou un apply).
+    if (ev && ev.current_state) {
+        const entries = Object.entries(ev.current_state).slice(0, 3);
+        const stateText = entries.map(([k, v]) => `${k}=${v}`).join(', ');
+        if (stateText) {
+            lines.push('');
+            lines.push(`${t('tooltip.currentstate')} : ${stateText}`);
         }
     }
+
+    // Casse si tu utilises (breaks).
+    if (rule.breaks && rule.breaks.length > 0) {
+        lines.push('');
+        const breakLabel = lang === 'en' ? '⚠ Breaks if you use' : '⚠ Casse si tu utilises';
+        lines.push(`${breakLabel} :`);
+        for (const b of rule.breaks) {
+            lines.push(`  • ${b}`);
+        }
+    }
+
+    // Reboot requis.
+    if (rule.requiresReboot) {
+        lines.push('');
+        lines.push(lang === 'en'
+            ? '⚙ Reboot required after applying'
+            : '⚙ Redémarrage requis après application');
+    }
+
+    // Irréversible (rares cas comme bloatware).
+    if (rule.irreversible) {
+        lines.push('');
+        const irrLabel = lang === 'en' ? '⚠ Irreversible' : '⚠ Irréversible';
+        const irrReason = rule.irreversibleReason || (lang === 'en'
+            ? "This rule can't be reverted via undo."
+            : "Cette règle ne peut pas être annulée par undo.");
+        lines.push(`${irrLabel} : ${irrReason}`);
+    }
+
     return lines.join('\n');
 }
 
@@ -999,137 +1025,9 @@ function setStatus(kind, message) {
     el.textContent = message;
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Tooltip au survol
-// ─────────────────────────────────────────────────────────────────
-
-function onRowHover(e) {
-    const tr = e.target.closest('tr.row');
-    if (!tr) return hideTooltip();
-    const ruleID = tr.dataset.ruleId;
-    const rule = rulesByID[ruleID];
-    if (!rule) return hideTooltip();
-    const status = tr.dataset.status || 'pending';
-    const ev = eventByRuleID[ruleID];
-    const currentState = ev && ev.current_state ? ev.current_state : null;
-    showTooltip(rule, status, currentState);
-}
-
-function onRowOut(e) {
-    if (!e.relatedTarget || !e.relatedTarget.closest('tr.row')) {
-        hideTooltip();
-    }
-}
-
-function onMouseMove(e) {
-    const tt = $('#rule-tooltip');
-    if (tt.classList.contains('hidden')) return;
-    const margin = 16;
-    let x = e.clientX + margin;
-    let y = e.clientY + margin;
-    const ttW = tt.offsetWidth;
-    const ttH = tt.offsetHeight;
-    if (x + ttW > window.innerWidth - 10) x = e.clientX - ttW - margin;
-    if (y + ttH > window.innerHeight - 10) y = e.clientY - ttH - margin;
-    tt.style.left = `${x}px`;
-    tt.style.top = `${y}px`;
-}
-
-function showTooltip(rule, status, currentState) {
-    const tt = $('#rule-tooltip');
-    const irreversibleSection = rule.irreversible
-        ? `<div class="tt-irreversible">⚠ Irréversible : ${escapeHtml(rule.irreversibleReason || 'Cette règle ne peut pas être annulée par undo.')}</div>`
-        : '';
-    const explanationSection = rule.explanation
-        ? `<div class="tt-section"><div class="tt-label">Pourquoi cette règle</div>${escapeHtml(rule.explanation).replace(/\n/g, '<br>')}</div>`
-        : '';
-    const rebootSection = rule.requiresReboot
-        ? '<div class="tt-section" style="color:#ffd770;font-size:11px">⚙ Nécessite un redémarrage après application</div>'
-        : '';
-
-    // Comparatif avant/après si on a un current_state.
-    let comparisonSection = '';
-    if (status && status !== 'pending') {
-        const stateBlurb = currentState ? humanStateBlurb(currentState) : '';
-        const isCompliant = (status === 'would_skip' || status === 'skipped' || status === 'applied');
-
-        if (isCompliant) {
-            comparisonSection = `
-                <div class="tt-row">
-                    <span class="tt-key">Maintenant</span>
-                    <span class="tt-val tt-current">${stateBlurb || '—'}</span>
-                </div>
-                <div class="tt-row">
-                    <span class="tt-key">État cible</span>
-                    <span class="tt-val tt-target">✓ Déjà atteint</span>
-                </div>`;
-        } else if (status === 'would_apply') {
-            comparisonSection = `
-                <div class="tt-row">
-                    <span class="tt-key">Maintenant</span>
-                    <span class="tt-val tt-current">${stateBlurb || '<em>non protégé</em>'}</span>
-                </div>
-                <div class="tt-row">
-                    <span class="tt-key">Si appliquée</span>
-                    <span class="tt-val tt-target">${escapeHtml(rule.description || 'Activation de la protection')}</span>
-                </div>
-                <div class="tt-row">
-                    <span class="tt-key">Bénéfice</span>
-                    <span class="tt-val tt-benefit">${escapeHtml(extractBenefit(rule.explanation) || rule.description || '—')}</span>
-                </div>`;
-        } else if (status === 'would_fail' || status === 'failed') {
-            comparisonSection = `
-                <div class="tt-row">
-                    <span class="tt-key">Maintenant</span>
-                    <span class="tt-val tt-current">Vérification impossible — souvent admin requis</span>
-                </div>`;
-        } else if (status === 'rolled_back') {
-            comparisonSection = `
-                <div class="tt-row">
-                    <span class="tt-key">Action</span>
-                    <span class="tt-val tt-side">A planté → rollback exécuté</span>
-                </div>`;
-        }
-    }
-
-    const breaksSection = rule.breaks && rule.breaks.length > 0
-        ? `<div class="tt-section tt-breaks">
-              <div class="tt-label tt-breaks-label">⚠ Casse si tu utilises</div>
-              <ul class="tt-breaks-list">${rule.breaks.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>
-           </div>`
-        : '';
-
-    tt.innerHTML = `
-        <h4>${escapeHtml(rule.title)} <span class="severity ${rule.severity}" style="margin-left:6px;font-size:9px;vertical-align:middle">${escapeHtml(humanSeverity(rule.severity))}</span></h4>
-        <div class="tt-desc">${escapeHtml(rule.description)}</div>
-        ${comparisonSection}
-        ${explanationSection}
-        <div class="tt-section">
-            <div class="tt-label">Impact concret si appliquée</div>
-            <span class="tt-impact">${escapeHtml(rule.impact || '—')}</span>
-        </div>
-        ${breaksSection}
-        ${rebootSection}
-        ${irreversibleSection}
-    `;
-    tt.classList.remove('hidden');
-}
-
-// extractBenefit : sortir 1 phrase du explanation pour le panneau "Bénéfice".
-// Heuristique simple : 1re phrase qui contient un verbe protecteur.
-function extractBenefit(explanation) {
-    if (!explanation) return null;
-    const sentences = explanation.split(/(?<=[.!?])\s+/);
-    const protective = /(bloque|emp[êe]che|prot[èe]ge|d[ée]tecte|active|interdit|refuse|isole|coupe|s[ée]curise|durcit)/i;
-    for (const s of sentences) {
-        if (protective.test(s)) return s.trim();
-    }
-    return sentences[0] ? sentences[0].trim() : null;
-}
-
-function hideTooltip() {
-    $('#rule-tooltip').classList.add('hidden');
-}
+// Tooltip removed: there is no longer an absolute-positioned big tooltip
+// at hover. The only tooltip is the native HTML one on .rule-name and
+// the severity cell, set via title="..." in renderRuleRow / updateRuleRow.
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers

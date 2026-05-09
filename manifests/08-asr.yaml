@@ -4,7 +4,7 @@ section:
   id: asr
   order: 8
   title: "Attack Surface Reduction (ASR)"
-  description: "RÃ¨gles Defender qui bloquent des comportements offensifs courants (Office macros, LSASS dump, scripts obfusquÃ©s, USB, WMI, ransomware)."
+  description: "Règles Defender qui bloquent des comportements offensifs courants (Office macros, LSASS dump, scripts obfusqués, USB, WMI, ransomware)."
 
   title_en: "Attack Surface Reduction (ASR)"
   description_en: "Defender rules that block common offensive behaviors (Office macros, LSASS dump, obfuscated scripts, USB, WMI, ransomware)."
@@ -16,9 +16,9 @@ rules:
       ASR rule 'Block Office apps from creating child processes'.
       GUID : D4F940AB-401B-4EFC-AADC-AD5F3C50688A.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_office_child_processes.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_office_child_processes.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -45,9 +45,9 @@ rules:
       ASR rule 'Block Office apps from creating executable content'.
       GUID : 3B576869-A4EC-4529-8536-B80A7769E899.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_office_executable_content.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_office_executable_content.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -79,9 +79,9 @@ rules:
       ASR rule 'Block Office apps from injecting code into other processes'.
       GUID : 75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_office_code_injection.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_office_code_injection.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -108,9 +108,9 @@ rules:
       ASR rule 'Block Office communication apps from creating child processes'.
       GUID : 26190899-1602-49E8-8B27-EB1D0A1CE869.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_office_comm_child_processes.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_office_comm_child_processes.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -137,9 +137,9 @@ rules:
       ASR rule 'Block Win32 API calls from Office macros'.
       GUID : 92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_win32_api_office_macros.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_win32_api_office_macros.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -166,9 +166,9 @@ rules:
       ASR rule 'Block executable content from email/webmail'.
       GUID : BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_email_executable_content.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_email_executable_content.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -195,9 +195,9 @@ rules:
       ASR rule 'Block execution of potentially obfuscated scripts'.
       GUID : 5BEB7EFE-FD9A-4556-801D-275E5FFC04CC.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_obfuscated_scripts.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_obfuscated_scripts.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -224,9 +224,9 @@ rules:
       ASR rule 'Block JS/VBS from launching downloaded executable'.
       GUID : D3E037E1-3EB8-44C8-A917-57927947596D.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_js_vbs_launch.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_js_vbs_launch.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -253,9 +253,9 @@ rules:
       ASR rule 'Block credential stealing from LSASS'.
       GUID : 9E6C4E1F-7D60-472F-BA1A-A39EF669E4B2.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_lsass_credential_theft.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_lsass_credential_theft.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -287,9 +287,9 @@ rules:
       ASR rule 'Block untrusted/unsigned processes from USB'.
       GUID : B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_unsigned_usb.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_unsigned_usb.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -317,9 +317,9 @@ rules:
       ASR rule 'Block persistence through WMI event subscription'.
       GUID : E6DB77E5-3DF2-4CF1-B95A-636979351E5B.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_wmi_persistence.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_wmi_persistence.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -346,9 +346,9 @@ rules:
       ASR rule 'Block process creations from PSExec/WMI commands'.
       GUID : D1E49AAC-8F56-4280-B9BA-993A6D77406C.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_psexec_wmi.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_psexec_wmi.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -375,9 +375,9 @@ rules:
       ASR rule 'Block executables unless prevalent/aged/trusted'.
       GUID : 01443614-CD74-433A-B99E-2ECDC07BFC25.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_unprevalent_executables.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_unprevalent_executables.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -408,9 +408,9 @@ rules:
       ASR rule 'Use advanced protection against ransomware'.
       GUID : C1DB55AB-C21A-4637-BB3F-A12568109D35.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement advanced_ransomware_protection.action.ps1.
+      cette règle en Audit (2) en éditant manuellement advanced_ransomware_protection.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -441,9 +441,9 @@ rules:
       ASR rule 'Block Adobe Reader from creating child processes'.
       GUID : 7674BA52-37EB-4A4F-A9A1-F0F9A1619A2C.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_adobe_reader_child.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_adobe_reader_child.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -470,9 +470,9 @@ rules:
       ASR rule 'Block abuse of exploited vulnerable signed drivers'.
       GUID : 56A863A9-875E-4185-98A7-B882C64B5CE5.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_vulnerable_drivers.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_vulnerable_drivers.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -499,9 +499,9 @@ rules:
       ASR rule 'Block rebooting machine in Safe Mode'.
       GUID : 33DDEDF1-C6E0-47CB-833E-DE6133960387.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_safe_mode_reboot.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_safe_mode_reboot.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -529,9 +529,9 @@ rules:
       ASR rule 'Block use of copied/impersonated system tools'.
       GUID : C0033C00-D16D-4114-A5A0-DC9B3A7D2CEB.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_impersonated_tools.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_impersonated_tools.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []
@@ -558,9 +558,9 @@ rules:
       ASR rule 'Block Webshell creation for Servers'.
       GUID : A8F5898E-1DC8-49A9-9878-85004B8A61E6.
       Mode : Block (1). Si tu rencontres des faux positifs, tu peux passer
-      cette rÃ¨gle en Audit (2) en Ã©ditant manuellement block_webshell_servers.action.ps1.
+      cette règle en Audit (2) en éditant manuellement block_webshell_servers.action.ps1.
     severity: important
-    impact: "Bloque le comportement dÃ©crit. Risque de faux positif sur certaines apps lÃ©gitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
+    impact: "Bloque le comportement décrit. Risque de faux positif sur certaines apps légitimes â€” auditer les events Defender (event log Microsoft-Windows-Windows Defender/Operational, event ID 1121/1122) en cas de souci."
     requires_reboot: false
     profile_when: always
     depends_on: []

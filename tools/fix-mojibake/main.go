@@ -90,7 +90,7 @@ func main() {
 			return nil
 		}
 		ext := strings.ToLower(filepath.Ext(path))
-		if ext != ".ps1" && ext != ".psm1" {
+		if ext != ".ps1" && ext != ".psm1" && ext != ".yaml" && ext != ".yml" {
 			return nil
 		}
 		// Skip *.tests.ps1 — ils sont écrits en code propre et n'ont pas le bug.

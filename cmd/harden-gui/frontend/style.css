@@ -554,31 +554,6 @@ td.action-cell .action-state {
     font-family: monospace;
 }
 
-/* Tooltip étendu : 3 sections distinctes */
-.tooltip .tt-row {
-    display: grid;
-    grid-template-columns: 95px 1fr;
-    gap: 8px;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #2c3a55;
-    align-items: start;
-}
-.tooltip .tt-row .tt-key {
-    color: #8fa1be;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding-top: 1px;
-}
-.tooltip .tt-row .tt-val {
-    color: #e6e6e6;
-}
-.tooltip .tt-row .tt-val.tt-current  { color: #aabfd9; }
-.tooltip .tt-row .tt-val.tt-target   { color: #aaffbb; }
-.tooltip .tt-row .tt-val.tt-benefit  { color: #ffd770; }
-.tooltip .tt-row .tt-val.tt-side     { color: #ff9099; }
-
 #results-table-wrap {
     background: #15203a;
     border-radius: 4px;
@@ -799,88 +774,6 @@ tr.row:hover { background: #1c2540; }
     gap: 8px;
     justify-content: flex-end;
 }
-
-.tooltip {
-    position: fixed;
-    background: #0d1424;
-    color: #e6e6e6;
-    border: 1px solid #2c3a55;
-    border-radius: 6px;
-    padding: 14px 16px;
-    max-width: 460px;
-    font-size: 12px;
-    line-height: 1.5;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-    z-index: 50;
-    pointer-events: none;
-}
-
-.tooltip.hidden { display: none; }
-
-.tooltip h4 {
-    color: #4fc3ff;
-    font-size: 13px;
-    margin-bottom: 6px;
-}
-
-.tooltip .tt-desc {
-    margin-bottom: 8px;
-}
-
-.tooltip .tt-section {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #2c3a55;
-}
-
-.tooltip .tt-label {
-    color: #8fa1be;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 3px;
-}
-
-.tooltip .tt-impact {
-    color: #ffd770;
-}
-
-.tooltip .tt-irreversible {
-    color: #ff9099;
-    font-weight: 500;
-    margin-top: 8px;
-    padding: 6px 8px;
-    background: #2a0e15;
-    border-radius: 3px;
-    font-size: 11px;
-}
-
-.tooltip .tt-breaks {
-    background: #2a1c10;
-    padding: 8px 10px;
-    border-radius: 4px;
-    border: 1px solid #5b3612;
-    margin-top: 10px;
-}
-.tooltip .tt-breaks-label {
-    color: #ffaa70 !important;
-    font-size: 11px !important;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-.tooltip .tt-breaks-list {
-    list-style: none;
-    padding-left: 0;
-    margin: 0;
-}
-.tooltip .tt-breaks-list li {
-    color: #ffd2a0;
-    font-size: 11px;
-    line-height: 1.4;
-    padding: 3px 0;
-    border-bottom: 1px solid rgba(91, 54, 18, 0.5);
-}
-.tooltip .tt-breaks-list li:last-child { border-bottom: none; }
 
 /* Badge "casse si..." dans la cell action */
 .breaks-badge {
