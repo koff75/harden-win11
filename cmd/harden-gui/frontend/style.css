@@ -55,6 +55,84 @@
 }
 .btn-watchlist-detail:hover { background: #ffc040; }
 
+.coach-icon {
+    cursor: pointer;
+    margin-left: 6px;
+    opacity: 0.7;
+    font-size: 14px;
+    transition: opacity 0.15s, transform 0.15s;
+}
+.coach-icon:hover { opacity: 1; transform: scale(1.2); }
+.coach-scenario {
+    background: #1f2c3a;
+    border-left: 3px solid #ffd060;
+    padding: 14px 16px;
+    border-radius: 4px;
+    line-height: 1.55;
+    color: #e6e6e6;
+    margin: 12px 0;
+}
+.coach-breaks {
+    background: #2a1f0e;
+    border-left: 3px solid #ffaa00;
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin: 8px 0;
+    font-size: 12px;
+}
+.coach-breaks ul { margin: 6px 0 0 18px; }
+.coach-breaks li { color: #ffd0a0; }
+
+.btn-maturity {
+    background: #2c5a7f;
+    color: #e6e6e6;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    margin-left: auto;
+}
+.btn-maturity:hover { background: #4fc3ff; color: #1b2636; }
+.btn-maturity.hidden { display: none; }
+
+.maturity-grade-block {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    gap: 4px 18px;
+    align-items: center;
+    padding: 16px 20px;
+    border-radius: 6px;
+    margin: 14px 0;
+}
+.maturity-grade-block.grade-A { background: linear-gradient(135deg, #15281e 0%, #1a3a2a 100%); border-left: 4px solid #5fcf6f; }
+.maturity-grade-block.grade-B { background: linear-gradient(135deg, #15243a 0%, #1a3450 100%); border-left: 4px solid #4fc3ff; }
+.maturity-grade-block.grade-C { background: linear-gradient(135deg, #2a1f0e 0%, #3a2c10 100%); border-left: 4px solid #ffaa00; }
+.maturity-grade-block.grade-D { background: linear-gradient(135deg, #2a0e15 0%, #3a141e 100%); border-left: 4px solid #ff6b7e; }
+.maturity-grade {
+    grid-row: 1 / span 2;
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    width: 80px;
+}
+.grade-A .maturity-grade { color: #5fcf6f; }
+.grade-B .maturity-grade { color: #4fc3ff; }
+.grade-C .maturity-grade { color: #ffaa00; }
+.grade-D .maturity-grade { color: #ff6b7e; }
+.maturity-score { font-size: 28px; font-weight: 500; }
+.maturity-headline { color: #c8d0dc; font-size: 13px; }
+
+.maturity-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.maturity-table th, .maturity-table td { padding: 8px; border-bottom: 1px solid #2c2c3c; font-size: 12px; }
+.maturity-table th { color: #8fa1be; font-weight: 500; text-align: left; }
+.comp-bar { width: 100%; height: 6px; background: #2a2a3a; border-radius: 3px; overflow: hidden; }
+.comp-bar-fill { height: 100%; background: #5fcf6f; }
+.comp-partial .comp-bar-fill { background: #ffaa00; }
+.comp-missing .comp-bar-fill { background: #ff6b7e; }
+
 html, body {
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

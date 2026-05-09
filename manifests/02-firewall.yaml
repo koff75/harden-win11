@@ -73,6 +73,8 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/netsecurity/set-netfirewallprofile"
     tags: [firewall, network]
     added_in: "1.0"
+
+    coach_example: "Tu te connectes au Wi-Fi de l'aéroport. Un autre passager scanne le réseau et trouve des partages SMB ouverts sur ta machine. Cette règle force le profil Public en \"deny inbound\" — quand Windows détecte un Wi-Fi non sûr, plus rien ne rentre. Tes shares restent invisibles."
     action: ./engine/actions/firewall/profile_public.action.ps1
     test: ./engine/actions/firewall/profile_public.test.ps1
     undo: ./engine/actions/firewall/profile_public.undo.ps1
@@ -99,6 +101,8 @@ rules:
       - "https://learn.microsoft.com/en-us/security-updates/securitybulletins/2017/ms17-010"
     tags: [firewall, smb, lateral-movement]
     added_in: "1.0"
+
+    coach_example: "Variant ciblé du Wi-Fi public : interdit explicitement le port 445 (SMB) en inbound sur le profil Public. C'est ceinture-bretelles avec firewall.profile_public — au cas où une autre rule ouvrirait par inadvertance le partage de fichiers."
     action: ./engine/actions/firewall/block_smb_public.action.ps1
     test: ./engine/actions/firewall/block_smb_public.test.ps1
     undo: ./engine/actions/firewall/block_smb_public.undo.ps1

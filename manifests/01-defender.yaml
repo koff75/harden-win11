@@ -23,6 +23,7 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/configure-real-time-protection-microsoft-defender-antivirus"
     tags: [malware, defender]
     added_in: "1.0"
+    coach_example: "Tu télécharges un PDF de facture qui s'avère être un dropper Emotet. Sans cette protection, le malware s'installe en arrière-plan dès que tu ouvres le PDF. Avec, Defender le détecte à la lecture du fichier et bloque l'exécution avant qu'il fasse des dégâts."
     action: ./engine/actions/defender/realtime.action.ps1
     test: ./engine/actions/defender/realtime.test.ps1
     undo: ./engine/actions/defender/realtime.undo.ps1
@@ -207,6 +208,8 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/controlled-folders"
     tags: [malware, defender, ransomware]
     added_in: "1.0"
+
+    coach_example: "Un ransomware se fait passer pour Word et tente de chiffrer ton dossier Documents. Cette règle interdit aux processus non whitelistés d'écrire dans tes dossiers personnels — Word marche, le ransomware se prend une erreur d'accès. C'est la dernière ligne de défense quand tout le reste a échoué."
     action: ./engine/actions/defender/controlled_folder_access.action.ps1
     test: ./engine/actions/defender/controlled_folder_access.test.ps1
     undo: ./engine/actions/defender/controlled_folder_access.undo.ps1

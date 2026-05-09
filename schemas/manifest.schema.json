@@ -72,6 +72,11 @@
         "breaks": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
+        },
+        "coach_example": {
+          "type": "string",
+          "minLength": 20,
+          "description": "Scénario concret pédagogique pour la GUI. Optionnel."
         }
       },
       "if": {

@@ -16,6 +16,7 @@ import (
 	"github.com/koff75/harden-win11/pkg/engine/executor"
 	"github.com/koff75/harden-win11/pkg/engine/journal"
 	"github.com/koff75/harden-win11/pkg/engine/manifest"
+	"github.com/koff75/harden-win11/pkg/engine/maturity"
 	"github.com/koff75/harden-win11/pkg/engine/ndjson"
 	"github.com/koff75/harden-win11/pkg/engine/restorepoint"
 	"github.com/koff75/harden-win11/pkg/engine/runner"
@@ -125,6 +126,7 @@ type RuleInfo struct {
 	IrreversibleReason string   `json:"irreversibleReason,omitempty"`
 	Profiles           []string `json:"profiles,omitempty"`
 	Breaks             []string `json:"breaks,omitempty"`
+	CoachExample       string   `json:"coachExample,omitempty"`
 }
 
 // ProfileInfo : descripteur d'un profil pour le sélecteur GUI.
@@ -200,6 +202,63 @@ func (a *App) RelaunchAsAdmin() error {
 		wailsruntime.Quit(a.ctx)
 	}()
 	return nil
+}
+
+// MaturityInputs : payload du frontend pour calculer le score.
+type MaturityInputs struct {
+	CriticalTotal      int  `json:"criticalTotal"`
+	CriticalCompliant  int  `json:"criticalCompliant"`
+	ImportantTotal     int  `json:"importantTotal"`
+	ImportantCompliant int  `json:"importantCompliant"`
+	NiceTotal          int  `json:"niceTotal"`
+	NiceCompliant      int  `json:"niceCompliant"`
+	UndeterminedCount  int  `json:"undeterminedCount"`
+}
+
+// ComputeMaturity calcule le score à partir des inputs frontend (compteurs
+// par sévérité agrégés depuis les action_results affichés).
+// Le backend ajoute les facteurs système (Restore Point récent, watchlist
+// active) qui ne sont pas observables côté frontend.
+func (a *App) ComputeMaturity(in MaturityInputs) maturity.Report {
+	hasRP := false
+	hasWatch := false
+	if reports, _ := watchlist.ListRecent(7 * 24 * time.Hour); len(reports) > 0 {
+		hasWatch = true
+	}
+	if hasRecentRestorePoint() {
+		hasRP = true
+	}
+	rep := maturity.Compute(maturity.Inputs{
+		CriticalTotal:         in.CriticalTotal,
+		CriticalCompliant:     in.CriticalCompliant,
+		ImportantTotal:        in.ImportantTotal,
+		ImportantCompliant:    in.ImportantCompliant,
+		NiceTotal:             in.NiceTotal,
+		NiceCompliant:         in.NiceCompliant,
+		HasRecentRestorePoint: hasRP,
+		HasWatchlistRunning:   hasWatch,
+		UndeterminedCount:     in.UndeterminedCount,
+	})
+	logf("ComputeMaturity: grade=%s score=%d hasRP=%t hasWatch=%t", rep.Grade, rep.Score, hasRP, hasWatch)
+	return rep
+}
+
+// hasRecentRestorePoint : interroge Get-ComputerRestorePoint via PS et regarde
+// si un point harden-win11 < 30 jours existe. Best-effort, swallowed errors.
+func hasRecentRestorePoint() bool {
+	cmd := exec.Command("powershell.exe", "-NoProfile", "-Command",
+		`$rp = Get-ComputerRestorePoint -ErrorAction SilentlyContinue | Where-Object { $_.Description -like '*harden-win11*' } | Sort-Object CreationTime -Descending | Select-Object -First 1
+if ($rp) {
+    $ts = [Management.ManagementDateTimeConverter]::ToDateTime($rp.CreationTime)
+    $age = (Get-Date) - $ts
+    if ($age.TotalDays -le 30) { 'yes' } else { 'no' }
+} else { 'no' }`)
+	cmd.SysProcAttr = hideWindowAttr()
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(out)) == "yes"
 }
 
 // WatchlistAlert : un alert résumé pour le frontend.
@@ -491,6 +550,7 @@ func (a *App) GetSections(profile string) ([]SectionInfo, error) {
 				IrreversibleReason: r.IrreversibleReason,
 				Profiles:           r.Profiles,
 				Breaks:             r.Breaks,
+				CoachExample:       r.CoachExample,
 			})
 		}
 		// Skip les sections qui n'ont aucune rule pour le profil sélectionné.

@@ -44,6 +44,12 @@ type Rule struct {
 	// (ex: "Chromecast", "NAS legacy", "RDP support distant"). Affichée
 	// dans la GUI pour avertir l'utilisateur.
 	Breaks []string `yaml:"breaks,omitempty"`
+	// CoachExample : scénario concret en français qui illustre la valeur
+	// de la rule. Mode pédagogique : pour la 1ère découverte d'une rule,
+	// la GUI affiche cet encart au lieu du jargon "severity: critical".
+	// Optionnel — seules les rules importantes en ont. Pas un texte théorique :
+	// un cas concret type "imagine que tu cliques sur un PDF reçu par mail…".
+	CoachExample string `yaml:"coach_example,omitempty"`
 }
 
 // AppliesToProfile retourne true si la règle s'applique au profil donné.

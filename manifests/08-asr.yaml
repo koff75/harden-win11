@@ -50,6 +50,7 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    coach_example: "Tu reçois une \"facture\" en .docm. Tu cliques \"activer les macros\" parce que ça affiche un message convaincant. La macro tente de télécharger emotet.exe et de l'exécuter. Cette règle bloque Word/Excel/PowerPoint d'écrire ou lancer un .exe — la chaîne d'attaque casse au step 2."
     action: ./engine/actions/asr/block_office_executable_content.action.ps1
     test: ./engine/actions/asr/block_office_executable_content.test.ps1
     undo: ./engine/actions/asr/block_office_executable_content.undo.ps1
@@ -225,6 +226,7 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-reference"
     tags: [defender, asr, hardening]
     added_in: "1.0"
+    coach_example: "Un attaquant a réussi à exécuter un code dans ta session. Il tente Mimikatz pour extraire ton mot de passe Windows depuis la mémoire LSASS. Cette règle ASR bloque tout accès au processus LSASS depuis du code non signé Microsoft. Sans elle, ton mot de passe AD/local part dans la nature."
     action: ./engine/actions/asr/block_lsass_credential_theft.action.ps1
     test: ./engine/actions/asr/block_lsass_credential_theft.test.ps1
     undo: ./engine/actions/asr/block_lsass_credential_theft.undo.ps1

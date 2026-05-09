@@ -48,6 +48,7 @@ var (
 	flagSeverity         string
 	flagSkipSnapshot     bool
 	flagSkipWatchlist    bool
+	flagUndoSince        time.Duration
 )
 
 func main() {
@@ -652,47 +653,80 @@ func undoCmd() *cobra.Command {
 				journalDir = journal.DefaultDir()
 			}
 
-			runIDToUse := flagRunID
-			if runIDToUse == "" {
-				latest, err := journal.LatestRunID(journalDir)
+			// Résoudre quels runs charger : --since prime sur --run-id.
+			var runIDsToProcess []string
+			if flagUndoSince > 0 {
+				cutoff := time.Now().Add(-flagUndoSince)
+				ids, err := journal.RunsModifiedSince(journalDir, cutoff)
 				if err != nil {
-					return &exitError{code: 4, msg: fmt.Sprintf("find latest run: %v", err)}
+					return &exitError{code: 4, msg: fmt.Sprintf("list runs since %s: %v", flagUndoSince, err)}
 				}
-				runIDToUse = latest
+				if len(ids) == 0 {
+					return &exitError{code: 4, msg: fmt.Sprintf("no runs found since %s ago in %s", flagUndoSince, journalDir)}
+				}
+				runIDsToProcess = ids
+				fmt.Fprintf(os.Stderr, "Time-aware rollback : %d run(s) trouvés dans la fenêtre des %s.\n", len(ids), flagUndoSince)
+			} else {
+				runIDToUse := flagRunID
+				if runIDToUse == "" {
+					latest, err := journal.LatestRunID(journalDir)
+					if err != nil {
+						return &exitError{code: 4, msg: fmt.Sprintf("find latest run: %v", err)}
+					}
+					runIDToUse = latest
+				}
+				runIDsToProcess = []string{runIDToUse}
 			}
 
-			events, err := journal.ReadRun(journalDir, runIDToUse)
-			if err != nil {
-				return &exitError{code: 4, msg: fmt.Sprintf("read journal: %v", err)}
-			}
-
-			// On ne peut undo que les règles avec status=applied (pas would_apply, pas
-			// skipped, pas failed).
+			// Aggregate les rules applied à travers tous les runs (LIFO : run le
+			// plus récent d'abord, dans chaque run la dernière rule en premier).
+			// Si une rule a été applied puis re-applied après un undo, on prend
+			// la version la plus récente seulement (déduplication par ruleID).
+			seenRules := map[string]bool{}
 			var toUndo []journal.AppliedRule
-			for _, ev := range events {
-				if ev["type"] != "action_result" {
+			runIDByRule := map[string]string{}
+
+			for _, rid := range runIDsToProcess {
+				events, err := journal.ReadRun(journalDir, rid)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "warning: skip run %s (read error: %v)\n", rid, err)
 					continue
 				}
-				if ev["status"] != "applied" {
-					continue
+				// Iter en reverse pour respect LIFO local du run.
+				for i := len(events) - 1; i >= 0; i-- {
+					ev := events[i]
+					if ev["type"] != "action_result" || ev["status"] != "applied" {
+						continue
+					}
+					ruleID, _ := ev["rule_id"].(string)
+					if seenRules[ruleID] {
+						continue
+					}
+					if flagRuleID != "" && ruleID != flagRuleID {
+						continue
+					}
+					sectionID, _ := ev["section_id"].(string)
+					seenRules[ruleID] = true
+					runIDByRule[ruleID] = rid
+					toUndo = append(toUndo, journal.AppliedRule{
+						RuleID:    ruleID,
+						SectionID: sectionID,
+						Before:    ev["before"],
+					})
 				}
-				ruleID, _ := ev["rule_id"].(string)
-				sectionID, _ := ev["section_id"].(string)
-				if flagRuleID != "" && ruleID != flagRuleID {
-					continue
-				}
-				toUndo = append(toUndo, journal.AppliedRule{
-					RuleID:    ruleID,
-					SectionID: sectionID,
-					Before:    ev["before"],
-				})
 			}
 
 			if len(toUndo) == 0 {
 				if flagRuleID != "" {
-					return &exitError{code: 4, msg: fmt.Sprintf("no applied rule %q found in run %s", flagRuleID, runIDToUse)}
+					return &exitError{code: 4, msg: fmt.Sprintf("no applied rule %q found in selected runs", flagRuleID)}
 				}
-				return &exitError{code: 4, msg: fmt.Sprintf("no applied rules found in run %s", runIDToUse)}
+				return &exitError{code: 4, msg: "no applied rules found in selected run(s)"}
+			}
+
+			// Pour la confirmation, on utilise un id synthétique ou le seul run.
+			runIDToUse := runIDsToProcess[0]
+			if len(runIDsToProcess) > 1 {
+				runIDToUse = fmt.Sprintf("[%d runs since %s]", len(runIDsToProcess), flagUndoSince)
 			}
 
 			// Admin requis pour les .undo.ps1 qui touchent au système.
@@ -828,6 +862,7 @@ func undoCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagRunID, "run-id", "", "Run ID dont undo les règles (vide = dernier run)")
+	cmd.Flags().DurationVar(&flagUndoSince, "since", 0, "Undo toutes les rules applied dans les N dernières heures/jours (ex: 24h, 7d=168h). Override --run-id : agrège LIFO sur tous les runs de la fenêtre, déduplique par rule_id.")
 	cmd.Flags().StringVar(&flagRuleID, "rule-id", "", "Cibler une règle précise (vide = toutes les règles applied du run)")
 	cmd.Flags().BoolVar(&flagYes, "yes", false, "Skip la confirmation interactive")
 	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", executor.DefaultRuleTimeout, "Timeout maximum par règle (ex: 30s)")

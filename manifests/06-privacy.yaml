@@ -144,6 +144,8 @@ rules:
       - "https://learn.microsoft.com/en-us/windows/client-management/manage-recall"
     tags: [privacy, ai, recall]
     added_in: "1.0"
+
+    coach_example: "Recall (Win11 24H2) prend un screenshot de ton écran toutes les quelques secondes et le stocke localement avec OCR. Pratique en théorie, désastreux en pratique : tout malware qui lit ce dossier a un historique complet de tes mots de passe, RIB, Slack privé. Cette règle désactive Recall complètement."
     action: ./engine/actions/privacy/recall_off.action.ps1
     test: ./engine/actions/privacy/recall_off.test.ps1
     undo: ./engine/actions/privacy/recall_off.undo.ps1

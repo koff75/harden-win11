@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 // DefaultDir retourne le path par défaut du journal sur la machine courante.
@@ -110,6 +111,45 @@ func ReadRun(dir, runID string) ([]map[string]any, error) {
 
 // ListRuns retourne tous les run IDs du dossier journal, triés du plus récent
 // au plus ancien.
+// RunsModifiedSince retourne les runIDs dont le fichier journal a été modifié
+// depuis `cutoff`. Triés par mtime décroissant (plus récent en tête) — utile
+// pour le time-aware rollback qui veut undo en LIFO sur plusieurs runs.
+func RunsModifiedSince(dir string, cutoff time.Time) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("read journal dir %s: %w", dir, err)
+	}
+	type fm struct {
+		runID string
+		mtime time.Time
+	}
+	var files []fm
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(strings.ToLower(e.Name()), ".ndjson") {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil || info.ModTime().Before(cutoff) {
+			continue
+		}
+		runID := strings.TrimSuffix(e.Name(), filepath.Ext(e.Name()))
+		// Skip les "undo-*" runs (ce sont des runs d'annulation, pas d'apply).
+		if strings.HasPrefix(runID, "undo-") {
+			continue
+		}
+		files = append(files, fm{runID, info.ModTime()})
+	}
+	sort.Slice(files, func(i, j int) bool { return files[i].mtime.After(files[j].mtime) })
+	out := make([]string, 0, len(files))
+	for _, f := range files {
+		out = append(out, f.runID)
+	}
+	return out, nil
+}
+
 func ListRuns(dir string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {

@@ -391,6 +391,76 @@ function bindEvents() {
 // Filtres
 // ─────────────────────────────────────────────────────────────────
 
+async function showMaturityModal() {
+    const rows = $$('#results-body tr.row');
+    const counts = {
+        critical: { total: 0, compliant: 0 },
+        important: { total: 0, compliant: 0 },
+        'nice-to-have': { total: 0, compliant: 0 },
+        undetermined: 0,
+    };
+    rows.forEach(tr => {
+        const rule = rulesByID[tr.dataset.ruleId] || {};
+        const sev = rule.severity || 'nice-to-have';
+        const bucket = statusBucket(tr.dataset.status || 'pending');
+        if (bucket === 'pending') return;
+        if (bucket === 'failed') { counts.undetermined++; return; }
+        if (!counts[sev]) return;
+        counts[sev].total++;
+        if (bucket === 'conforme') counts[sev].compliant++;
+    });
+    let report;
+    try {
+        report = await window.go.main.App.ComputeMaturity({
+            criticalTotal: counts.critical.total,
+            criticalCompliant: counts.critical.compliant,
+            importantTotal: counts.important.total,
+            importantCompliant: counts.important.compliant,
+            niceTotal: counts['nice-to-have'].total,
+            niceCompliant: counts['nice-to-have'].compliant,
+            undeterminedCount: counts.undetermined,
+        });
+    } catch (err) {
+        alert('Impossible de calculer le score : ' + err);
+        return;
+    }
+    const compsHtml = report.components.map(c => {
+        const pct = c.weight > 0 ? Math.round(c.earned / c.weight * 100) : 0;
+        const cls = c.status === 'ok' ? 'comp-ok' : c.status === 'partial' ? 'comp-partial' : 'comp-missing';
+        return `
+            <tr class="${cls}">
+                <td>${escapeHtml(c.name)}</td>
+                <td style="text-align:right">${Math.round(c.earned)} / ${c.weight}</td>
+                <td><div class="comp-bar"><div class="comp-bar-fill" style="width:${pct}%"></div></div></td>
+                <td><span class="muted small">${escapeHtml(c.detail || '')}</span></td>
+            </tr>`;
+    }).join('');
+    const actionsHtml = (report.next_actions || []).map(a => `<li>${escapeHtml(a)}</li>`).join('');
+    const html = `
+        <div class="cov-modal" id="maturity-modal-overlay">
+            <div class="cov-modal-content" style="max-width:780px">
+                <span class="cov-close" id="maturity-modal-close">✕</span>
+                <h3>📊 Score de maturité</h3>
+                <div class="maturity-grade-block grade-${report.grade}">
+                    <div class="maturity-grade">${report.grade}</div>
+                    <div class="maturity-score">${report.score}<span class="muted small"> / 100</span></div>
+                    <div class="maturity-headline">${escapeHtml(report.headline)}</div>
+                </div>
+                <table class="maturity-table">
+                    <thead><tr><th>Composant</th><th>Points</th><th>Niveau</th><th>Détail</th></tr></thead>
+                    <tbody>${compsHtml}</tbody>
+                </table>
+                ${actionsHtml ? `<h4 style="margin-top:18px">Pour gagner du score</h4><ol>${actionsHtml}</ol>` : ''}
+                <p class="muted small" style="margin-top:14px"><em>Pondération : critique 50, important 25, optionnel 10, Restore Point 8, watchlist 7. Total max : 100.</em></p>
+            </div>
+        </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    const overlay = $('#maturity-modal-overlay');
+    const close = () => overlay.remove();
+    $('#maturity-modal-close').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
 // statusBucket : regroupe les statuses techniques en 4 catégories user-facing
 // pour le filtre. Cohérent avec les checkboxes dans index.html.
 function statusBucket(status) {
@@ -470,6 +540,11 @@ function renderDashboard() {
 
     dashboard.classList.remove('hidden');
     dashboard.className = '';   // reset classes
+    $('#btn-maturity').classList.remove('hidden');
+    if (!$('#btn-maturity').dataset.bound) {
+        $('#btn-maturity').addEventListener('click', showMaturityModal);
+        $('#btn-maturity').dataset.bound = '1';
+    }
 
     const total = toApply.critical + toApply.important + toApply['nice-to-have'];
     const detail = `${conformeAll}/${evaluatedAll} déjà OK`;
@@ -681,17 +756,52 @@ function renderRuleRow(rule, status, ev) {
     const severity = rule.severity || 'nice-to-have';
     const excluded = excludedRules.has(rule.id);
     if (excluded) tr.classList.add('excluded');
+    const coachIcon = rule.coachExample
+        ? `<span class="coach-icon" title="Pourquoi cette règle ? Cliquer pour un exemple concret." data-rule-id="${escapeHtml(rule.id)}">💡</span>`
+        : '';
     tr.innerHTML = `
         <td class="col-include"><input type="checkbox" class="include-rule" data-rule-id="${escapeHtml(rule.id)}" ${excluded ? '' : 'checked'} title="Décocher pour exclure cette règle"></td>
         <td><span class="severity ${severity}">${humanSeverity(severity)}</span></td>
         <td class="rule-name">
-            ${escapeHtml(rule.title || rule.id)}
+            ${escapeHtml(rule.title || rule.id)} ${coachIcon}
             <span class="rule-id-tech">${escapeHtml(rule.id)}</span>
         </td>
         <td><span class="status ${status}">${escapeHtml(humanStatus(status, rule.id))}</span></td>
         <td class="action-cell">${formatActionCell(rule, status, ev)}</td>
     `;
+    const icon = tr.querySelector('.coach-icon');
+    if (icon) {
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCoachModal(rule);
+        });
+    }
     return tr;
+}
+
+function showCoachModal(rule) {
+    const breaksBlock = (rule.breaks && rule.breaks.length)
+        ? `<div class="coach-breaks">
+             <strong>⚠ Ce que cette règle peut casser :</strong>
+             <ul>${rule.breaks.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>
+           </div>`
+        : '';
+    const html = `
+        <div class="cov-modal" id="coach-modal-overlay">
+            <div class="cov-modal-content" style="max-width:680px">
+                <span class="cov-close" id="coach-modal-close">✕</span>
+                <h3>💡 ${escapeHtml(rule.title || rule.id)}</h3>
+                <p class="muted small"><code>${escapeHtml(rule.id)}</code> · sévérité <strong>${escapeHtml(rule.severity || 'nice-to-have')}</strong></p>
+                <div class="coach-scenario">${escapeHtml(rule.coachExample)}</div>
+                ${breaksBlock}
+                <p class="muted small" style="margin-top:14px"><em>Cas d'usage concret pour t'aider à décider si tu veux activer cette règle. Pas une théorie générique.</em></p>
+            </div>
+        </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    const overlay = $('#coach-modal-overlay');
+    const close = () => overlay.remove();
+    $('#coach-modal-close').addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 function updateRuleRow(ev) {

@@ -104,6 +104,8 @@ rules:
       - "https://attack.mitre.org/techniques/T1557/002/"
     tags: [network, wpad, lateral-movement]
     added_in: "1.0"
+
+    coach_example: "WPAD (Web Proxy Auto-Discovery) cherche un serveur de proxy via DNS/NetBIOS au démarrage. Un attaquant sur ton réseau peut répondre à cette requête et devenir ton proxy → MITM sur tout ton trafic web. Désactiver WPAD ferme ce vecteur."
     action: ./engine/actions/network/wpad_disable.action.ps1
     test: ./engine/actions/network/wpad_disable.test.ps1
     undo: ./engine/actions/network/wpad_disable.undo.ps1
@@ -130,6 +132,8 @@ rules:
       - "https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-security-lan-manager-authentication-level"
     tags: [network, ntlm, lateral-movement]
     added_in: "1.0"
+
+    coach_example: "Un attaquant sur ton réseau force ton PC à parler NTLMv1 (Responder, MITM6, etc.) puis crack ton hash en quelques heures. NTLMv2 résiste mieux aux attaques de relay et au cracking offline. Cette règle force NTLMv2 only — refuse les downgrade silencieux."
     action: ./engine/actions/network/ntlm_v2_only.action.ps1
     test: ./engine/actions/network/ntlm_v2_only.test.ps1
     undo: ./engine/actions/network/ntlm_v2_only.undo.ps1
@@ -204,6 +208,8 @@ rules:
       - "https://learn.microsoft.com/en-us/windows-server/storage/file-server/troubleshoot/detect-enable-and-disable-smbv1-v2-v3"
     tags: [network, smb, ransomware, eternalblue]
     added_in: "1.0"
+
+    coach_example: "EternalBlue / WannaCry se sont propagés en 2017 via SMBv1. Cette version du protocole a 30 ans et est toujours présente sur Windows pour compat avec NAS antédiluviens. Désactiver SMBv1 ferme un vecteur d'infection latéral majeur. Si ton NAS de 2010 ne marche plus, c'est l'occasion de le remplacer."
     action: ./engine/actions/network/smbv1_disable.action.ps1
     test: ./engine/actions/network/smbv1_disable.test.ps1
     undo: ./engine/actions/network/smbv1_disable.undo.ps1
