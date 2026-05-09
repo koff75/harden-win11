@@ -77,6 +77,26 @@
           "type": "string",
           "minLength": 20,
           "description": "Scénario concret pédagogique pour la GUI. Optionnel."
+        },
+        "user_today": {
+          "type": "string",
+          "minLength": 10,
+          "description": "Situation présente sans la règle, en français normal."
+        },
+        "user_after": {
+          "type": "string",
+          "minLength": 10,
+          "description": "Ce que la règle change concrètement."
+        },
+        "user_for_who": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Pour quel profil utilisateur la règle est utile."
+        },
+        "user_risk": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Ce que la règle peut empêcher de faire (impact concret)."
         }
       },
       "if": {

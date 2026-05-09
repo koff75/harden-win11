@@ -26,6 +26,10 @@ rules:
       - "https://learn.microsoft.com/en-us/windows/security/identity-protection/access-control/local-accounts"
     tags: [accounts, hardening]
     added_in: "1.0"
+    user_today: "Plusieurs comptes systèmes par défaut existent sur Windows (Administrator, Guest…). Souvent activés sans raison."
+    user_after: "Ces comptes inutiles sont désactivés. Un attaquant ne peut plus tenter de mots de passe dessus."
+    user_for_who: "Tout le monde."
+    user_risk: "Aucun pour 99% des gens. Si tu utilises explicitement le compte 'Invité' (très rare), à ne pas faire."
     action: ./engine/actions/accounts/disable_unused.action.ps1
     test: ./engine/actions/accounts/disable_unused.test.ps1
     undo: ./engine/actions/accounts/disable_unused.undo.ps1
@@ -55,6 +59,14 @@ rules:
       - "https://learn.microsoft.com/en-us/windows/security/identity-protection/access-control/local-accounts"
     tags: [accounts, hardening, defense-in-depth]
     added_in: "1.0"
+
+    user_today: "Le compte super-administrateur s'appelle 'Administrator' — un nom universellement connu des attaquants automatisés."
+
+    user_after: "Renommé en 'AdminLocal_<TonPC>'. Un robot qui tente 1000 mots de passe sur 'Administrator' ne trouve plus le compte."
+
+    user_for_who: "PC perso ou solo. À éviter en entreprise (la GPO peut écraser le rename)."
+
+    user_risk: "Si tu as des scripts qui appellent 'Administrator' explicitement, ils casseront. Très rare en perso."
     action: ./engine/actions/accounts/rename_admin.action.ps1
     test: ./engine/actions/accounts/rename_admin.test.ps1
     undo: ./engine/actions/accounts/rename_admin.undo.ps1

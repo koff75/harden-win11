@@ -25,6 +25,10 @@ rules:
       - "https://www.sans.org/blog/responder-netbios-poisoning-attacks/"
     tags: [network, llmnr, lateral-movement]
     added_in: "1.0"
+    user_today: "Quand ton PC cherche un nom de machine sur le réseau, il demande à voix haute à tout le monde du réseau."
+    user_after: "Il n'utilise plus que le DNS classique. Personne sur le réseau ne peut intercepter ses recherches."
+    user_for_who: "Tout le monde. C'est un vecteur classique d'attaque sur Wi-Fi public."
+    user_risk: "Sur un réseau familial sans DNS local correctement configuré, certaines découvertes automatiques peuvent ne plus marcher (rare)."
     action: ./engine/actions/network/llmnr_disable.action.ps1
     test: ./engine/actions/network/llmnr_disable.test.ps1
     undo: ./engine/actions/network/llmnr_disable.undo.ps1
@@ -51,6 +55,14 @@ rules:
       - "https://learn.microsoft.com/en-us/windows-server/security/windows-services/turn-off-mdns"
     tags: [network, mdns, lateral-movement]
     added_in: "1.0"
+
+    user_today: "Ton PC fait de la découverte automatique style Bonjour Apple sur le réseau (cast vers TV, AirPrint, etc.)."
+
+    user_after: "Plus de découverte automatique de ce type. Plus discret sur le réseau."
+
+    user_for_who: "Profile 'maximal' (paranoid). À éviter chez toi si tu utilises Chromecast/AirPlay/imprimantes Apple."
+
+    user_risk: "Plus de Chromecast, plus d'AirPrint. Si tu cast régulièrement vers une TV, ne pas l'activer."
     action: ./engine/actions/network/mdns_disable.action.ps1
     test: ./engine/actions/network/mdns_disable.test.ps1
     undo: ./engine/actions/network/mdns_disable.undo.ps1
@@ -77,6 +89,14 @@ rules:
       - "https://www.sans.org/blog/responder-netbios-poisoning-attacks/"
     tags: [network, netbios, lateral-movement]
     added_in: "1.0"
+
+    user_today: "Un vieux protocole de nommage Windows (NetBIOS) est encore activé. Souvent utilisé pour les attaques sur Wi-Fi public."
+
+    user_after: "Désactivé. Ton PC ne répond plus aux questions NetBIOS d'un attaquant local."
+
+    user_for_who: "Tout le monde, surtout en mobilité."
+
+    user_risk: "Si tu accèdes à un partage réseau via un nom court (genre \\\\NAS-MAISON), il faudra utiliser l'IP ou le nom complet."
     action: ./engine/actions/network/netbios_off.action.ps1
     test: ./engine/actions/network/netbios_off.test.ps1
     undo: ./engine/actions/network/netbios_off.undo.ps1
@@ -106,6 +126,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "WPAD (Web Proxy Auto-Discovery) cherche un serveur de proxy via DNS/NetBIOS au démarrage. Un attaquant sur ton réseau peut répondre à cette requête et devenir ton proxy → MITM sur tout ton trafic web. Désactiver WPAD ferme ce vecteur."
+
+    user_today: "Au démarrage, ton PC cherche automatiquement un proxy web. Un attaquant local peut répondre et devenir ton intermédiaire."
+
+    user_after: "Plus de découverte automatique de proxy. Si tu en utilises un, tu le configures explicitement."
+
+    user_for_who: "Tout le monde, surtout en mobilité (Wi-Fi public)."
+
+    user_risk: "Si ton entreprise utilise un proxy auto via WPAD, l'accès web peut casser (situation rare en perso)."
     action: ./engine/actions/network/wpad_disable.action.ps1
     test: ./engine/actions/network/wpad_disable.test.ps1
     undo: ./engine/actions/network/wpad_disable.undo.ps1
@@ -134,6 +162,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "Un attaquant sur ton réseau force ton PC à parler NTLMv1 (Responder, MITM6, etc.) puis crack ton hash en quelques heures. NTLMv2 résiste mieux aux attaques de relay et au cracking offline. Cette règle force NTLMv2 only — refuse les downgrade silencieux."
+
+    user_today: "Ton PC peut être forcé à parler une vieille version d'authentification (NTLMv1) qui se casse en quelques heures."
+
+    user_after: "Refuse toute négociation vers une version inférieure. Reste en NTLMv2 minimum (résistant)."
+
+    user_for_who: "Tout le monde, surtout en entreprise."
+
+    user_risk: "Très rares vieux serveurs NTLMv1-only ne marcheront plus."
     action: ./engine/actions/network/ntlm_v2_only.action.ps1
     test: ./engine/actions/network/ntlm_v2_only.test.ps1
     undo: ./engine/actions/network/ntlm_v2_only.undo.ps1
@@ -158,6 +194,14 @@ rules:
       - "https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing-overview"
     tags: [network, smb, integrity]
     added_in: "1.0"
+
+    user_today: "Quand tu accèdes à un partage réseau, les paquets ne sont pas signés. Quelqu'un sur le réseau pourrait les modifier."
+
+    user_after: "Les paquets sont signés des 2 côtés. Toute altération est détectée et rejetée."
+
+    user_for_who: "Tout le monde qui utilise des partages réseau (NAS, partages Windows)."
+
+    user_risk: "Rare souci de compatibilité avec très vieux NAS qui ne supportent pas la signature."
     action: ./engine/actions/network/smb_client_signing.action.ps1
     test: ./engine/actions/network/smb_client_signing.test.ps1
     undo: ./engine/actions/network/smb_client_signing.undo.ps1
@@ -182,6 +226,14 @@ rules:
       - "https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-signing-overview"
     tags: [network, smb, integrity]
     added_in: "1.0"
+
+    user_today: "Si ton PC partage des fichiers, les paquets sortants ne sont pas signés."
+
+    user_after: "Tes partages forcent la signature. Personne ne peut intercepter et modifier sans que ce soit détecté."
+
+    user_for_who: "Tout le monde qui partage des dossiers depuis son PC."
+
+    user_risk: "Idem que client signing : très rare souci avec vieux clients."
     action: ./engine/actions/network/smb_server_signing.action.ps1
     test: ./engine/actions/network/smb_server_signing.test.ps1
     undo: ./engine/actions/network/smb_server_signing.undo.ps1
@@ -210,6 +262,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "EternalBlue / WannaCry se sont propagés en 2017 via SMBv1. Cette version du protocole a 30 ans et est toujours présente sur Windows pour compat avec NAS antédiluviens. Désactiver SMBv1 ferme un vecteur d'infection latéral majeur. Si ton NAS de 2010 ne marche plus, c'est l'occasion de le remplacer."
+
+    user_today: "Un système de partage de fichiers vieux de 30 ans est encore activé. Utilisé par les ransomwares WannaCry et NotPetya pour se répandre."
+
+    user_after: "Ce vieux système est éteint. Ton PC ne parle plus que les versions modernes (sécurisées)."
+
+    user_for_who: "Tout le monde, sauf si tu accèdes à un serveur ou NAS d'avant 2012 que tu ne veux pas remplacer."
+
+    user_risk: "Si un partage réseau ne marche plus, c'est qu'il était en SMBv1. Faut mettre le NAS à jour ou faire une exception."
     action: ./engine/actions/network/smbv1_disable.action.ps1
     test: ./engine/actions/network/smbv1_disable.test.ps1
     undo: ./engine/actions/network/smbv1_disable.undo.ps1
@@ -235,6 +295,14 @@ rules:
       - "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/guest-access-in-smb2-is-disabled-by-default"
     tags: [network, smb, lateral-movement]
     added_in: "1.0"
+
+    user_today: "Ton PC peut se connecter à des partages sans mot de passe (mode 'invité'). Un attaquant local peut faire passer un faux serveur."
+
+    user_after: "Tout partage sans mot de passe est refusé. Faut authentification explicite."
+
+    user_for_who: "Tout le monde."
+
+    user_risk: "Si tu as un NAS configuré en mode invité (rare), faudra le passer en mode authentifié."
     action: ./engine/actions/network/smb_guest_auth_off.action.ps1
     test: ./engine/actions/network/smb_guest_auth_off.test.ps1
     undo: ./engine/actions/network/smb_guest_auth_off.undo.ps1

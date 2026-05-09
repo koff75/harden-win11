@@ -24,6 +24,10 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/netsecurity/set-netfirewallprofile"
     tags: [firewall, network]
     added_in: "1.0"
+    user_today: "Sur un PC en entreprise (joint au domaine), le firewall peut être plus permissif."
+    user_after: "On force le blocage par défaut même sur le réseau d'entreprise."
+    user_for_who: "Postes en entreprise (domaine Active Directory)."
+    user_risk: "Si ton admin réseau a configuré des outils qui ont besoin d'accès entrant, faudra créer des règles."
     action: ./engine/actions/firewall/profile_domain.action.ps1
     test: ./engine/actions/firewall/profile_domain.test.ps1
     undo: ./engine/actions/firewall/profile_domain.undo.ps1
@@ -48,6 +52,14 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/netsecurity/set-netfirewallprofile"
     tags: [firewall, network]
     added_in: "1.0"
+
+    user_today: "Sur ton réseau Wi-Fi maison (marqué 'privé'), les autres appareils peuvent se connecter à ton PC."
+
+    user_after: "Reste accessible aux machines de ta maison mais on bloque toute tentative inhabituelle."
+
+    user_for_who: "Tout le monde qui a un PC à la maison."
+
+    user_risk: "Aucun pour usage normal. Si tu héberges un service local (NAS, serveur de jeu), il faudra créer une exception."
     action: ./engine/actions/firewall/profile_private.action.ps1
     test: ./engine/actions/firewall/profile_private.test.ps1
     undo: ./engine/actions/firewall/profile_private.undo.ps1
@@ -75,6 +87,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "Tu te connectes au Wi-Fi de l'aéroport. Un autre passager scanne le réseau et trouve des partages SMB ouverts sur ta machine. Cette règle force le profil Public en \"deny inbound\" — quand Windows détecte un Wi-Fi non sûr, plus rien ne rentre. Tes shares restent invisibles."
+
+    user_today: "Quand tu te connectes au Wi-Fi d'un café ou d'un aéroport, les autres ordinateurs du réseau peuvent essayer de te joindre."
+
+    user_after: "Sur ces réseaux non-sûrs, ton PC devient invisible — personne ne peut s'y connecter."
+
+    user_for_who: "Indispensable pour un laptop qui sort de la maison. Inutile sur un fixe qui ne quitte jamais ton bureau."
+
+    user_risk: "Si tu fais du jeu en LAN ou du partage de fichiers dans un café, ça bloquera. Sinon rien."
     action: ./engine/actions/firewall/profile_public.action.ps1
     test: ./engine/actions/firewall/profile_public.test.ps1
     undo: ./engine/actions/firewall/profile_public.undo.ps1

@@ -24,6 +24,10 @@ rules:
       - "https://learn.microsoft.com/en-us/windows/privacy/configure-windows-diagnostic-data-in-your-organization"
     tags: [privacy, telemetry]
     added_in: "1.0"
+    user_today: "Windows envoie beaucoup d'infos à Microsoft (apps lancées, fréquence, crashs). Niveau 'Enhanced' par défaut sur Pro."
+    user_after: "Niveau réduit au minimum requis (juste les crash reports critiques pour Microsoft)."
+    user_for_who: "Tout le monde qui veut limiter ce qui sort de son PC vers Microsoft."
+    user_risk: "Aucun fonctionnellement. Microsoft a un peu moins de signals pour améliorer Windows à l'avenir."
     action: ./engine/actions/privacy/telemetry_required.action.ps1
     test: ./engine/actions/privacy/telemetry_required.test.ps1
     undo: ./engine/actions/privacy/telemetry_required.undo.ps1
@@ -118,6 +122,14 @@ rules:
     references: []
     tags: [privacy, cortana]
     added_in: "1.0"
+
+    user_today: "Cortana est activée — assistant vocal Microsoft qui collecte tes recherches, ton calendrier, ta voix."
+
+    user_after: "Cortana est désactivée. La barre de recherche Windows reste fonctionnelle pour les fichiers locaux."
+
+    user_for_who: "Tout le monde qui n'utilise pas Cortana (= 99% des gens en France)."
+
+    user_risk: "Si tu utilises Cortana pour des rappels vocaux, ne pas activer."
     action: ./engine/actions/privacy/cortana_off.action.ps1
     test: ./engine/actions/privacy/cortana_off.test.ps1
     undo: ./engine/actions/privacy/cortana_off.undo.ps1
@@ -146,6 +158,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "Recall (Win11 24H2) prend un screenshot de ton écran toutes les quelques secondes et le stocke localement avec OCR. Pratique en théorie, désastreux en pratique : tout malware qui lit ce dossier a un historique complet de tes mots de passe, RIB, Slack privé. Cette règle désactive Recall complètement."
+
+    user_today: "Recall (Win11 24H2) prend un screenshot de ton écran toutes les quelques secondes et stocke tout localement avec OCR."
+
+    user_after: "Recall est complètement éteint. Plus aucune capture d'écran automatique."
+
+    user_for_who: "Tout le monde sur Win11 24H2+."
+
+    user_risk: "Aucun. Recall reste une fonctionnalité expérimentale, beaucoup d'utilisateurs préfèrent l'avoir off."
     action: ./engine/actions/privacy/recall_off.action.ps1
     test: ./engine/actions/privacy/recall_off.test.ps1
     undo: ./engine/actions/privacy/recall_off.undo.ps1

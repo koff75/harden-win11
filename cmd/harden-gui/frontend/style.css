@@ -133,6 +133,51 @@
 .comp-partial .comp-bar-fill { background: #ffaa00; }
 .comp-missing .comp-bar-fill { background: #ff6b7e; }
 
+/* Carte action user-friendly (zéro jargon, structure 4 lignes). */
+.action-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: #1f2c3a;
+    border-left: 3px solid #ffaa00;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.45;
+    max-width: 100%;
+}
+.action-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+.action-card-verb {
+    color: #ffd060;
+    font-weight: 600;
+    font-size: 12px;
+}
+.action-card-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 8px;
+    align-items: start;
+}
+.action-card-label {
+    color: #8fa1be;
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding-top: 1px;
+}
+.action-card-value {
+    color: #d8e0ec;
+}
+.action-card-risk .action-card-label { color: #ffaa00; }
+.action-card-risk .action-card-value { color: #ffd0a0; }
+td.action-cell { vertical-align: top; padding: 6px 8px; }
+
 html, body {
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

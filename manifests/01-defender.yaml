@@ -24,6 +24,10 @@ rules:
     tags: [malware, defender]
     added_in: "1.0"
     coach_example: "Tu télécharges un PDF de facture qui s'avère être un dropper Emotet. Sans cette protection, le malware s'installe en arrière-plan dès que tu ouvres le PDF. Avec, Defender le détecte à la lecture du fichier et bloque l'exécution avant qu'il fasse des dégâts."
+    user_today: "Quand tu télécharges ou ouvres un fichier, rien ne le scanne pour détecter un virus."
+    user_after: "Chaque fichier est analysé en arrière-plan dès que tu y touches. Les menaces connues sont bloquées immédiatement."
+    user_for_who: "Tout le monde — c'est l'antivirus de base de Windows."
+    user_risk: "Quasi nul. Très rare ralentissement à l'ouverture de fichiers très gros (>1 Go) ou ZIP avec milliers de fichiers."
     action: ./engine/actions/defender/realtime.action.ps1
     test: ./engine/actions/defender/realtime.test.ps1
     undo: ./engine/actions/defender/realtime.undo.ps1
@@ -50,6 +54,14 @@ rules:
       - "https://learn.microsoft.com/en-us/powershell/module/defender/set-mppreference"
     tags: [malware, defender]
     added_in: "1.0"
+
+    user_today: "Defender ne regarde que la signature des fichiers (= si on connaît déjà le virus)."
+
+    user_after: "Defender surveille aussi le comportement des programmes en cours d'exécution. Détecte les nouveaux malwares qui se cachent en mémoire."
+
+    user_for_who: "Tout le monde, surtout pour résister aux menaces récentes pas encore dans les bases antivirus."
+
+    user_risk: "Aucun en usage normal."
     action: ./engine/actions/defender/behavior_monitoring.action.ps1
     test: ./engine/actions/defender/behavior_monitoring.test.ps1
     undo: ./engine/actions/defender/behavior_monitoring.undo.ps1
@@ -176,6 +188,14 @@ rules:
       - "https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/network-protection"
     tags: [malware, defender, network]
     added_in: "1.0"
+
+    user_today: "Si tu cliques sur un lien malveillant, ton navigateur charge la page (qui peut tenter de t'infecter)."
+
+    user_after: "Defender bloque la connexion vers les sites réputés malveillants AVANT que ton navigateur ne charge la page."
+
+    user_for_who: "Tout le monde qui surf sur internet."
+
+    user_risk: "Très rare faux positif sur un site légitime mais récent. Tu peux le débloquer manuellement si besoin."
     action: ./engine/actions/defender/network_protection.action.ps1
     test: ./engine/actions/defender/network_protection.test.ps1
     undo: ./engine/actions/defender/network_protection.undo.ps1
@@ -210,6 +230,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "Un ransomware se fait passer pour Word et tente de chiffrer ton dossier Documents. Cette règle interdit aux processus non whitelistés d'écrire dans tes dossiers personnels — Word marche, le ransomware se prend une erreur d'accès. C'est la dernière ligne de défense quand tout le reste a échoué."
+
+    user_today: "N'importe quel programme peut écrire dans tes Documents, Photos, Bureau (= zone d'attaque pour les ransomwares)."
+
+    user_after: "Seules les apps autorisées (Word, Photoshop, etc.) peuvent y écrire. Un ransomware se prend une erreur et n'arrive pas à chiffrer tes fichiers."
+
+    user_for_who: "Très utile contre les ransomwares. Plutôt en mode 'paranoid' car nécessite un peu de configuration."
+
+    user_risk: "Au début tu vas devoir autoriser à la main certaines apps légitimes (Steam, OBS, Visual Studio, jeux). Quelques minutes de setup les premiers jours."
     action: ./engine/actions/defender/controlled_folder_access.action.ps1
     test: ./engine/actions/defender/controlled_folder_access.test.ps1
     undo: ./engine/actions/defender/controlled_folder_access.undo.ps1

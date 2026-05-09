@@ -50,6 +50,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "Un .exe douteux te demande des droits admin. Sans cette règle, UAC peut accepter sans demander de mot de passe (Auto-Elevate). Avec, tu dois explicitement valider la fenêtre UAC avec ton mot de passe — ça met une vraie barrière entre un drive-by-download et l'élévation de privilèges."
+
+    user_today: "Quand un programme demande les droits administrateur, Windows peut accepter automatiquement (sans te demander)."
+
+    user_after: "Tu dois explicitement valider chaque demande d'élévation. Un malware ne peut plus passer en silence."
+
+    user_for_who: "Tout le monde, sauf si tu fais du dev/admin et qu'une fenêtre UAC par jour t'agace."
+
+    user_risk: "Quelques fenêtres UAC supplémentaires en installant des logiciels. C'est l'objectif : voir ce qui demande à grimper en admin."
     action: ./engine/actions/uac/consent_admin.action.ps1
     test: ./engine/actions/uac/consent_admin.test.ps1
     undo: ./engine/actions/uac/consent_admin.undo.ps1
@@ -100,6 +108,14 @@ rules:
       - "https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/settings-and-configuration"
     tags: [uac, hardening]
     added_in: "1.0"
+
+    user_today: "Un compte standard peut demander à devenir admin (en saisissant un mot de passe)."
+
+    user_after: "Les comptes standards ne peuvent plus s'élever du tout. Faut se connecter avec le compte admin pour ça."
+
+    user_for_who: "Setup avec plusieurs comptes (parents/enfants, famille). À éviter sur PC perso solo (= ton compte unique est admin)."
+
+    user_risk: "Sur PC perso solo : aucun. Sur PC partagé : impossible pour les comptes standards d'installer un logiciel."
     action: ./engine/actions/uac/deny_user_elevation.action.ps1
     test: ./engine/actions/uac/deny_user_elevation.test.ps1
     undo: ./engine/actions/uac/deny_user_elevation.undo.ps1
@@ -127,6 +143,14 @@ rules:
     added_in: "1.0"
 
     coach_example: "Tu as activé RDP \"juste pour dépanner ton oncle\". 6 mois plus tard, ton port 3389 est public sur Internet et un bot tente 10 000 mots de passe par jour. Désactiver RDP ferme ce vecteur connu massivement utilisé par les ransomwares (BlueKeep, BadRabbit, etc)."
+
+    user_today: "Le Bureau à Distance (RDP) est peut-être activé sur ton PC. Si oui, c'est une porte d'entrée connue des attaquants."
+
+    user_after: "RDP est éteint. Plus personne ne peut se connecter à ton PC à distance via cette voie."
+
+    user_for_who: "Tout le monde, sauf si tu utilises RDP pour dépanner ton PC depuis ailleurs."
+
+    user_risk: "Si tu te connectes à ton PC depuis ailleurs (depuis le boulot, par exemple), tu ne pourras plus."
     action: ./engine/actions/system_settings/rdp_disable.action.ps1
     test: ./engine/actions/system_settings/rdp_disable.test.ps1
     undo: ./engine/actions/system_settings/rdp_disable.undo.ps1
@@ -182,6 +206,14 @@ rules:
       - "https://learn.microsoft.com/en-us/windows-hardware/customize/power-settings/policies-no-hibernate"
     tags: [power, disk-space]
     added_in: "1.0"
+
+    user_today: "Quand tu mets ton PC en veille prolongée, Windows écrit la mémoire (= secrets, mots de passe en cours) sur le disque."
+
+    user_after: "L'hibernation est désactivée. Soit tu fais Veille (sans copie disque), soit tu éteins."
+
+    user_for_who: "PC fixe principalement. À éviter sur laptop où l'hibernation économise la batterie."
+
+    user_risk: "Sur laptop : tu perds l'autonomie de l'hibernation longue. Le sleep classique consomme un peu plus."
     action: ./engine/actions/system_settings/hibernate_off.action.ps1
     test: ./engine/actions/system_settings/hibernate_off.test.ps1
     undo: ./engine/actions/system_settings/hibernate_off.undo.ps1

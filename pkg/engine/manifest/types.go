@@ -50,6 +50,14 @@ type Rule struct {
 	// Optionnel — seules les rules importantes en ont. Pas un texte théorique :
 	// un cas concret type "imagine que tu cliques sur un PDF reçu par mail…".
 	CoachExample string `yaml:"coach_example,omitempty"`
+	// User-facing text fields : explication zéro-jargon pour l'utilisateur
+	// final. Tous optionnels, affichés tels quels dans la cellule action de
+	// la GUI quand présents (sinon fallback sur description/state).
+	// Format : 1 phrase courte, française, sans nom de regkey ni chiffre.
+	UserToday  string `yaml:"user_today,omitempty"`  // situation présente sans la règle
+	UserAfter  string `yaml:"user_after,omitempty"`  // ce que la règle change concrètement
+	UserForWho string `yaml:"user_for_who,omitempty"` // quel profil en bénéficie
+	UserRisk   string `yaml:"user_risk,omitempty"`   // ce que la règle peut t'empêcher de faire
 }
 
 // AppliesToProfile retourne true si la règle s'applique au profil donné.

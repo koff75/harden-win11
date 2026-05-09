@@ -557,35 +557,31 @@ function renderDashboard() {
         return;
     }
 
-    // Construit la headline en priorisant le critique.
+    // Headline vulgarisée : on met d'abord le positif (X points OK) puis
+    // les améliorations possibles. Plus engageant qu'un nb brut de "règles
+    // à renforcer".
     let headline = '';
     let level = 'level-light';
-    let icon = '⚪';
+    let icon = '✓';
+    const totalNonCompliant = toApply.critical + toApply.important + toApply['nice-to-have'];
 
     if (toApply.critical > 0) {
-        headline = `${toApply.critical} règle${toApply.critical > 1 ? 's' : ''} critique${toApply.critical > 1 ? 's' : ''} à renforcer`;
+        const detailExtras = [];
+        if (toApply.important > 0) detailExtras.push(`${toApply.important} importante${toApply.important > 1 ? 's' : ''}`);
+        if (toApply['nice-to-have'] > 0) detailExtras.push(`${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}`);
+        const extras = detailExtras.length > 0 ? `, ${detailExtras.join(' et ')}` : '';
+        headline = `Ta machine est OK sur ${conformeAll} points. ${totalNonCompliant} amélioration${totalNonCompliant > 1 ? 's' : ''} possible${totalNonCompliant > 1 ? 's' : ''} : ${toApply.critical} critique${toApply.critical > 1 ? 's' : ''}${extras}.`;
         level = 'level-critical';
         icon = '🔴';
     } else if (toApply.important > 0) {
-        headline = `${toApply.important} règle${toApply.important > 1 ? 's' : ''} importante${toApply.important > 1 ? 's' : ''} à renforcer`;
+        const opt = toApply['nice-to-have'] > 0 ? ` et ${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}` : '';
+        headline = `Ta machine est bien protégée. ${toApply.important} amélioration${toApply.important > 1 ? 's' : ''} importante${toApply.important > 1 ? 's' : ''}${opt} possible${(toApply.important + toApply['nice-to-have']) > 1 ? 's' : ''}.`;
         level = 'level-medium';
         icon = '🟡';
     } else {
-        headline = `${toApply['nice-to-have']} règle${toApply['nice-to-have'] > 1 ? 's' : ''} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''} à renforcer`;
+        headline = `Ta machine est solide. ${toApply['nice-to-have']} amélioration${toApply['nice-to-have'] > 1 ? 's' : ''} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''} possible si tu veux pousser plus loin.`;
         level = 'level-light';
         icon = '⚪';
-    }
-
-    // Si plusieurs niveaux ont des trucs à faire, ajouter un suffixe discret.
-    const others = [];
-    if (toApply.critical > 0 && (toApply.important > 0 || toApply['nice-to-have'] > 0)) {
-        if (toApply.important > 0) others.push(`${toApply.important} importante${toApply.important > 1 ? 's' : ''}`);
-        if (toApply['nice-to-have'] > 0) others.push(`${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}`);
-    } else if (toApply.important > 0 && toApply['nice-to-have'] > 0) {
-        others.push(`${toApply['nice-to-have']} optionnelle${toApply['nice-to-have'] > 1 ? 's' : ''}`);
-    }
-    if (others.length > 0) {
-        headline += ` (+ ${others.join(', ')})`;
     }
 
     dashboard.classList.add(level);
@@ -836,6 +832,64 @@ function updateRuleRow(ev) {
 //
 // L'idée : pas de JSON brut. On dit clairement ce qui se passerait pour la
 // règle dans son état actuel.
+// formatUserCard : affichage "carte" structurée pour les rules annotées
+// avec user_today/user_after/user_for_who/user_risk. Zéro jargon technique,
+// pour que l'utilisateur décide en 5 secondes si c'est utile ou pas.
+function formatUserCard(rule) {
+    const verb = contextualVerb(rule);
+    const id = rule.id || '';
+    return `
+        <div class="action-card">
+            <div class="action-card-header">
+                <span class="action-icon warn">⚠</span>
+                <span class="action-card-verb">${verb}</span>
+            </div>
+            <div class="action-card-row">
+                <span class="action-card-label">Aujourd'hui</span>
+                <span class="action-card-value">${escapeHtml(rule.userToday)}</span>
+            </div>
+            <div class="action-card-row">
+                <span class="action-card-label">Si tu actives</span>
+                <span class="action-card-value">${escapeHtml(rule.userAfter)}</span>
+            </div>
+            ${rule.userForWho ? `
+            <div class="action-card-row">
+                <span class="action-card-label">Pour qui</span>
+                <span class="action-card-value">${escapeHtml(rule.userForWho)}</span>
+            </div>` : ''}
+            ${rule.userRisk ? `
+            <div class="action-card-row action-card-risk">
+                <span class="action-card-label">Ce qui peut t'embêter</span>
+                <span class="action-card-value">${escapeHtml(rule.userRisk)}</span>
+            </div>` : ''}
+        </div>`;
+}
+
+// contextualVerb : verbe lisible selon le type de rule. Évite le générique
+// "À renforcer" qui se répète partout.
+function contextualVerb(rule) {
+    const id = rule.id || '';
+    if (id.startsWith('bloatware.')) return 'Désinstaller';
+    if (id.startsWith('asr.') || id.startsWith('defender.')) return 'Activer la protection';
+    if (id.startsWith('firewall.')) return 'Bloquer';
+    if (id === 'system_settings.rdp_disable' ||
+        id === 'system_settings.hibernate_off' ||
+        id === 'system_settings.fast_startup_off' ||
+        id === 'privacy.recall_off' ||
+        id === 'privacy.cortana_off' ||
+        id.startsWith('privacy.') && id.endsWith('_off') ||
+        id === 'network.llmnr_disable' ||
+        id === 'network.mdns_disable' ||
+        id === 'network.netbios_off' ||
+        id === 'network.wpad_disable' ||
+        id === 'network.smbv1_disable' ||
+        id === 'network.smb_guest_auth_off') return 'Désactiver';
+    if (id.startsWith('network.')) return 'Renforcer';
+    if (id.startsWith('system_settings.uac_')) return 'Renforcer UAC';
+    if (id.startsWith('accounts.')) return 'Sécuriser le compte';
+    return 'Renforcer';
+}
+
 function formatActionCell(rule, status, ev) {
     if (status === 'pending') {
         return `<span class="action-icon pending">○</span><span class="action-text">Pas encore vérifiée</span>`;
@@ -854,12 +908,17 @@ function formatActionCell(rule, status, ev) {
         return `<span class="action-icon ok">✓</span><span class="action-text">${txt}</span>`;
     }
     if (status === 'would_apply') {
+        // Si la rule a les 4 textes user-friendly, on affiche la "carte" claire.
+        if (rule.userToday && rule.userAfter) {
+            return formatUserCard(rule);
+        }
+        // Fallback : ancien format pour les rules pas encore annotées.
         const desc = rule.description || 'modification système';
         const stateBlurb = ev && ev.current_state ? humanStateBlurb(ev.current_state) : '';
         const breaksBadge = rule.breaks && rule.breaks.length > 0
             ? `<span class="breaks-badge" title="${escapeHtml(rule.breaks.join('  •  '))}">⚠ casse si…</span>`
             : '';
-        const verb = isBloatware ? 'À supprimer' : 'À renforcer';
+        const verb = contextualVerb(rule);
         return `<span class="action-icon warn">⚠</span><span class="action-text">${verb} : ${escapeHtml(desc)}</span> ${breaksBadge}
                 ${stateBlurb ? `<span class="action-state">État actuel : ${stateBlurb}</span>` : ''}`;
     }
