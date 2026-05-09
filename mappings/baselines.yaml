@@ -1,0 +1,343 @@
+version: "1.0"
+title: "Mapping harden-win11 → CIS / ANSSI / MS Security Baseline"
+sources:
+  cis: "CIS Microsoft Windows 11 Enterprise Benchmark v3.0.0 (2024)"
+  anssi: "ANSSI — Recommandations de sécurité relatives à un système Microsoft Windows (PA-067, R-numbers)"
+  ms_baseline: "Microsoft Security Baseline for Windows 11 24H2"
+disclaimer: |
+  Mapping établi à partir de la documentation publique des référentiels.
+  Les correspondances sont approximatives : certaines règles harden-win11 sont plus
+  strictes ou plus laxistes que la recommandation officielle. Pour un usage compliance
+  (audit, certification), une revue externe est nécessaire.
+  Bloatware : non couvert par CIS/ANSSI/MS (relève d'une politique d'entreprise).
+
+mappings:
+  # ─────────────────────────── DEFENDER ───────────────────────────
+  defender.realtime:
+    cis: ["18.10.42.12.1"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/DisableRealtimeMonitoring=0"]
+  defender.behavior_monitoring:
+    cis: ["18.10.42.12.4"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/DisableBehaviorMonitoring=0"]
+  defender.ioav:
+    cis: ["18.10.42.12.2"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/DisableIOAVProtection=0"]
+  defender.script_scanning:
+    cis: ["18.10.42.12.5"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/DisableScriptScanning=0"]
+  defender.nis:
+    cis: ["18.10.42.10.1"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/EnableNetworkProtection"]
+  defender.pua:
+    cis: ["18.10.42.9"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/PUAProtection=1"]
+  defender.network_protection:
+    cis: ["18.10.42.6.1.1"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/EnableNetworkProtection=1"]
+  defender.controlled_folder_access:
+    cis: ["18.10.42.6.3.1"]
+    anssi: []
+    ms_baseline: ["DefenderAV/EnableControlledFolderAccess"]
+    notes: "Pas explicite dans ANSSI. CIS conseille mais autorise Audit-only."
+  defender.sample_submission:
+    cis: ["18.10.42.5.1"]
+    anssi: ["R55"]
+    ms_baseline: ["DefenderAV/SubmitSamplesConsent"]
+  defender.cloud_protection:
+    cis: ["18.10.42.5.2"]
+    anssi: []
+    ms_baseline: ["DefenderAV/MAPSReporting"]
+  defender.signatures:
+    cis: ["18.10.42.7"]
+    anssi: ["R57"]
+    ms_baseline: ["DefenderAV/SignatureUpdateInterval"]
+  defender.tamper_protection_check:
+    cis: ["18.10.42.16"]
+    anssi: []
+    ms_baseline: ["DefenderAV/TamperProtection"]
+
+  # ─────────────────────────── FIREWALL ───────────────────────────
+  firewall.profile_domain:
+    cis: ["9.1.1", "9.1.2"]
+    anssi: ["R26"]
+    ms_baseline: ["WindowsFirewall/DomainProfile/EnableFirewall=1"]
+  firewall.profile_private:
+    cis: ["9.2.1", "9.2.2"]
+    anssi: ["R26"]
+    ms_baseline: ["WindowsFirewall/PrivateProfile/EnableFirewall=1"]
+  firewall.profile_public:
+    cis: ["9.3.1", "9.3.2"]
+    anssi: ["R26"]
+    ms_baseline: ["WindowsFirewall/PublicProfile/EnableFirewall=1"]
+  firewall.block_smb_public:
+    cis: ["9.3.5"]
+    anssi: ["R48"]
+    ms_baseline: []
+    notes: "CIS demande inbound block sur port 445 en profil Public."
+  firewall.block_netbios_public:
+    cis: ["9.3.5"]
+    anssi: ["R47"]
+    ms_baseline: []
+
+  # ─────────────────────────── ACCOUNTS ───────────────────────────
+  accounts.disable_unused:
+    cis: ["2.3.1.1", "2.3.1.2", "2.3.1.6"]
+    anssi: ["R7", "R8"]
+    ms_baseline: ["LocalPolicies/AccountStatus/Administrator=Disabled", "LocalPolicies/AccountStatus/Guest=Disabled"]
+    notes: "CIS 2.3.1.1=Administrator account status, 2.3.1.2=Block Microsoft accounts, 2.3.1.6=Guest account status."
+  accounts.rename_admin:
+    cis: ["2.3.1.5"]
+    anssi: ["R9"]
+    ms_baseline: ["LocalPolicies/SecurityOptions/RenameAdministratorAccount"]
+
+  # ─────────────────────── SYSTEM SETTINGS / UAC / RDP ───────────────────────
+  system_settings.uac_enable_lua:
+    cis: ["2.3.17.1"]
+    anssi: ["R20"]
+    ms_baseline: ["LocalPolicies/SecurityOptions/UAC/EnableLUA=1"]
+  system_settings.uac_consent_admin:
+    cis: ["2.3.17.6"]
+    anssi: ["R20"]
+    ms_baseline: ["LocalPolicies/SecurityOptions/UAC/ConsentPromptBehaviorAdmin=2"]
+  system_settings.uac_prompt_secure_desktop:
+    cis: ["2.3.17.8"]
+    anssi: ["R20"]
+    ms_baseline: ["LocalPolicies/SecurityOptions/UAC/PromptOnSecureDesktop=1"]
+  system_settings.uac_deny_user_elevation:
+    cis: ["2.3.17.7"]
+    anssi: ["R21"]
+    ms_baseline: ["LocalPolicies/SecurityOptions/UAC/ConsentPromptBehaviorUser=0"]
+  system_settings.rdp_disable:
+    cis: ["18.10.56.3.2.1"]
+    anssi: ["R37"]
+    ms_baseline: ["RemoteDesktop/fDenyTSConnections=1"]
+  system_settings.rdp_firewall_disable:
+    cis: ["9.3.4"]
+    anssi: ["R37"]
+    ms_baseline: []
+  system_settings.hibernate_off:
+    cis: ["18.8.34.6.5"]
+    anssi: []
+    ms_baseline: []
+    notes: "Pas dans baselines stricts ; recommandation pratique (sécu mémoire au sleep)."
+  system_settings.fast_startup_off:
+    cis: []
+    anssi: []
+    ms_baseline: []
+    notes: "Recommandation pratique harden-win11 (cohérence reboot ↔ apply Defender). Pas dans benchmarks."
+
+  # ─────────────────────────── NETWORK ───────────────────────────
+  network.llmnr_disable:
+    cis: ["18.5.13.2"]
+    anssi: ["R47"]
+    ms_baseline: ["DNSClient/EnableMulticast=0"]
+  network.mdns_disable:
+    cis: ["18.5.13.3"]
+    anssi: ["R47"]
+    ms_baseline: ["DNSClient/EnableMDNS=0"]
+    notes: "CIS v3 ajoute mDNS (anciennement absent)."
+  network.netbios_off:
+    cis: ["18.5.4.1"]
+    anssi: ["R47"]
+    ms_baseline: ["NetBT/NetbiosOptions=2"]
+  network.wpad_disable:
+    cis: ["18.5.14.1"]
+    anssi: ["R47"]
+    ms_baseline: ["WinHttpAutoProxySvc=Disabled"]
+  network.ntlm_v2_only:
+    cis: ["2.3.11.7"]
+    anssi: ["R31"]
+    ms_baseline: ["LocalPolicies/SecurityOptions/LmCompatibilityLevel=5"]
+  network.smb_client_signing:
+    cis: ["2.3.8.1", "2.3.8.3"]
+    anssi: ["R49"]
+    ms_baseline: ["LanmanWorkstation/RequireSecuritySignature=1"]
+  network.smb_server_signing:
+    cis: ["2.3.9.2", "2.3.9.4"]
+    anssi: ["R49"]
+    ms_baseline: ["LanmanServer/RequireSecuritySignature=1"]
+  network.smbv1_disable:
+    cis: ["18.4.3"]
+    anssi: ["R48"]
+    ms_baseline: ["LanmanServer/SMB1=0"]
+  network.smb_guest_auth_off:
+    cis: ["18.5.8.1"]
+    anssi: ["R48"]
+    ms_baseline: ["LanmanWorkstation/AllowInsecureGuestAuth=0"]
+
+  # ─────────────────────────── PRIVACY / TELEMETRY ───────────────────────────
+  privacy.telemetry_required:
+    cis: ["18.10.91.2.1"]
+    anssi: []
+    ms_baseline: ["DataCollection/AllowTelemetry=1"]
+    notes: "CIS recommande Security (0) en édition Enterprise ; Required (1) sur Pro/Home."
+  privacy.advertising_id_machine:
+    cis: ["18.10.5.1"]
+    anssi: []
+    ms_baseline: ["AdvertisingID/DisabledByGroupPolicy=1"]
+  privacy.online_speech_off:
+    cis: ["18.10.85.1"]
+    anssi: []
+    ms_baseline: ["Privacy/AllowOnlineSpeechRecognition=0"]
+  privacy.activity_history_off:
+    cis: ["18.8.7.1.2", "18.8.7.1.3"]
+    anssi: []
+    ms_baseline: ["System/PublishUserActivities=0"]
+  privacy.cortana_off:
+    cis: ["18.10.15.1"]
+    anssi: []
+    ms_baseline: ["Search/AllowCortana=0"]
+  privacy.recall_off:
+    cis: ["18.10.93.1"]
+    anssi: []
+    ms_baseline: ["WindowsAI/DisableAIDataAnalysis=1"]
+    notes: "Recall = nouveauté 2024, CIS v3 ajoute setting (numéro à confirmer en v3.1)."
+  privacy.consumer_features_off:
+    cis: ["18.9.14.1"]
+    anssi: []
+    ms_baseline: ["CloudContent/DisableWindowsConsumerFeatures=1"]
+  privacy.silent_apps_off:
+    cis: ["18.9.14.2"]
+    anssi: []
+    ms_baseline: ["CloudContent/DisableWindowsSpotlightFeatures=1"]
+  privacy.settings_suggestions_off:
+    cis: []
+    anssi: []
+    ms_baseline: ["CloudContent/DisableSoftLanding=1"]
+  privacy.start_suggestions_off:
+    cis: []
+    anssi: []
+    ms_baseline: ["CloudContent/DisableSoftLanding=1"]
+  privacy.tips_welcome_off:
+    cis: []
+    anssi: []
+    ms_baseline: []
+  privacy.ink_text_collection_off:
+    cis: ["18.9.27.1"]
+    anssi: []
+    ms_baseline: ["TextInput/AllowLinguisticDataCollection=0"]
+  privacy.advertising_id_user:
+    cis: ["18.10.5.1"]
+    anssi: []
+    ms_baseline: ["AdvertisingID/DisabledByGroupPolicy=1"]
+
+  # ─────────────────────────── ASR (Attack Surface Reduction) ───────────────────────────
+  # CIS 18.10.42.6.1.2.X mappe les ASR rules par GUID. Numéros stables en v3.0.0.
+  asr.block_office_child_processes:
+    cis: ["18.10.42.6.1.2.5"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/ASR/D4F940AB-401B-4EFC-AADC-AD5F3C50688A=1"]
+  asr.block_office_executable_content:
+    cis: ["18.10.42.6.1.2.7"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/ASR/3B576869-A4EC-4529-8536-B80A7769E899=1"]
+  asr.block_office_code_injection:
+    cis: ["18.10.42.6.1.2.8"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/ASR/75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84=1"]
+  asr.block_office_comm_child_processes:
+    cis: ["18.10.42.6.1.2.6"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/ASR/26190899-1602-49E8-8B27-EB1D0A1CE869=1"]
+  asr.block_win32_api_office_macros:
+    cis: ["18.10.42.6.1.2.10"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/ASR/92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B=1"]
+  asr.block_email_executable_content:
+    cis: ["18.10.42.6.1.2.4"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/ASR/BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550=1"]
+  asr.block_obfuscated_scripts:
+    cis: ["18.10.42.6.1.2.9"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/ASR/5BEB7EFE-FD9A-4556-801D-275E5FFC04CC=1"]
+  asr.block_js_vbs_launch:
+    cis: ["18.10.42.6.1.2.3"]
+    anssi: ["R56"]
+    ms_baseline: ["DefenderAV/ASR/D3E037E1-3EB8-44C8-A917-57927947596D=1"]
+  asr.block_lsass_credential_theft:
+    cis: ["18.10.42.6.1.2.11"]
+    anssi: ["R30", "R31"]
+    ms_baseline: ["DefenderAV/ASR/9E6C4E1F-7D60-472F-BA1A-A39EF669E4B2=1"]
+  asr.block_unsigned_usb:
+    cis: ["18.10.42.6.1.2.12"]
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4=1"]
+  asr.block_wmi_persistence:
+    cis: ["18.10.42.6.1.2.14"]
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/E6DB77E5-3DF2-4CF1-B95A-636979351E5B=1"]
+    notes: "Server-flavoured rule ; CIS recommande sur server, autorise sur workstation."
+  asr.block_psexec_wmi:
+    cis: ["18.10.42.6.1.2.13"]
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/D1E49AAC-8F56-4280-B9BA-993A6D77406C=1"]
+  asr.block_unprevalent_executables:
+    cis: ["18.10.42.6.1.2.2"]
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/01443614-CD74-433A-B99E-2ECDC07BFC25=1"]
+  asr.advanced_ransomware_protection:
+    cis: ["18.10.42.6.1.2.1"]
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/C1DB55AB-C21A-4637-BB3F-A12568109D35=1"]
+  asr.block_adobe_reader_child:
+    cis: []
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/7674BA52-37EB-4A4F-A9A1-F0F9A1619A2C=1"]
+    notes: "Pas dans CIS L1/L2 stable ; recommandation MS."
+  asr.block_vulnerable_drivers:
+    cis: []
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/56A863A9-875E-4185-98A7-B882C64B5CE5=1"]
+  asr.block_safe_mode_reboot:
+    cis: []
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/33DDEDF1-C6E0-47CB-833E-DE6133960387=1"]
+    notes: "Recommandation MS, pas dans CIS."
+  asr.block_impersonated_tools:
+    cis: []
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/C0033C00-D16D-4114-A5A0-DC9B3A7D2CEB=1"]
+  asr.block_webshell_servers:
+    cis: []
+    anssi: []
+    ms_baseline: ["DefenderAV/ASR/A8F5898E-1DC8-49A9-9878-85004B8A61E6=1"]
+    notes: "Server-targeted, pas pertinent en workstation CIS."
+
+  # ─────────────────────────── BLOATWARE (non couvert) ───────────────────────────
+  # Les benchmarks ne mappent pas les apps Store individuelles. C'est une politique
+  # interne (preinstalled crapware policy).
+  bloatware.clipchamp:        { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.bing_news:        { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.bing_weather:     { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.get_help:         { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.get_started:      { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.solitaire:        { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.mixed_reality:    { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.people:           { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.skype:            { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.feedback_hub:     { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.your_phone:       { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.zune_music:       { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.zune_video:       { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.disney:           { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.tiktok:           { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.facebook:         { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.instagram:        { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.twitter:          { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.linkedin:         { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.netflix:          { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.candy_crush:      { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.spotify_ab:       { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.spotify:          { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.apple_music:      { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.dolby_access:     { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.jimmylin:         { cis: [], anssi: [], ms_baseline: [] }
+  bloatware.pub_5319275a:     { cis: [], anssi: [], ms_baseline: [] }

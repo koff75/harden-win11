@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/koff75/harden-win11/pkg/engine/baseline"
 	"github.com/koff75/harden-win11/pkg/engine/executor"
 	"github.com/koff75/harden-win11/pkg/engine/journal"
 	"github.com/koff75/harden-win11/pkg/engine/manifest"
@@ -37,6 +38,9 @@ var (
 	flagYes         bool
 	flagRunID       string
 	flagRuleID      string
+	flagProfile     string
+	flagAudit       bool
+	flagParallel    int
 )
 
 func main() {
@@ -49,7 +53,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&flagSchemaPath, "schema", "schemas/manifest.schema.json", "Chemin du JSONSchema")
 	rootCmd.PersistentFlags().StringVar(&flagJournalDir, "journal-dir", "", "Dossier du journal NDJSON (vide = %ProgramData%\\Harden-Win11\\runs\\)")
 
-	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd())
+	rootCmd.AddCommand(versionCmd(), validateCmd(), applyCmd(), undoCmd(), coverageCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(exitCodeFor(err))
@@ -284,14 +288,20 @@ func applyCmd() *cobra.Command {
 			var aborted bool
 			var abortedSection string
 			for _, sct := range sections {
+				r := runner.New()
+				if flagAudit {
+					r.Env = map[string]string{"HARDEN_ASR_MODE": "audit"}
+				}
 				summary, err := executor.Run(ctx, sct.path, executor.Options{
 					Mode:        mode,
 					ManifestDir: flagManifestDir,
 					BasePath:    base,
-					Runner:      runner.New(),
+					Runner:      r,
 					Writer:      w,
 					RunID:       runID,
 					RuleTimeout: flagRuleTimeout,
+					Profile:     flagProfile,
+					Parallel:    flagParallel,
 				})
 				total.Skipped += summary.Skipped
 				total.Applied += summary.Applied
@@ -338,9 +348,92 @@ func applyCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&flagDryRun, "dry-run", false, "Mode dry-run (lit l'état, ne modifie rien)")
 	cmd.Flags().StringVar(&flagSection, "section", "", "ID de la section à exécuter (vide = toutes)")
+	cmd.Flags().StringVar(&flagProfile, "profile", "", "Profil de risque (personal | business | maximal). Vide = toutes les règles.")
+	cmd.Flags().BoolVar(&flagAudit, "audit", false, "Mode audit pour ASR / Network Protection (n'applique pas mais log les events)")
+	cmd.Flags().IntVar(&flagParallel, "parallel", 1, "Nombre de règles dry-run exécutées en parallèle (default 1 = séquentiel). Sans effet en apply réel.")
 	cmd.Flags().DurationVar(&flagRuleTimeout, "rule-timeout", executor.DefaultRuleTimeout, "Timeout maximum par règle (ex: 30s, 1m)")
 	cmd.Flags().BoolVar(&flagYes, "yes", false, "Skip la confirmation interactive avant apply réel")
 	return cmd
+}
+
+func coverageCmd() *cobra.Command {
+	var (
+		mappingPath string
+		jsonOut     bool
+	)
+	cmd := &cobra.Command{
+		Use:   "coverage",
+		Short: "Affiche la couverture des règles vs CIS / ANSSI / MS Security Baseline",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			doc, err := baseline.Load(mappingPath)
+			if err != nil {
+				return &exitError{code: 4, msg: err.Error()}
+			}
+			entries, _, err := loadAndValidateManifests(flagManifestDir, flagSchemaPath, false)
+			if err != nil {
+				return err
+			}
+			ruleIDs, err := collectRuleIDs(entries)
+			if err != nil {
+				return err
+			}
+			rep := baseline.Compute(doc, ruleIDs)
+			if jsonOut {
+				b, _ := json.MarshalIndent(rep, "", "  ")
+				fmt.Println(string(b))
+				return nil
+			}
+			printCoverageText(rep)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&mappingPath, "mapping", "mappings/baselines.yaml", "Chemin du fichier de mapping baseline")
+	cmd.Flags().BoolVar(&jsonOut, "json", false, "Sortie JSON (vs texte humain)")
+	return cmd
+}
+
+func collectRuleIDs(entries []manifestEntry) ([]string, error) {
+	ids := make([]string, 0, 128)
+	for _, e := range entries {
+		sec, err := manifest.Load(e.path)
+		if err != nil {
+			return nil, fmt.Errorf("load %s: %w", e.path, err)
+		}
+		for _, r := range sec.Rules {
+			ids = append(ids, r.ID)
+		}
+	}
+	return ids, nil
+}
+
+func printCoverageText(rep *baseline.CoverageReport) {
+	fmt.Printf("Total règles harden-win11 : %d\n", rep.TotalRules)
+	fmt.Printf("Règles avec ≥1 mapping    : %d (%d%%)\n",
+		rep.MappedRules, pct(rep.MappedRules, rep.TotalRules))
+	fmt.Println()
+	order := []string{"cis", "anssi", "ms_baseline"}
+	for _, k := range order {
+		st := rep.Frameworks[k]
+		fmt.Printf("[%s]\n", st.Framework)
+		fmt.Printf("  Règles couvertes : %d / %d (%d%%)\n",
+			st.Mapped, rep.TotalRules, pct(st.Mapped, rep.TotalRules))
+		fmt.Printf("  Contrôles uniques cités : %d\n", st.UniqueControls)
+		if len(st.SampleControls) > 0 {
+			fmt.Printf("  Exemples : %v\n", st.SampleControls)
+		}
+		fmt.Printf("  Règles sans mapping ce framework : %d\n", len(st.UnmappedRules))
+		fmt.Println()
+	}
+	if rep.Disclaimer != "" {
+		fmt.Println("⚠ ", strings.TrimSpace(rep.Disclaimer))
+	}
+}
+
+func pct(num, denom int) int {
+	if denom == 0 {
+		return 0
+	}
+	return int(float64(num) / float64(denom) * 100)
 }
 
 func undoCmd() *cobra.Command {

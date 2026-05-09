@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/koff75/harden-win11/pkg/engine/manifest"
@@ -48,6 +49,14 @@ type Options struct {
 	// filtre (toutes les rules tournent). Sinon : seules les rules dont
 	// rule.profiles contient cette valeur (ou rule.profiles vide) tournent.
 	Profile string
+	// ExcludedRuleIDs : rule_ids à skipper explicitement (cas où l'utilisateur
+	// décoche manuellement des règles dans la GUI). Appliqué après le filtre
+	// profile.
+	ExcludedRuleIDs map[string]bool
+	// Parallel : nombre max de rules dry-run exécutées en parallèle (default 1).
+	// N'a d'effet qu'en ModeDry — apply reste séquentiel à cause de l'auto-rollback.
+	// Les events sont buffer-réordonnés pour rester dans l'ordre du manifest.
+	Parallel int
 }
 
 // Summary agrège les compteurs de statuts d'un Run.
@@ -95,6 +104,16 @@ func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error)
 		}
 		rules = filtered
 	}
+	// Filtre supplémentaire : rule_ids exclus explicitement par l'utilisateur.
+	if len(opts.ExcludedRuleIDs) > 0 {
+		filtered := make([]manifest.Rule, 0, len(rules))
+		for _, r := range rules {
+			if !opts.ExcludedRuleIDs[r.ID] {
+				filtered = append(filtered, r)
+			}
+		}
+		rules = filtered
+	}
 
 	_ = opts.Writer.Emit(map[string]any{
 		"type":             "section_start",
@@ -113,36 +132,41 @@ func Run(ctx context.Context, sectionPath string, opts Options) (Summary, error)
 		timeout = DefaultRuleTimeout
 	}
 
-	for _, rule := range rules {
-		var (
-			ev      map[string]any
-			aborted bool
-		)
-		switch opts.Mode {
-		case ModeDry:
-			ev = runDry(ctx, rule, opts, timeout, &sum)
-		case ModeApply:
-			ev, aborted = runApply(ctx, rule, opts, timeout, &sum)
-		default:
-			ev = map[string]any{
-				"type":    "action_result",
-				"run_id":  opts.RunID,
-				"rule_id": rule.ID,
-				"status":  "failed",
-				"error":   fmt.Sprintf("unknown executor mode: %d", opts.Mode),
+	// Apply reste séquentiel (auto-rollback critique). Dry-run peut être parallélisé.
+	if opts.Mode == ModeDry && opts.Parallel > 1 && len(rules) > 1 {
+		runDryParallel(ctx, rules, opts, timeout, &sum)
+	} else {
+		for _, rule := range rules {
+			var (
+				ev      map[string]any
+				aborted bool
+			)
+			switch opts.Mode {
+			case ModeDry:
+				ev = runDry(ctx, rule, opts, timeout, &sum)
+			case ModeApply:
+				ev, aborted = runApply(ctx, rule, opts, timeout, &sum)
+			default:
+				ev = map[string]any{
+					"type":    "action_result",
+					"run_id":  opts.RunID,
+					"rule_id": rule.ID,
+					"status":  "failed",
+					"error":   fmt.Sprintf("unknown executor mode: %d", opts.Mode),
+				}
+				sum.Failed++
 			}
-			sum.Failed++
-		}
-		_ = opts.Writer.Emit(ev)
+			_ = opts.Writer.Emit(ev)
 
-		if aborted {
-			_ = opts.Writer.Emit(map[string]any{
-				"type":       "section_end",
-				"run_id":     opts.RunID,
-				"section_id": s.Section.ID,
-				"aborted":    true,
-			})
-			return sum, ErrAborted
+			if aborted {
+				_ = opts.Writer.Emit(map[string]any{
+					"type":       "section_end",
+					"run_id":     opts.RunID,
+					"section_id": s.Section.ID,
+					"aborted":    true,
+				})
+				return sum, ErrAborted
+			}
 		}
 	}
 
@@ -162,6 +186,55 @@ func modeName(m Mode) string {
 		return "apply"
 	default:
 		return "unknown"
+	}
+}
+
+// runDryParallel : N workers consomment les rules, leurs résultats sont
+// rebuffered dans l'ordre original avant émission, pour préserver l'ordre
+// utile en debug (et l'UX si la GUI passe Parallel > 1, ce qu'elle ne fait
+// pas pour l'instant).
+//
+// Apply ne passe jamais ici (l'auto-rollback nécessite un ordre strict
+// pour décider d'aborter la section).
+func runDryParallel(ctx context.Context, rules []manifest.Rule, opts Options, timeout time.Duration, sum *Summary) {
+	n := opts.Parallel
+	if n > len(rules) {
+		n = len(rules)
+	}
+
+	type job struct {
+		idx  int
+		rule manifest.Rule
+	}
+	jobs := make(chan job, n*2)
+	results := make([]map[string]any, len(rules))
+	deltas := make([]Summary, len(rules))
+
+	var wg sync.WaitGroup
+	for w := 0; w < n; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := range jobs {
+				var local Summary
+				ev := runDry(ctx, j.rule, opts, timeout, &local)
+				results[j.idx] = ev
+				deltas[j.idx] = local
+			}
+		}()
+	}
+	for i, r := range rules {
+		jobs <- job{idx: i, rule: r}
+	}
+	close(jobs)
+	wg.Wait()
+
+	// Émission ordonnée + sommage des deltas.
+	for i, ev := range results {
+		_ = opts.Writer.Emit(ev)
+		sum.Skipped += deltas[i].Skipped
+		sum.Applied += deltas[i].Applied
+		sum.Failed += deltas[i].Failed
 	}
 }
 
