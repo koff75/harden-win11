@@ -29,7 +29,6 @@ desktop.ini
 *.dylib
 *.test
 *.out
-go.sum
 /dist/
 /build/
 __debug_bin*
