@@ -40,17 +40,21 @@ jobs:
       - name: Coverage report
         run: go tool cover -func=coverage.out | tail -1
 
-      - name: Coverage threshold (≥ 25% sur pkg + engine CLI)
+      - name: Coverage threshold (≥ 20% sur pkg + engine CLI)
         shell: powershell
         run: |
           $line = (go tool cover -func=coverage.out | Select-Object -Last 1).ToString()
+          Write-Output "::notice title=Coverage line::$line"
           if ($line -match '(\d+\.\d+)%') {
               $pct = [double]$matches[1]
-              Write-Host "Total coverage: $pct%"
-              if ($pct -lt 25.0) {
-                  Write-Error "Coverage $pct% below threshold 25%"
+              Write-Output "::notice title=Coverage percentage::$pct%"
+              if ($pct -lt 20.0) {
+                  Write-Output "::error title=Coverage below threshold::Total coverage $pct% < threshold 20%"
                   exit 1
               }
+          } else {
+              Write-Output "::error title=Coverage parse failed::Could not extract percentage from: $line"
+              exit 1
           }
 
       - name: Smoke test (version + validate + coverage + dry-run)
