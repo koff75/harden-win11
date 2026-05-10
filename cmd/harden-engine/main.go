@@ -935,8 +935,11 @@ func undoCmd() *cobra.Command {
 			}
 
 			var ok, failed int
-			// Inverse l'ordre : LIFO.
-			for i := len(toUndo) - 1; i >= 0; i-- {
+			// `toUndo` est deja en ordre LIFO : la boucle precedente lit les events
+			// en reverse, donc toUndo[0] = derniere rule appliquee. Iterer forward
+			// emet correctement en LIFO. (Avant : double inversion → FIFO bug,
+			// invisible en non-admin local mais detecte par le runner CI admin.)
+			for i := 0; i < len(toUndo); i++ {
 				u := toUndo[i]
 				ref, found := rulesByID[u.RuleID]
 				if !found {
