@@ -24,12 +24,12 @@ jobs:
       - name: go build
         run: go build -o dist/harden-engine.exe ./cmd/harden-engine
 
-      - name: go test (avec coverage + race detector)
-        env:
-          CGO_ENABLED: "1"
+      - name: go test (avec coverage)
+        # -race nécessite cgo + gcc. On ne l'active pas par défaut sur le runner
+        # Windows (pas de gcc préinstallé). Pour ré-activer : ajouter setup-mingw.
         # Coverage limitée au code business (pkg + engine CLI). Les `tools/`
         # et `cmd/harden-gui` (Wails — pas de tests Go) sont tirés du calcul.
-        run: go test ./pkg/... ./cmd/harden-engine/... -count=1 -timeout 10m -race -coverprofile=coverage.out
+        run: go test ./pkg/... ./cmd/harden-engine/... -count=1 -timeout 10m -coverprofile=coverage.out
 
       - name: Coverage report
         run: go tool cover -func=coverage.out | tail -1
@@ -213,11 +213,11 @@ jobs:
           go-version: '1.26'
           cache: true
 
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v8
         with:
           version: latest
-          # --timeout est défini dans .golangci.yml (run.timeout) et n'existe plus comme flag CLI en v2.
-          args: ""
+          # v8 de l'action supporte golangci-lint v2 (config en version: "2").
+          # --timeout est défini dans .golangci.yml (run.timeout).
 
   # Linux compile-only check : confirme que les build tags Windows-only
   # n'empêchent pas la compilation sur Linux (utile pour les contributors
