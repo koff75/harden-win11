@@ -41,3 +41,15 @@ __debug_bin*
 # Wails build artifacts
 /cmd/harden-gui/build/
 /cmd/harden-gui/frontend/wailsjs/
+
+# Secrets / credentials — ne jamais commit
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+credentials.json
+.gh-token
+.npmrc

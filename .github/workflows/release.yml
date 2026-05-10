@@ -24,13 +24,15 @@ jobs:
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
 
       - name: Build harden-engine.exe
+        # -trimpath retire le path absolu du runner (D:\a\...) du binaire,
+        # défense en profondeur pour ne rien fuiter de l'env de build.
         run: |
           $version = "${{ github.ref_name }}"
-          go build -ldflags "-X main.Version=$version" -o dist/harden-engine.exe ./cmd/harden-engine
+          go build -trimpath -ldflags "-X main.Version=$version" -o dist/harden-engine.exe ./cmd/harden-engine
 
       - name: Build harden-gui.exe (Wails)
         working-directory: cmd/harden-gui
-        run: wails build
+        run: wails build -trimpath
 
       - name: Smoke test
         run: |

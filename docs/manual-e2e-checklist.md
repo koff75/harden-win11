@@ -6,7 +6,7 @@ fonctionnent réellement avant un release. ~10 minutes.
 ## Prérequis
 
 1. PowerShell **élevée** (clic droit → Exécuter en tant qu'administrateur)
-2. `cd C:\Users\koff7\projet_hardening`
+2. `cd <chemin-vers-le-repo>` (le clone local de win11-hardening)
 
 ## 1. Test GUI avec admin
 

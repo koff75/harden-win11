@@ -22,7 +22,7 @@ jobs:
         run: go vet ./...
 
       - name: go build
-        run: go build -o dist/harden-engine.exe ./cmd/harden-engine
+        run: go build -trimpath -o dist/harden-engine.exe ./cmd/harden-engine
 
       - name: go test (avec coverage)
         # -race nécessite cgo + gcc. On ne l'active pas par défaut sur le runner
