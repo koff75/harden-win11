@@ -6,9 +6,9 @@
   "wailsjsdir": "frontend",
   "version": "0.1.0",
   "info": {
-    "productName": "harden-win11 GUI",
+    "productName": "Win11 Hardening",
     "productVersion": "0.1.0",
     "copyright": "WTFPL",
-    "comments": "GUI pour le moteur harden-win11 v2"
+    "comments": "Win11 Hardening — harden Windows 11 in 1 click, open source, fully reversible"
   }
 }

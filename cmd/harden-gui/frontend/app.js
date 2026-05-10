@@ -1,4 +1,4 @@
-// app.js — frontend de la GUI harden-win11.
+// app.js — frontend de la GUI Win11 Hardening.
 // Vanilla JS, pas de framework. Utilise window.go.main.App.* injecté par Wails.
 
 const $ = (sel) => document.querySelector(sel);
@@ -147,7 +147,7 @@ function showWatchlistModal(alerts) {
             <div class="cov-modal-content" style="max-width:840px">
                 <span class="cov-close" id="watchlist-modal-close">✕</span>
                 <h3>Anomalies Event Viewer post-apply</h3>
-                <p class="muted small">Détectées par la watchlist 24h après tes derniers apply. Si une source est en pic, c'est qu'une règle harden-win11 casse peut-être quelque chose que tu utilises.</p>
+                <p class="muted small">Détectées par la watchlist 24h après tes derniers apply. Si une source est en pic, c'est qu'une règle Win11 Hardening casse peut-être quelque chose que tu utilises.</p>
                 <table>
                     <thead><tr><th>Run</th><th>Source</th><th>Events</th><th>Pourquoi c'est suspect</th></tr></thead>
                     <tbody>${rows}</tbody>
@@ -250,17 +250,9 @@ async function refreshEngineInfo() {
     try {
         engineInfo = await window.go.main.App.GetEngineInfo();
     } catch (err) {
-        $('#engine-info').innerHTML = `<span style="color:#ff9099">init error: ${err}</span>`;
+        console.error('init error:', err);
         return;
     }
-    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
-    const adminLabel = engineInfo.isAdmin
-        ? '<span style="color:#aaffbb">admin ✓</span>'
-        : `<span style="color:#ff9099">${lang === 'en' ? 'non-admin (apply disabled)' : 'non-admin (apply désactivé)'}</span>`;
-    $('#engine-info').innerHTML =
-        `engine ${engineInfo.engineVersion} · manifest ${engineInfo.manifestVersion} · ${adminLabel}`;
-    $('#log-path').textContent = engineInfo.logPath ? `log: ${engineInfo.logPath}` : '';
-    $('#log-path').title = engineInfo.logPath || '';
     $('#modal-journal-dir').textContent = engineInfo.journalDir;
 
     if (!engineInfo.isAdmin) {

@@ -1,4 +1,4 @@
-// harden-engine est le moteur CLI v2 du projet harden-win11.
+// harden-engine est le moteur CLI du projet win11-hardening.
 package main
 
 import (
@@ -55,8 +55,8 @@ var (
 func main() {
 	rootCmd := &cobra.Command{
 		Use:   "harden-engine",
-		Short: "Windows 11 hardening engine",
-		Long:  "harden-engine — moteur de la baseline de sécurité Windows 11 v2.",
+		Short: "Win11 Hardening — engine for hardening Windows 11",
+		Long:  "Win11 Hardening — open-source engine that hardens Windows 11 against modern attacks. 95 rules mapped to CIS / ANSSI / Microsoft Security Baseline, fully reversible, with post-Windows-Update drift detection.",
 	}
 	rootCmd.PersistentFlags().StringVar(&flagManifestDir, "manifest-dir", "manifests", "Folder containing the YAML manifests")
 	rootCmd.PersistentFlags().StringVar(&flagSchemaPath, "schema", "schemas/manifest.schema.json", "Path to the JSONSchema")

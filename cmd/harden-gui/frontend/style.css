@@ -133,17 +133,23 @@ html, body {
 
 header {
     display: flex;
-    align-items: baseline;
-    gap: 12px;
-    padding: 12px 20px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
     background: #11192a;
     border-bottom: 1px solid #2c3a55;
+}
+
+header .brand-icon {
+    display: block;
+    flex: 0 0 auto;
 }
 
 header h1 {
     font-size: 18px;
     font-weight: 600;
     color: #4fc3ff;
+    letter-spacing: -0.2px;
 }
 
 header .spacer { flex: 1; }

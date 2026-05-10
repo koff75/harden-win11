@@ -20,7 +20,7 @@ func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:  "harden-win11 — GUI",
+		Title:  "Win11 Hardening",
 		Width:  1100,
 		Height: 750,
 		AssetServer: &assetserver.Options{

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tooltip mock</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+body{background:#1b2636;color:#e6e6e6;font-size:14px}
+
+header{display:flex;align-items:center;gap:10px;padding:10px 20px;background:#11192a;border-bottom:1px solid #2c3a55}
+header h1{font-size:18px;font-weight:600;color:#4fc3ff;letter-spacing:-0.2px}
+header .spacer{flex:1}
+.btn-lang{background:transparent;color:#9aa6bf;border:1px solid #2c3a55;padding:4px 10px;border-radius:4px;font-size:12px;cursor:pointer}
+.brand-icon{display:block}
+
+main{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 49px)}
+aside{padding:16px;border-right:1px solid #2c3a55;background:#15203a;color:#9aa6bf;font-size:13px;overflow-y:auto}
+aside h2{font-size:11px;text-transform:uppercase;color:#6b7a99;margin-bottom:8px;letter-spacing:0.5px;margin-top:12px}
+aside h2:first-child{margin-top:0}
+.profile-list .profile-item{padding:8px 10px;border:1px solid #2c3a55;border-radius:4px;margin-bottom:6px;cursor:pointer;line-height:1.4}
+.profile-list .profile-item.active{border-color:#4fc3ff;background:#1a2c4a}
+.profile-list strong{color:#e6e6e6;display:block;margin-bottom:2px}
+hr{border:0;border-top:1px solid #2c3a55;margin:10px 0}
+.section-row{padding:4px 0;color:#c4cfe5}
+
+#dashboard{padding:14px 20px;border-bottom:1px solid #2c3a55;display:flex;align-items:center;gap:14px;background:#1b2636}
+.dash-icon{font-size:20px}
+.dash-headline{font-weight:600;color:#e6e6e6}
+.dash-detail{color:#9aa6bf;font-size:13px}
+
+#filters{padding:10px 20px;border-bottom:1px solid #2c3a55;display:flex;align-items:center;gap:18px;font-size:12px;color:#9aa6bf}
+.filter-pill{padding:1px 7px;border-radius:9px;font-size:10px;font-weight:600}
+.filter-pill.critical{background:#5a1a22;color:#ffabb6}
+.filter-pill.important{background:#5a3a16;color:#ffd6a8}
+.filter-pill.nice-to-have{background:#1a3a4a;color:#9bd6e8}
+
+.results-table-wrap{padding:0 20px 20px;overflow:auto;position:relative}
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+thead th{text-align:left;padding:8px 10px;color:#6b7a99;text-transform:uppercase;font-size:11px;letter-spacing:0.5px;border-bottom:1px solid #2c3a55}
+tbody td{padding:11px 10px;border-bottom:1px solid #1f2c44;vertical-align:middle}
+tbody tr.hovered{background:#1a2540}
+.severity-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.critical{background:#5a1a22;color:#ffabb6}
+.important{background:#5a3a16;color:#ffd6a8}
+.nice{background:#1a3a4a;color:#9bd6e8}
+.status-pending{color:#9aa6bf}
+.status-toharden{color:#ffd6a8}
+.status-compliant{color:#9be8a8}
+
+/* Rich tooltip — that follows the cursor */
+.tooltip{position:absolute;background:#0e1525;border:1px solid #2c3a55;border-radius:6px;padding:14px 16px;width:380px;box-shadow:0 10px 30px rgba(0,0,0,0.5);z-index:100;font-size:13px;line-height:1.5}
+.tooltip-row{margin-bottom:10px}
+.tooltip-row:last-child{margin-bottom:0}
+.tooltip-label{display:block;color:#7e8db0;font-size:10px;text-transform:uppercase;letter-spacing:0.6px;font-weight:600;margin-bottom:3px}
+.tooltip-text{color:#e6e6e6}
+.tooltip-text strong{color:#ffd6a8}
+
+td.col-severity, td.col-rule{cursor:help}
+.rule-name{font-weight:500;color:#e6e6e6}
+.rule-id{color:#6b7a99;font-size:11px;margin-top:2px}
+
+.col-include{width:32px;text-align:center}
+.col-severity{width:90px}
+.col-rule{}
+.col-status{width:170px}
+.col-detail{width:230px}
+input[type=checkbox]{accent-color:#4fc3ff}
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="brand-icon" viewBox="0 0 256 256" width="28" height="28">
+    <defs>
+      <linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1B89E8"/><stop offset="100%" stop-color="#0561B8"/>
+      </linearGradient>
+      <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#34D27A"/><stop offset="100%" stop-color="#16A34A"/>
+      </linearGradient>
+    </defs>
+    <path d="M128 16 L224 48 L224 128 C224 188 184 224 128 240 C72 224 32 188 32 128 L32 48 Z" fill="url(#s)"/>
+    <text x="128" y="152" text-anchor="middle" font-family="-apple-system,Segoe UI" font-size="96" font-weight="800" fill="#fff" letter-spacing="-6">11</text>
+    <circle cx="200" cy="200" r="34" fill="url(#b)"/>
+    <path d="M184 200 L196 212 L218 188" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"/>
+  </svg>
+  <h1>Win11 Hardening</h1>
+  <span class="spacer"></span>
+  <button class="btn-lang">FR</button>
+</header>
+
+<main>
+  <aside>
+    <h2>Profile</h2>
+    <div class="profile-list">
+      <div class="profile-item active"><strong>Personal PC</strong>Home / personal usage</div>
+      <div class="profile-item"><strong>Office laptop</strong>Domain joined / managed</div>
+    </div>
+    <hr>
+    <h2>Sections</h2>
+    <div class="section-row">☑ Defender &amp; ASR (12)</div>
+    <div class="section-row">☑ Privacy &amp; telemetry (18)</div>
+    <div class="section-row">☑ Network protocols (9)</div>
+    <div class="section-row">☑ Office macros (6)</div>
+    <div class="section-row">☑ System hardening (14)</div>
+    <div class="section-row">☐ Bloatware (26)</div>
+  </aside>
+
+  <section>
+    <div id="dashboard">
+      <span class="dash-icon">⚠</span>
+      <span class="dash-headline">Your machine is OK on 47 points.</span>
+      <span class="dash-detail">23 improvements possible : 8 critical, 12 important, 3 optional.</span>
+    </div>
+
+    <div id="filters">
+      <span>Level:</span>
+      <span class="filter-pill critical">CRITICAL</span>
+      <span class="filter-pill important">IMPORTANT</span>
+      <span class="filter-pill nice-to-have">OPTIONAL</span>
+      <span style="margin-left:20px">State:</span>
+      <span>To harden · Compliant · Failed</span>
+    </div>
+
+    <div class="results-table-wrap">
+      <table>
+        <thead>
+          <tr><th class="col-include"></th><th class="col-severity">Level</th><th class="col-rule">Rule</th><th class="col-status">State</th><th class="col-detail">Proposed action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="col-include"><input type="checkbox" checked></td><td class="col-severity"><span class="severity-pill critical">CRITICAL</span></td><td class="col-rule"><div class="rule-name">Block Office macros from internet</div><div class="rule-id">office.macros_block_internet</div></td><td class="col-status status-compliant">OK (already compliant)</td><td>—</td></tr>
+          <tr class="hovered"><td class="col-include"><input type="checkbox" checked></td><td class="col-severity"><span class="severity-pill critical">CRITICAL</span></td><td class="col-rule"><div class="rule-name">Disable SMBv1 (legacy file sharing)</div><div class="rule-id">network.smbv1_disable</div></td><td class="col-status status-toharden">To harden</td><td>Disable</td></tr>
+          <tr><td class="col-include"><input type="checkbox" checked></td><td class="col-severity"><span class="severity-pill critical">CRITICAL</span></td><td class="col-rule"><div class="rule-name">Defender Cloud-delivered protection</div><div class="rule-id">defender.cloud_protection</div></td><td class="col-status status-toharden">To harden</td><td>Activate protection</td></tr>
+          <tr><td class="col-include"><input type="checkbox" checked></td><td class="col-severity"><span class="severity-pill important">IMPORTANT</span></td><td class="col-rule"><div class="rule-name">Disable WPAD auto-discovery</div><div class="rule-id">network.wpad_off</div></td><td class="col-status status-toharden">To harden</td><td>Disable</td></tr>
+          <tr><td class="col-include"><input type="checkbox" checked></td><td class="col-severity"><span class="severity-pill important">IMPORTANT</span></td><td class="col-rule"><div class="rule-name">Disable LLMNR (legacy name resolution)</div><div class="rule-id">network.llmnr_off</div></td><td class="col-status status-toharden">To harden</td><td>Disable</td></tr>
+          <tr><td class="col-include"><input type="checkbox" checked></td><td class="col-severity"><span class="severity-pill nice">OPTIONAL</span></td><td class="col-rule"><div class="rule-name">Hide advertising ID</div><div class="rule-id">privacy.advertising_id</div></td><td class="col-status status-toharden">To harden</td><td>Block</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Tooltip rendered next to the hovered row -->
+      <div class="tooltip" style="left:560px;top:75px">
+        <div class="tooltip-row">
+          <span class="tooltip-label">Today</span>
+          <div class="tooltip-text">A 30-year-old file sharing system (SMBv1) is still on your PC. <strong>WannaCry and NotPetya</strong> used it to spread.</div>
+        </div>
+        <div class="tooltip-row">
+          <span class="tooltip-label">If you activate</span>
+          <div class="tooltip-text">That old system is off. Your PC only speaks the modern (encrypted) versions of the protocol.</div>
+        </div>
+        <div class="tooltip-row">
+          <span class="tooltip-label">For whom</span>
+          <div class="tooltip-text">Everyone, unless you have a NAS from before 2012 or a printer from the era of Windows XP.</div>
+        </div>
+        <div class="tooltip-row">
+          <span class="tooltip-label">What might bother you</span>
+          <div class="tooltip-text">If a network share stops working, it was on SMBv1. Update the device or whitelist its IP — but rare in 2026.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

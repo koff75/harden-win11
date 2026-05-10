@@ -84,10 +84,10 @@ gh repo edit \
   --add-topic devsecops
 
 # Description visible en haut du repo (EN — vise audience internationale) :
-gh repo edit --description "🛡️ Harden Windows 11 in 1 click. 95 security rules explained in plain English, fully reversible, mapped to CIS / ANSSI / MS Baseline. Detects post-Windows-Update drift. CLI + GUI. EN/FR."
+gh repo edit --description "🛡️ Win11 Hardening — Harden Windows 11 in 1 click. Open-source GUI app: 95 security rules explained in plain English, fully reversible, mapped to CIS / ANSSI / MS Baseline. Detects post-Windows-Update drift. EN/FR."
 ```
 
-Sinon **manuellement** sur https://github.com/koff75/harden-win11/settings (icône engrenage en haut à droite du repo) :
+Sinon **manuellement** sur https://github.com/koff75/win11-hardening/settings (icône engrenage en haut à droite du repo) :
 - Description : copie le texte ci-dessus
 - Topics : ajoute la liste ci-dessus
 - Website : optionnel (un site Vercel/Netlify avec démo si tu veux)
