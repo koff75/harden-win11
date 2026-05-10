@@ -25,28 +25,28 @@ jobs:
         run: go build -trimpath -o dist/harden-engine.exe ./cmd/harden-engine
 
       - name: go test (avec coverage)
-        # Coverage limitée au business code. -v + tail capturé en annotation
-        # publique via ::error:: si le test fail (logs non accessibles sans auth).
-        shell: powershell
+        # bash shell pour éviter le parsing PS 5.1 qui mange le = dans -coverprofile=...
+        # Tail capturé en annotation publique si fail (logs non accessibles sans auth).
+        shell: bash
         run: |
-          go test -v ./pkg/... ./cmd/harden-engine/... -count=1 -timeout 10m -coverprofile=coverage.out 2>&1 | Tee-Object -FilePath gotest.log
-          $code = $LASTEXITCODE
-          if ($code -ne 0) {
-              $tail = (Get-Content gotest.log -Tail 60) -join "%0A"
-              Write-Output "::error title=go test failure (last 60 lines)::$tail"
-              exit $code
-          }
+          set +e
+          go test -v ./pkg/... ./cmd/harden-engine/... -count=1 -timeout 10m -coverprofile=coverage.out 2>&1 | tee gotest.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            tail=$(tail -n 60 gotest.log | sed 's/$/%0A/' | tr -d '\n')
+            echo "::error title=go test failure (last 60 lines)::$tail"
+            exit "$code"
+          fi
 
       - name: Coverage report
-        shell: powershell
+        shell: bash
         run: |
-          $line = (go tool cover -func=coverage.out | Select-Object -Last 1).ToString()
-          Write-Host "Coverage line: $line"
-          # Affiche aussi le % en annotation visible dans l'UI Actions.
-          if ($line -match '(\d+\.\d+)%') {
-              $pct = $matches[1]
-              Write-Output "::warning title=Test coverage::Total coverage : $pct% (informatif — pas de seuil bloquant pour le moment)"
-          }
+          line=$(go tool cover -func=coverage.out | tail -n 1)
+          echo "Coverage line: $line"
+          pct=$(echo "$line" | grep -oE '[0-9]+\.[0-9]+%' | tail -1)
+          if [ -n "$pct" ]; then
+            echo "::warning title=Test coverage::Total coverage : $pct (informatif — pas de seuil bloquant)"
+          fi
 
       - name: Smoke test (version + validate + coverage + dry-run)
         run: |
