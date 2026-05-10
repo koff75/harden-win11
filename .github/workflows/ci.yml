@@ -25,12 +25,17 @@ jobs:
         run: go build -trimpath -o dist/harden-engine.exe ./cmd/harden-engine
 
       - name: go test (avec coverage)
-        # -race nécessite cgo + gcc. On ne l'active pas par défaut sur le runner
-        # Windows (pas de gcc préinstallé). Pour ré-activer : ajouter setup-mingw.
-        # Coverage limitée au code business (pkg + engine CLI). Les `tools/`
-        # et `cmd/harden-gui` (Wails — pas de tests Go) sont tirés du calcul.
-        # -v : verbose pour voir quel test plante (jamais reproductible localement).
-        run: go test -v ./pkg/... ./cmd/harden-engine/... -count=1 -timeout 10m -coverprofile=coverage.out
+        # Coverage limitée au business code. -v + tail capturé en annotation
+        # publique via ::error:: si le test fail (logs non accessibles sans auth).
+        shell: powershell
+        run: |
+          go test -v ./pkg/... ./cmd/harden-engine/... -count=1 -timeout 10m -coverprofile=coverage.out 2>&1 | Tee-Object -FilePath gotest.log
+          $code = $LASTEXITCODE
+          if ($code -ne 0) {
+              $tail = (Get-Content gotest.log -Tail 60) -join "%0A"
+              Write-Output "::error title=go test failure (last 60 lines)::$tail"
+              exit $code
+          }
 
       - name: Coverage report
         run: go tool cover -func=coverage.out | tail -1
@@ -109,23 +114,23 @@ jobs:
           Get-ChildItem manifests/ -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.Name)" }
           Write-Host "Engine actions sample:"
           Get-ChildItem engine/actions/ -Recurse -Filter *.ps1 -ErrorAction SilentlyContinue | Select-Object -First 5 | ForEach-Object { Write-Host "  $($_.FullName.Replace((Get-Location).Path, '.'))" }
-      - name: Run audit-coherence (with verbose error catching)
+      - name: Run audit-coherence (annotations publiques)
         shell: powershell
         run: |
           try {
-              .\tools\audit-coherence.ps1
+              .\tools\audit-coherence.ps1 2>&1 | Tee-Object -FilePath audit.log
               $code = $LASTEXITCODE
           } catch {
-              Write-Host "EXCEPTION caught:" -ForegroundColor Red
-              Write-Host $_.Exception.Message
-              Write-Host $_.ScriptStackTrace
+              $msg = "$($_.Exception.Message)%0A$($_.ScriptStackTrace)"
+              Write-Output "::error title=audit-coherence threw exception::$msg"
               exit 99
           }
-          Write-Host "audit-coherence script returned: $code"
           if ($code -ne 0) {
-              Write-Error "audit-coherence: exit $code"
+              $tail = (Get-Content audit.log -Tail 30) -join "%0A"
+              Write-Output "::error title=audit-coherence exit $code (last 30 lines)::$tail"
               exit $code
           }
+          Write-Host "audit-coherence script returned: 0"
 
   build-gui:
     name: Build GUI (Wails)
