@@ -29,7 +29,8 @@ jobs:
         # Windows (pas de gcc préinstallé). Pour ré-activer : ajouter setup-mingw.
         # Coverage limitée au code business (pkg + engine CLI). Les `tools/`
         # et `cmd/harden-gui` (Wails — pas de tests Go) sont tirés du calcul.
-        run: go test ./pkg/... ./cmd/harden-engine/... -count=1 -timeout 10m -coverprofile=coverage.out
+        # -v : verbose pour voir quel test plante (jamais reproductible localement).
+        run: go test -v ./pkg/... ./cmd/harden-engine/... -count=1 -timeout 10m -coverprofile=coverage.out
 
       - name: Coverage report
         run: go tool cover -func=coverage.out | tail -1
@@ -99,13 +100,31 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run audit-coherence
+      - name: Debug environment
         shell: powershell
         run: |
-          .\tools\audit-coherence.ps1
-          if ($LASTEXITCODE -ne 0) {
-              Write-Error "audit-coherence: exit $LASTEXITCODE — voir output ci-dessus"
-              exit $LASTEXITCODE
+          Write-Host "PSVersion: $($PSVersionTable.PSVersion)"
+          Write-Host "PWD: $(Get-Location)"
+          Write-Host "Manifests:"
+          Get-ChildItem manifests/ -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $($_.Name)" }
+          Write-Host "Engine actions sample:"
+          Get-ChildItem engine/actions/ -Recurse -Filter *.ps1 -ErrorAction SilentlyContinue | Select-Object -First 5 | ForEach-Object { Write-Host "  $($_.FullName.Replace((Get-Location).Path, '.'))" }
+      - name: Run audit-coherence (with verbose error catching)
+        shell: powershell
+        run: |
+          try {
+              .\tools\audit-coherence.ps1
+              $code = $LASTEXITCODE
+          } catch {
+              Write-Host "EXCEPTION caught:" -ForegroundColor Red
+              Write-Host $_.Exception.Message
+              Write-Host $_.ScriptStackTrace
+              exit 99
+          }
+          Write-Host "audit-coherence script returned: $code"
+          if ($code -ne 0) {
+              Write-Error "audit-coherence: exit $code"
+              exit $code
           }
 
   build-gui:
