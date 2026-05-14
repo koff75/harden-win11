@@ -81,6 +81,13 @@ Tu peux les laisser (utile en cas de problème futur) ou les supprimer via
 
 ---
 
-**Critère de validation E2E** : tous les ☐ cochés. Si quelque chose foire,
-copie le contenu de `%LOCALAPPDATA%\Harden-Win11\gui.log` et le dernier
-NDJSON du journal.
+**Critère de validation E2E** : tous les ☐ cochés. Si quelque chose foire :
+
+```powershell
+.\tools\collect-debug.ps1
+```
+
+Ça génère `debug-bundles\debug-bundle-YYYY-MM-DD-HHMM.zip` (anonymisé : remplace
+ton username et le nom du PC par `<user>`/`<pc>`). Le bundle contient le tail
+de `gui.log`, les 3 derniers NDJSON, la sortie de `harden-engine version|validate|coverage`,
+et un `sysinfo.json` (OS, RAM, CPU, admin oui/non). Partage le ZIP pour analyse.

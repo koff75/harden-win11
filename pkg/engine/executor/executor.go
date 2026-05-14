@@ -343,6 +343,33 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 	totalDur := time.Since(actionStart) + testDur
 	ev["duration_ms"] = totalDur.Milliseconds()
 
+	// Si l'action a retourne explicitement ok=false dans son JSON (sans crash
+	// PS), on traite comme un echec metier propre — l'action a detecte qu'elle
+	// ne pouvait pas faire son boulot (ex: feature non supportee sur cette
+	// edition Windows, dependance manuelle requise). Pas de post-apply test
+	// dans ce cas (l'action n'a rien modifie), pas non plus de rollback.
+	if actionErr == nil {
+		if okVal, hasOk := actionOut["ok"]; hasOk {
+			if okBool, isBool := okVal.(bool); isBool && !okBool {
+				ev["status"] = "failed"
+				if msg, ok := actionOut["error"].(string); ok && msg != "" {
+					ev["error"] = msg
+				} else {
+					ev["error"] = "action returned ok=false without error message"
+				}
+				if before, ok := actionOut["before"]; ok {
+					ev["before"] = before
+				}
+				if after, ok := actionOut["after"]; ok {
+					ev["after"] = after
+				}
+				ev["rollback"] = "not_attempted (action did not modify system)"
+				sum.Failed++
+				return ev, false // continue avec les regles suivantes
+			}
+		}
+	}
+
 	// Re-test post-apply : double barrière indépendante. Une action qui retourne
 	// ok=true peut quand même n'avoir rien changé si une GPO ré-écrase, ou si la
 	// règle ment. On relance .test.ps1 ; si non-conforme malgré ok=true → on
@@ -380,11 +407,15 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 	ev["status"] = "failed"
 
 	// Tenter auto-rollback. Best-effort : si la rule est irreversible ou n'a pas
-	// d'undo, on ne peut rien faire, on remonte juste l'erreur.
+	// d'undo, on ne peut rien faire. Mais on CONTINUE avec les regles suivantes
+	// plutot que d'aborter tout le run — le rollback "skipped" signifie juste
+	// qu'on n'a pas pu restaurer cette rule specifique, pas que le systeme est
+	// dans un etat instable. Coherent avec la philosophie "rollback ok = safe
+	// to continue" appliquee plus bas.
 	if rule.Undo == "" || rule.Irreversible {
 		ev["rollback"] = "skipped (rule is irreversible or has no undo)"
 		sum.Failed++
-		return ev, true
+		return ev, false
 	}
 
 	// Le before pour le rollback : on prend en priorité actionOut.before (capturé
@@ -429,15 +460,24 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 		rollbackEv["error"] = undoErr.Error()
 		ev["rollback"] = "failed"
 		sum.Failed++
-	} else {
-		rollbackEv["status"] = "rollback_ok"
-		ev["rollback"] = "ok"
-		ev["status"] = "rolled_back"
-		sum.RolledBack++
+		_ = opts.Writer.Emit(rollbackEv)
+		// Rollback failed → état système inconnu, on aborte pour eviter
+		// de continuer à modifier un système instable.
+		return ev, true
 	}
+
+	rollbackEv["status"] = "rollback_ok"
+	ev["rollback"] = "ok"
+	ev["status"] = "rolled_back"
+	sum.RolledBack++
 	_ = opts.Writer.Emit(rollbackEv)
 
-	return ev, true // abort le run global
+	// Rollback réussi → état pré-apply restauré, safe de continuer avec les
+	// règles suivantes. L'user verra X lignes "Modif annulée" + tout le reste
+	// appliqué — plus utile que tout stopper sur la première (qui peut etre
+	// symptomatique d'un Tamper Protection, GPO, etc. qui affecte tout un
+	// pan, mais pas le reste).
+	return ev, false
 }
 
 func baseEvent(rule manifest.Rule, opts Options, mode string) map[string]any {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -111,8 +110,9 @@ func TestRun_ApplyMode_RecheckFails(t *testing.T) {
 		Writer:   w,
 		RunID:    "test-apply-recheck-fails",
 	})
-	if !errors.Is(err, ErrAborted) {
-		t.Fatalf("expected ErrAborted, got %v", err)
+	// Nouveau comportement (mai 2026) : rollback OK → on continue, pas d'abort.
+	if err != nil {
+		t.Fatalf("expected no error (rollback ok → continue), got %v", err)
 	}
 	if summary.RolledBack != 1 {
 		t.Errorf("expected RolledBack=1 (recheck triggered rollback), got %+v", summary)
@@ -132,7 +132,9 @@ func TestRun_ApplyMode_RecheckFails(t *testing.T) {
 }
 
 // TestRun_ApplyMode_RollbackOnFail vérifie qu'une action qui plante déclenche
-// le rollback via .undo.ps1, émet un rollback_result, et retourne ErrAborted.
+// le rollback via .undo.ps1, émet un rollback_result, et — depuis mai 2026 —
+// CONTINUE avec les règles suivantes (au lieu d'aborter). Rollback OK = état
+// restauré = safe de continuer.
 func TestRun_ApplyMode_RollbackOnFail(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows only")
@@ -149,8 +151,9 @@ func TestRun_ApplyMode_RollbackOnFail(t *testing.T) {
 		Writer:   w,
 		RunID:    "test-apply-rollback",
 	})
-	if !errors.Is(err, ErrAborted) {
-		t.Fatalf("expected ErrAborted, got %v", err)
+	// Nouveau comportement : rollback réussi → pas d'abort, on continue.
+	if err != nil {
+		t.Fatalf("expected no error (rollback ok → continue), got %v", err)
 	}
 	if summary.RolledBack != 1 {
 		t.Errorf("expected RolledBack=1, got %+v", summary)
@@ -161,7 +164,7 @@ func TestRun_ApplyMode_RollbackOnFail(t *testing.T) {
 
 	events := parseEvents(t, buf.Bytes())
 
-	var sawActionFail, sawRollback, sawSectionEndAborted bool
+	var sawActionFail, sawRollback bool
 	for _, ev := range events {
 		if ev["type"] == "action_result" && ev["rule_id"] == "fixture.fail" {
 			sawActionFail = true
@@ -175,18 +178,13 @@ func TestRun_ApplyMode_RollbackOnFail(t *testing.T) {
 				t.Errorf("expected rollback status=rollback_ok, got %v", ev["status"])
 			}
 		}
-		if ev["type"] == "section_end" && ev["aborted"] == true {
-			sawSectionEndAborted = true
-		}
+		// Plus de section_end aborted=true attendu : rollback OK ne stoppe plus.
 	}
 	if !sawActionFail {
 		t.Error("did not see action_result for fixture.fail")
 	}
 	if !sawRollback {
 		t.Error("did not see rollback_result event")
-	}
-	if !sawSectionEndAborted {
-		t.Error("did not see section_end with aborted=true")
 	}
 }
 

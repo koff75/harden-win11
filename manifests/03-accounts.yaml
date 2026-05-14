@@ -10,7 +10,8 @@ section:
   description_en: "Disable rarely-used default accounts and rename the built-in Administrator."
 rules:
   - id: accounts.disable_unused
-    title: "Désactiver les comptes Administrator / Guest / WsiAccount / DefaultAccount"
+    title: "Désactiver les comptes inutiles (Administrator, Invité, etc.)"
+    title_en: "Disable unused accounts (Administrator, Guest, etc.)"
     description: "Désactive les comptes locaux Windows par défaut peu ou pas utilisés."
     explanation: |
       Win11 Home crée plusieurs comptes système (Administrator, Guest, WsiAccount,
@@ -45,7 +46,8 @@ rules:
       - maximal
 
   - id: accounts.rename_admin
-    title: "Renommer le compte SID-500 (Administrator built-in)"
+    title: "Renommer le compte Administrator (rend les attaques plus difficiles)"
+    title_en: "Rename the Administrator account (makes attacks harder)"
     description: "Renomme 'Administrator' en 'AdminLocal_<COMPUTERNAME>' pour casser les attaques par nom."
     explanation: |
       Le compte SID-500 est le compte super-administrateur built-in (souvent

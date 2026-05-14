@@ -3,14 +3,15 @@ version: "1.0"
 section:
   id: asr
   order: 8
-  title: "Attack Surface Reduction (ASR)"
+  title: "Protections anti-malware avancées (ASR)"
   description: "Règles Defender qui bloquent des comportements offensifs courants (Office macros, LSASS dump, scripts obfusqués, USB, WMI, ransomware)."
 
-  title_en: "Attack Surface Reduction (ASR)"
+  title_en: "Advanced anti-malware protections (ASR)"
   description_en: "Defender rules that block common offensive behaviors (Office macros, LSASS dump, obfuscated scripts, USB, WMI, ransomware)."
 rules:
   - id: asr.block_office_child_processes
-    title: "Block Office apps from creating child processes"
+    title: "Empêcher Office de lancer d'autres programmes"
+    title_en: "Prevent Office from launching other programs"
     description: "ASR rule D4F940AB-401B-4EFC-AADC-AD5F3C50688A en mode Block."
     explanation: |
       ASR rule 'Block Office apps from creating child processes'.
@@ -43,7 +44,8 @@ rules:
       - business
       - maximal
   - id: asr.block_office_executable_content
-    title: "Block Office apps from creating executable content"
+    title: "Empêcher Office de créer des fichiers exécutables"
+    title_en: "Prevent Office from creating executable files"
     description: "ASR rule 3B576869-A4EC-4529-8536-B80A7769E899 en mode Block."
     explanation: |
       ASR rule 'Block Office apps from creating executable content'.
@@ -77,7 +79,8 @@ rules:
       - business
       - maximal
   - id: asr.block_office_code_injection
-    title: "Block Office apps from injecting code into other processes"
+    title: "Empêcher Office d'injecter du code dans d'autres logiciels"
+    title_en: "Prevent Office from injecting code into other software"
     description: "ASR rule 75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84 en mode Block."
     explanation: |
       ASR rule 'Block Office apps from injecting code into other processes'.
@@ -110,7 +113,8 @@ rules:
       - business
       - maximal
   - id: asr.block_office_comm_child_processes
-    title: "Block Office communication apps from creating child processes"
+    title: "Empêcher Outlook/Teams de lancer d'autres programmes"
+    title_en: "Prevent Outlook/Teams from launching other programs"
     description: "ASR rule 26190899-1602-49E8-8B27-EB1D0A1CE869 en mode Block."
     explanation: |
       ASR rule 'Block Office communication apps from creating child processes'.
@@ -143,7 +147,8 @@ rules:
       - business
       - maximal
   - id: asr.block_win32_api_office_macros
-    title: "Block Win32 API calls from Office macros"
+    title: "Empêcher les macros Office d'utiliser les API Windows"
+    title_en: "Prevent Office macros from calling Windows APIs"
     description: "ASR rule 92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B en mode Block."
     explanation: |
       ASR rule 'Block Win32 API calls from Office macros'.
@@ -176,7 +181,8 @@ rules:
       - business
       - maximal
   - id: asr.block_email_executable_content
-    title: "Block executable content from email/webmail"
+    title: "Bloquer les fichiers exécutables reçus par mail"
+    title_en: "Block executable files received by email"
     description: "ASR rule BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550 en mode Block."
     explanation: |
       ASR rule 'Block executable content from email/webmail'.
@@ -209,7 +215,8 @@ rules:
       - business
       - maximal
   - id: asr.block_obfuscated_scripts
-    title: "Block execution of potentially obfuscated scripts"
+    title: "Bloquer les scripts cachés ou obfusqués"
+    title_en: "Block hidden or obfuscated scripts"
     description: "ASR rule 5BEB7EFE-FD9A-4556-801D-275E5FFC04CC en mode Block."
     explanation: |
       ASR rule 'Block execution of potentially obfuscated scripts'.
@@ -242,7 +249,8 @@ rules:
       - business
       - maximal
   - id: asr.block_js_vbs_launch
-    title: "Block JS/VBS from launching downloaded executable"
+    title: "Empêcher JavaScript/VBScript de lancer des téléchargements"
+    title_en: "Prevent JavaScript/VBScript from launching downloads"
     description: "ASR rule D3E037E1-3EB8-44C8-A917-57927947596D en mode Block."
     explanation: |
       ASR rule 'Block JS/VBS from launching downloaded executable'.
@@ -275,7 +283,8 @@ rules:
       - business
       - maximal
   - id: asr.block_lsass_credential_theft
-    title: "Block credential stealing from LSASS"
+    title: "Bloquer le vol de mots de passe Windows (LSASS)"
+    title_en: "Block theft of Windows passwords (LSASS)"
     description: "ASR rule 9E6C4E1F-7D60-472F-BA1A-A39EF669E4B2 en mode Block."
     explanation: |
       ASR rule 'Block credential stealing from LSASS'.
@@ -309,7 +318,8 @@ rules:
       - business
       - maximal
   - id: asr.block_unsigned_usb
-    title: "Block untrusted/unsigned processes from USB"
+    title: "Bloquer les programmes non signés sur clés USB"
+    title_en: "Block unsigned programs on USB drives"
     description: "ASR rule B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4 en mode Block."
     explanation: |
       ASR rule 'Block untrusted/unsigned processes from USB'.
@@ -343,7 +353,8 @@ rules:
     breaks:
       - "Outils portables non signes sur cle USB (utilitaires admin, scripts custom)."
   - id: asr.block_wmi_persistence
-    title: "Block persistence through WMI event subscription"
+    title: "Bloquer la persistance via WMI (technique d'attaque)"
+    title_en: "Block persistence via WMI (attack technique)"
     description: "ASR rule E6DB77E5-3DF2-4CF1-B95A-636979351E5B en mode Block."
     explanation: |
       ASR rule 'Block persistence through WMI event subscription'.
@@ -376,7 +387,8 @@ rules:
       - business
       - maximal
   - id: asr.block_psexec_wmi
-    title: "Block process creations from PSExec/WMI commands"
+    title: "Bloquer les commandes distantes (PSExec/WMI)"
+    title_en: "Block remote commands (PSExec/WMI)"
     description: "ASR rule D1E49AAC-8F56-4280-B9BA-993A6D77406C en mode Block."
     explanation: |
       ASR rule 'Block process creations from PSExec/WMI commands'.
@@ -409,7 +421,8 @@ rules:
     breaks:
       - "PsExec utilise pour administration distante (Sysadmin / IT). Casse les outils Sysinternals en usage admin legitime."
   - id: asr.block_unprevalent_executables
-    title: "Block executables unless prevalent/aged/trusted"
+    title: "Bloquer les .exe inconnus, récents ou non signés"
+    title_en: "Block unknown, recent or unsigned .exe files"
     description: "ASR rule 01443614-CD74-433A-B99E-2ECDC07BFC25 en mode Block."
     explanation: |
       ASR rule 'Block executables unless prevalent/aged/trusted'.
@@ -442,7 +455,8 @@ rules:
     breaks:
       - "Executables peu communs (apps internes, builds dev, scripts metier). Faux positifs frequents en environnement developpement."
   - id: asr.advanced_ransomware_protection
-    title: "Use advanced protection against ransomware"
+    title: "Protection avancée contre les rançongiciels"
+    title_en: "Advanced ransomware protection"
     description: "ASR rule C1DB55AB-C21A-4637-BB3F-A12568109D35 en mode Block."
     explanation: |
       ASR rule 'Use advanced protection against ransomware'.
@@ -475,7 +489,8 @@ rules:
       - business
       - maximal
   - id: asr.block_adobe_reader_child
-    title: "Block Adobe Reader from creating child processes"
+    title: "Empêcher Adobe Reader de lancer d'autres programmes"
+    title_en: "Prevent Adobe Reader from launching other programs"
     description: "ASR rule 7674BA52-37EB-4A4F-A9A1-F0F9A1619A2C en mode Block."
     explanation: |
       ASR rule 'Block Adobe Reader from creating child processes'.
@@ -508,7 +523,8 @@ rules:
       - business
       - maximal
   - id: asr.block_vulnerable_drivers
-    title: "Block abuse of exploited vulnerable signed drivers"
+    title: "Bloquer les pilotes signés mais vulnérables"
+    title_en: "Block signed but vulnerable drivers"
     description: "ASR rule 56A863A9-875E-4185-98A7-B882C64B5CE5 en mode Block."
     explanation: |
       ASR rule 'Block abuse of exploited vulnerable signed drivers'.
@@ -541,7 +557,8 @@ rules:
       - business
       - maximal
   - id: asr.block_safe_mode_reboot
-    title: "Block rebooting machine in Safe Mode"
+    title: "Bloquer le redémarrage en mode sans échec (anti-attaque)"
+    title_en: "Block reboot into Safe Mode (anti-attack)"
     description: "ASR rule 33DDEDF1-C6E0-47CB-833E-DE6133960387 en mode Block."
     explanation: |
       ASR rule 'Block rebooting machine in Safe Mode'.
@@ -575,7 +592,8 @@ rules:
     breaks:
       - "Reboot en Safe Mode bloque (par ex. via msconfig). Affecte les troubleshooting workflows."
   - id: asr.block_impersonated_tools
-    title: "Block use of copied/impersonated system tools"
+    title: "Bloquer les outils système copiés ou usurpés"
+    title_en: "Block copied or impersonated system tools"
     description: "ASR rule C0033C00-D16D-4114-A5A0-DC9B3A7D2CEB en mode Block."
     explanation: |
       ASR rule 'Block use of copied/impersonated system tools'.
@@ -608,7 +626,8 @@ rules:
       - business
       - maximal
   - id: asr.block_webshell_servers
-    title: "Block Webshell creation for Servers"
+    title: "Bloquer la création de Webshells (pour serveurs)"
+    title_en: "Block Webshell creation (for servers)"
     description: "ASR rule A8F5898E-1DC8-49A9-9878-85004B8A61E6 en mode Block."
     explanation: |
       ASR rule 'Block Webshell creation for Servers'.

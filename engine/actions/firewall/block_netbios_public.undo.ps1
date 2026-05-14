@@ -9,10 +9,12 @@ $names = @(
     'Block NetBIOS TCP Inbound (Public) [Hardening]'
 )
 
+# Les crochets [ ] dans le DisplayName sont interpretes comme wildcards par
+# Get/Remove-NetFirewallRule -DisplayName. On filtre via Where-Object pour
+# matcher litteralement, et on supprime par Name (GUID) qui est stable.
 foreach ($n in $names) {
-    if (Get-NetFirewallRule -DisplayName $n -ErrorAction SilentlyContinue) {
-        Remove-NetFirewallRule -DisplayName $n
-    }
+    $rules = @(Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $n })
+    foreach ($r in $rules) { Remove-NetFirewallRule -Name $r.Name -ErrorAction SilentlyContinue }
 }
 
 @{ ok = $true } | ConvertTo-Json -Compress

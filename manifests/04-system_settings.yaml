@@ -3,14 +3,15 @@ version: "1.0"
 section:
   id: system_settings
   order: 4
-  title: "UAC, RDP, Power"
+  title: "Sécurité système (UAC, RDP, démarrage)"
   description: "Renforcement UAC, désactivation RDP, et économie disque (hibernation/fast startup)."
 
-  title_en: "UAC, RDP, Power"
+  title_en: "System security (UAC, RDP, startup)"
   description_en: "User Account Control, Remote Desktop, hibernation — settings that make a real difference for everyday safety."
 rules:
   - id: system_settings.uac_enable_lua
-    title: "UAC : EnableLUA = 1"
+    title: "UAC activé (demande d'autorisation pour les changements)"
+    title_en: "UAC enabled (prompts for permission on changes)"
     description: "Active globalement le filtrage LUA (base technique d'UAC)."
     explanation: |
       EnableLUA=1 est la racine d'UAC. À 0, UAC est entièrement désactivé
@@ -42,7 +43,8 @@ rules:
       - maximal
 
   - id: system_settings.uac_consent_admin
-    title: "UAC : ConsentPromptBehaviorAdmin = 5"
+    title: "UAC : demande de confirmation pour les admins"
+    title_en: "UAC: prompt admins for confirmation"
     description: "Prompt admin sur secure desktop pour les escalades."
     explanation: |
       Valeur 5 = "Prompt for consent on the secure desktop". Le secure desktop
@@ -85,7 +87,8 @@ rules:
       - maximal
 
   - id: system_settings.uac_prompt_secure_desktop
-    title: "UAC : PromptOnSecureDesktop = 1"
+    title: "UAC : utiliser le bureau sécurisé (anti-spoofing)"
+    title_en: "UAC: use secure desktop (anti-spoofing)"
     description: "Force tous les prompts UAC à apparaître sur le secure desktop."
     explanation: |
       Renforce ConsentPromptBehaviorAdmin en s'assurant que tous les prompts
@@ -126,7 +129,8 @@ rules:
       - maximal
 
   - id: system_settings.uac_deny_user_elevation
-    title: "UAC : ConsentPromptBehaviorUser = 0 (refuser élévation user)"
+    title: "UAC : empêcher les non-admins de gagner des privilèges"
+    title_en: "UAC: prevent non-admins from gaining privileges"
     description: "Refuse silencieusement toute tentative d'élévation depuis un compte standard."
     explanation: |
       Valeur 0 = "Automatically deny elevation requests". Si un user standard
@@ -167,7 +171,8 @@ rules:
       - "Le mode Run as administrator depuis un compte standard ne fonctionne plus. Sur PC perso (compte unique = admin), aucun impact."
 
   - id: system_settings.rdp_disable
-    title: "RDP : fDenyTSConnections = 1 (désactivation RDP)"
+    title: "Désactiver le Bureau à distance (RDP)"
+    title_en: "Disable Remote Desktop (RDP)"
     description: "Refuse les connexions Remote Desktop entrantes."
     explanation: |
       RDP exposé sur Internet est l'un des vecteurs principaux de ransomware
@@ -211,7 +216,8 @@ rules:
       - "Connexion RDP entrante (impossible de se connecter via Bureau a distance). Si tu utilises RDP pour le support distant, laisser active."
 
   - id: system_settings.rdp_firewall_disable
-    title: "RDP : firewall rules 'Remote Desktop' désactivées"
+    title: "Pare-feu : règles Bureau à distance désactivées"
+    title_en: "Firewall: Remote Desktop rules disabled"
     description: "Désactive les rules firewall du groupe Remote Desktop (defense-in-depth)."
     explanation: |
       Belt-and-suspenders avec system_settings.rdp_disable. Même si une
@@ -252,7 +258,8 @@ rules:
       - "Idem rdp_disable : ports firewall RDP fermes."
 
   - id: system_settings.hibernate_off
-    title: "Hibernation désactivée (libère ~RAM size sur disque)"
+    title: "Désactiver l'hibernation (libère de l'espace disque)"
+    title_en: "Disable hibernation (frees disk space)"
     description: "powercfg.exe /hibernate off — supprime hiberfil.sys."
     explanation: |
       L'hibernation Win11 stocke un dump complet de la RAM dans
@@ -298,7 +305,8 @@ rules:
       - "Plus d hibernation possible (sleep et shutdown OK). Sur laptop, verifier que ton flow ne depend pas d hibernation longue."
 
   - id: system_settings.fast_startup_off
-    title: "Fast Startup désactivé (HiberbootEnabled = 0)"
+    title: "Désactiver le démarrage rapide (évite des bugs après update)"
+    title_en: "Disable fast startup (avoids bugs after updates)"
     description: "Désactive le 'fast startup' Win11 (semi-hibernation kernel au shutdown)."
     explanation: |
       Fast Startup mélange hibernation + shutdown : à l'arrêt, l'état kernel

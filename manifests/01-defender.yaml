@@ -11,6 +11,7 @@ section:
 rules:
   - id: defender.realtime
     title: "Protection temps réel"
+    title_en: "Real-time protection"
     description: "Scanner les fichiers à chaque ouverture / téléchargement."
     explanation: |
       Defender scanne en arrière-plan chaque fichier que tu ouvres.
@@ -43,7 +44,8 @@ rules:
       - maximal
 
   - id: defender.behavior_monitoring
-    title: "Behavior Monitoring"
+    title: "Surveillance comportementale des programmes"
+    title_en: "Behavior monitoring of running programs"
     description: "Analyse comportementale des processus en cours d'exécution."
     explanation: |
       Defender surveille le comportement des processus (création de fichiers,
@@ -85,7 +87,8 @@ rules:
       - maximal
 
   - id: defender.ioav
-    title: "IOAV (analyse pièces jointes / téléchargements)"
+    title: "Analyse des pièces jointes et téléchargements"
+    title_en: "Scan of attachments and downloads"
     description: "Analyse les fichiers téléchargés et pièces jointes Office."
     explanation: |
       IOAV (IOfficeAntiVirus) intercepte les fichiers téléchargés via Outlook,
@@ -126,7 +129,8 @@ rules:
       - maximal
 
   - id: defender.script_scanning
-    title: "Script scanning"
+    title: "Analyse des scripts (JS, VBS, PowerShell)"
+    title_en: "Script scanning (JS, VBS, PowerShell)"
     description: "Analyse des scripts PowerShell, JS, VBS avant exécution."
     explanation: |
       Defender scanne le contenu des scripts (PowerShell, JScript, VBScript)
@@ -167,7 +171,8 @@ rules:
       - maximal
 
   - id: defender.nis
-    title: "Network Inspection System (NIS)"
+    title: "Inspection du trafic réseau (NIS)"
+    title_en: "Network traffic inspection (NIS)"
     description: "Inspection du trafic réseau pour bloquer les exploits connus."
     explanation: |
       NIS analyse le trafic réseau au niveau du noyau pour détecter et bloquer
@@ -208,7 +213,8 @@ rules:
       - maximal
 
   - id: defender.pua
-    title: "PUA Protection (Potentially Unwanted Apps)"
+    title: "Détection des applications indésirables (PUA)"
+    title_en: "Detect potentially unwanted apps (PUA)"
     description: "Bloque l'installation des applications indésirables (toolbars, miners, ad-injectors)."
     explanation: |
       PUA Protection cible les apps qui ne sont pas malveillantes au sens strict
@@ -249,7 +255,8 @@ rules:
       - maximal
 
   - id: defender.network_protection
-    title: "Network Protection"
+    title: "Protection réseau (blocage des sites malveillants)"
+    title_en: "Network protection (block malicious sites)"
     description: "Bloque les connexions sortantes vers domaines/IP réputés malveillants."
     explanation: |
       Network Protection intercepte les requêtes DNS et connexions sortantes
@@ -292,7 +299,8 @@ rules:
       - "Apps qui se connectent a des hotes flagges faux positifs (occasionnel). A auditer dans Event Viewer si une app a un comportement reseau anormal."
 
   - id: defender.controlled_folder_access
-    title: "Controlled Folder Access (anti-ransomware)"
+    title: "Accès contrôlé aux dossiers (anti-rançongiciel)"
+    title_en: "Controlled folder access (anti-ransomware)"
     description: "Empêche les apps non autorisées de modifier les dossiers protégés."
     explanation: |
       CFA verrouille les dossiers utilisateur (Documents, Pictures, etc.)
@@ -341,7 +349,8 @@ rules:
       - "Office (Word, Excel, PowerPoint), Photoshop, Visual Studio Code, OBS, Firefox profiles, certains jeux. Liste blanche manuelle requise apres activation."
 
   - id: defender.sample_submission
-    title: "Sample submission (envoi automatique d'échantillons sûrs)"
+    title: "Envoi auto d'échantillons à Microsoft (sûrs uniquement)"
+    title_en: "Auto-submit safe samples to Microsoft"
     description: "Envoie à Microsoft les fichiers suspects qui ne contiennent pas d'info perso."
     explanation: |
       Defender peut envoyer automatiquement à Microsoft les fichiers détectés
@@ -388,7 +397,8 @@ rules:
       - maximal
 
   - id: defender.cloud_protection
-    title: "Cloud-delivered protection (HIGH)"
+    title: "Protection cloud Microsoft (niveau élevé)"
+    title_en: "Microsoft cloud protection (high level)"
     description: "Active la protection cloud Defender en mode agressif."
     explanation: |
       Cloud-delivered protection envoie les hashes / metadonnees suspects à
@@ -436,6 +446,7 @@ rules:
 
   - id: defender.signatures
     title: "Signatures antivirus à jour"
+    title_en: "Antivirus signatures up to date"
     description: "Force la mise à jour des signatures Defender."
     explanation: |
       Update-MpSignature télécharge les dernières signatures Defender depuis
@@ -479,7 +490,8 @@ rules:
       - maximal
 
   - id: defender.tamper_protection_check
-    title: "Tamper Protection (check uniquement, à activer manuellement)"
+    title: "Protection anti-falsification (vérification uniquement)"
+    title_en: "Tamper Protection (check only)"
     description: "Vérifie que Tamper Protection est ON. Ne peut PAS être activé par script."
     explanation: |
       Microsoft a designed Tamper Protection pour qu'aucun script (même

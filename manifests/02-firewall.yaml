@@ -10,7 +10,8 @@ section:
   description_en: "OS-level network protection — profiles + specific rules."
 rules:
   - id: firewall.profile_domain
-    title: "Profile Domain : enabled + block inbound"
+    title: "Pare-feu réseau d'entreprise (blocage entrant)"
+    title_en: "Firewall enterprise profile (block inbound)"
     description: "Active le pare-feu sur le profil Domain (réseau d'entreprise AD)."
     explanation: |
       Le profil Domain s'applique quand la machine est jointe à un domaine
@@ -42,7 +43,8 @@ rules:
       - maximal
 
   - id: firewall.profile_private
-    title: "Profile Private : enabled + block inbound"
+    title: "Pare-feu réseau maison (blocage entrant)"
+    title_en: "Firewall home profile (block inbound)"
     description: "Active le pare-feu sur le profil Private (réseau domestique de confiance)."
     explanation: |
       Le profil Private s'applique sur les réseaux marqués "privés" dans
@@ -83,7 +85,8 @@ rules:
       - maximal
 
   - id: firewall.profile_public
-    title: "Profile Public : enabled + block inbound"
+    title: "Pare-feu Wi-Fi public (blocage entrant, café/aéroport)"
+    title_en: "Firewall public Wi-Fi profile (block inbound, café/airport)"
     description: "Active le pare-feu sur les réseaux publics avec blocage entrant par défaut."
     explanation: |
       Le profil Public s'applique sur Wi-Fi café, hotspots, réseaux non-fiables.
@@ -126,7 +129,8 @@ rules:
       - maximal
 
   - id: firewall.block_smb_public
-    title: "Bloquer SMB (TCP 445) entrant sur Public"
+    title: "Bloquer le partage de fichiers sur Wi-Fi public"
+    title_en: "Block file sharing on public Wi-Fi"
     description: "Crée une firewall rule [Hardening] pour bloquer SMB inbound sur le profil Public."
     explanation: |
       SMB sur le port 445 est l'un des vecteurs principaux d'attaque latérale
@@ -170,7 +174,8 @@ rules:
       - maximal
 
   - id: firewall.block_netbios_public
-    title: "Bloquer NetBIOS (UDP 137-138 + TCP 139) entrant sur Public"
+    title: "Bloquer NetBIOS sur Wi-Fi public (ancien protocole)"
+    title_en: "Block NetBIOS on public Wi-Fi (legacy protocol)"
     description: "Crée 2 firewall rules [Hardening] pour bloquer NetBIOS inbound sur Public."
     explanation: |
       NetBIOS over TCP/IP (ports 137 nom-resolution, 138 datagram, 139 session)

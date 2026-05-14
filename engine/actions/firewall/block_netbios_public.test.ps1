@@ -1,5 +1,9 @@
 # block_netbios_public.test.ps1
 # Conforme = les 2 rules existent ET sont Enabled.
+#
+# Note : les crochets [ ] dans le DisplayName sont interpretes comme
+# wildcards par Get-NetFirewallRule -DisplayName. On filtre via Where-Object
+# pour matcher litteralement.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -8,9 +12,9 @@ $udpName = 'Block NetBIOS UDP Inbound (Public) [Hardening]'
 $tcpName = 'Block NetBIOS TCP Inbound (Public) [Hardening]'
 
 function Get-State($name) {
-    $r = Get-NetFirewallRule -DisplayName $name -ErrorAction SilentlyContinue
-    if ($r) { @{ exists = $true; enabled = $r.Enabled.ToString() } }
-    else    { @{ exists = $false; enabled = 'NotPresent' } }
+    $rules = @(Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $name })
+    if ($rules.Count -gt 0) { @{ exists = $true; enabled = $rules[0].Enabled.ToString() } }
+    else                    { @{ exists = $false; enabled = 'NotPresent' } }
 }
 
 $udp = Get-State $udpName

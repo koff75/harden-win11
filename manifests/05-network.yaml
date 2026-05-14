@@ -3,14 +3,15 @@ version: "1.0"
 section:
   id: network
   order: 5
-  title: "Hardening protocoles réseau"
+  title: "Sécurisation des protocoles réseau"
   description: "Coupe les protocoles de résolution de nom hérités (LLMNR, mDNS, NetBIOS, WPAD) et impose NTLMv2 + signature SMB."
 
-  title_en: "Network Protocol Hardening"
+  title_en: "Network protocol security"
   description_en: "Cuts off legacy name-resolution protocols (LLMNR, mDNS, NetBIOS, WPAD) and enforces NTLMv2 + SMB signing."
 rules:
   - id: network.llmnr_disable
-    title: "LLMNR désactivé (EnableMulticast=0)"
+    title: "Désactiver LLMNR (vieux protocole exploitable)"
+    title_en: "Disable LLMNR (legacy exploitable protocol)"
     description: "Empêche la résolution de noms multicast vulnérable au poisoning."
     explanation: |
       LLMNR (UDP 5355) est un fallback de résolution de noms qui broadcast
@@ -45,7 +46,8 @@ rules:
       - "Decouverte locale par nom NetBIOS-like (rare en perso). Imprimantes anciennes peuvent ne plus etre decouvertes automatiquement en entreprise."
 
   - id: network.mdns_disable
-    title: "mDNS désactivé (EnableMDNS=0)"
+    title: "Désactiver mDNS (vieux protocole local)"
+    title_en: "Disable mDNS (legacy local protocol)"
     description: "Désactive mDNS Microsoft (Bonjour-like, vecteur similaire à LLMNR)."
     explanation: |
       mDNS (UDP 5353) est un autre protocole de résolution multicast,
@@ -86,7 +88,8 @@ rules:
       - "Chromecast, AirPrint, imprimantes via Bonjour, devices IoT en mDNS. Casse les setups entreprise avec imprimante reseau Apple/multi-fonctions."
 
   - id: network.netbios_off
-    title: "NetBIOS over TCP/IP désactivé sur tous les adapters"
+    title: "Désactiver NetBIOS sur toutes les interfaces réseau"
+    title_en: "Disable NetBIOS on all network interfaces"
     description: "Désactive NetBIOS-NS sur chaque interface (anti-Responder)."
     explanation: |
       NetBIOS Name Service (UDP 137) est l'autre vecteur principal de
@@ -129,7 +132,8 @@ rules:
       - "Partages SMB qui passent par NetBIOS-name (NAS legacy, anciens NAS Synology/QNAP). Si tes partages utilisent FQDN ou IP, aucun impact."
 
   - id: network.wpad_disable
-    title: "WPAD désactivé (service WinHttpAutoProxySvc Start=4)"
+    title: "Désactiver WPAD (détection auto de proxy, exploitable)"
+    title_en: "Disable WPAD (auto-proxy detection, exploitable)"
     description: "Désactive le Web Proxy Auto-Discovery (vecteur de proxy poisoning)."
     explanation: |
       WPAD broadcast pour découvrir un proxy auto-config. Vulnérable au
@@ -174,7 +178,8 @@ rules:
       - "Configuration de proxy automatique via WPAD/PAC (souvent utilise en entreprise). Si tes settings Internet utilisent un proxy auto-discovery, casse l acces web."
 
   - id: network.ntlm_v2_only
-    title: "NTLM : LmCompatibilityLevel = 5 (NTLMv2 only)"
+    title: "Forcer l'authentification moderne (NTLMv2 uniquement)"
+    title_en: "Force modern authentication (NTLMv2 only)"
     description: "Refuse l'auth LM/NTLMv1 (anciens, faibles). NTLMv2 only."
     explanation: |
       LmCompatibilityLevel=5 = "Send NTLMv2 response only. Refuse LM and
@@ -217,7 +222,8 @@ rules:
       - maximal
 
   - id: network.smb_client_signing
-    title: "SMB client : signature requise (RequireSecuritySignature=1)"
+    title: "Partage de fichiers : signature requise (côté client)"
+    title_en: "File sharing: signing required (client side)"
     description: "Force la signature des paquets SMB côté client."
     explanation: |
       Sans signature, un attaquant en MitM peut altérer les paquets SMB en
@@ -257,7 +263,8 @@ rules:
       - maximal
 
   - id: network.smb_server_signing
-    title: "SMB server : signature requise (RequireSecuritySignature=1)"
+    title: "Partage de fichiers : signature requise (côté serveur)"
+    title_en: "File sharing: signing required (server side)"
     description: "Force la signature des paquets SMB côté server."
     explanation: |
       Pareil que client_signing mais côté serveur (au cas où la machine
@@ -297,7 +304,8 @@ rules:
       - maximal
 
   - id: network.smbv1_disable
-    title: "SMBv1 désactivé (legacy, vulnérable EternalBlue)"
+    title: "Désactiver SMBv1 (ancien protocole, faille EternalBlue)"
+    title_en: "Disable SMBv1 (legacy protocol, EternalBlue flaw)"
     description: "Set-SmbServerConfiguration + Disable-WindowsOptionalFeature SMB1Protocol."
     explanation: |
       SMBv1 est le protocole exploité par EternalBlue (WannaCry, NotPetya).
@@ -341,7 +349,8 @@ rules:
       - maximal
 
   - id: network.smb_guest_auth_off
-    title: "SMB client : refuser l'auth guest (AllowInsecureGuestAuth=0)"
+    title: "Partage de fichiers : refuser l'accès invité"
+    title_en: "File sharing: refuse guest access"
     description: "Empêche le client SMB d'utiliser une auth guest non chiffrée."
     explanation: |
       L'auth guest SMB est non chiffrée et permet aux attaques de phishing

@@ -3,14 +3,15 @@ version: "1.0"
 section:
   id: privacy
   order: 6
-  title: "Privacy & Telemetry"
+  title: "Vie privée & télémétrie"
   description: "Réduit la collecte de données et les fonctionnalités cloud (telemetry, AdID, Cortana, Recall, suggestions, ink/text)."
 
-  title_en: "Privacy & Telemetry"
+  title_en: "Privacy & telemetry"
   description_en: "Reduces the data Windows sends to Microsoft and turns off attention-stealing default features."
 rules:
   - id: privacy.telemetry_required
-    title: "Telemetry niveau 1 (Required only)"
+    title: "Télémétrie Windows au minimum (données nécessaires seulement)"
+    title_en: "Windows telemetry at minimum (required data only)"
     description: "AllowTelemetry = 1 — minimum acceptable sur Win11 Home."
     explanation: |
       Win11 Home n'a pas le niveau 'Security only' (0) — minimum dispo = 1
@@ -43,7 +44,8 @@ rules:
       - maximal
 
   - id: privacy.advertising_id_machine
-    title: "Advertising ID désactivé (machine-wide)"
+    title: "Identifiant publicitaire désactivé (tout le PC)"
+    title_en: "Advertising ID disabled (entire PC)"
     description: "DisabledByGroupPolicy = 1 — bloque l'Advertising ID pour tous les users."
     explanation: |
       L'Advertising ID est utilisé par les apps Store et certaines apps
@@ -83,7 +85,8 @@ rules:
       - maximal
 
   - id: privacy.online_speech_off
-    title: "Online Speech Recognition désactivée"
+    title: "Reconnaissance vocale en ligne désactivée"
+    title_en: "Online speech recognition disabled"
     description: "AllowInputPersonalization = 0."
     explanation: |
       Empêche Win11 d'envoyer les samples vocaux au cloud Microsoft pour
@@ -122,7 +125,8 @@ rules:
       - maximal
 
   - id: privacy.activity_history_off
-    title: "Activity History désactivée (3 valeurs)"
+    title: "Historique d'activité Windows désactivé"
+    title_en: "Windows Activity History disabled"
     description: "EnableActivityFeed + PublishUserActivities + UploadUserActivities = 0."
     explanation: |
       Désactive Win11 Timeline et l'envoi d'historique d'activité au compte
@@ -161,7 +165,8 @@ rules:
       - maximal
 
   - id: privacy.cortana_off
-    title: "Cortana désactivée (AllowCortana = 0)"
+    title: "Cortana désactivée"
+    title_en: "Cortana disabled"
     description: "Bloque Cortana (assistant Microsoft)."
     explanation: |
       Cortana envoie au cloud Microsoft une bonne partie de ce que tu tapes
@@ -201,7 +206,8 @@ rules:
       - maximal
 
   - id: privacy.recall_off
-    title: "Windows Recall désactivé (préventif)"
+    title: "Windows Recall désactivé (capture d'écran périodique)"
+    title_en: "Windows Recall disabled (periodic screen capture)"
     description: "DisableAIDataAnalysis = 1."
     explanation: |
       Recall est la fonctionnalité Win11 qui screenshote ton écran toutes
@@ -245,7 +251,8 @@ rules:
       - maximal
 
   - id: privacy.consumer_features_off
-    title: "Consumer features désactivées (anti-bloat machine-wide)"
+    title: "Fonctionnalités grand public désactivées (anti-pubs)"
+    title_en: "Consumer features disabled (anti-ads)"
     description: "DisableWindowsConsumerFeatures + DisableConsumerAccountStateContent = 1."
     explanation: |
       Empêche Win11 de pousser automatiquement des apps Store ('Suggested
@@ -284,7 +291,8 @@ rules:
       - maximal
 
   - id: privacy.silent_apps_off
-    title: "HKCU : pas de réinstall silencieuse d'apps Store"
+    title: "Empêcher la réinstallation auto des apps Store"
+    title_en: "Prevent auto-reinstall of Store apps"
     description: "SilentInstalledAppsEnabled = 0 (user courant)."
     explanation: |
       Empêche Win11 d'installer en silence les apps 'recommandées' Microsoft
@@ -323,7 +331,8 @@ rules:
       - maximal
 
   - id: privacy.settings_suggestions_off
-    title: "HKCU : suggestions Settings désactivées"
+    title: "Suggestions dans Paramètres désactivées"
+    title_en: "Settings suggestions disabled"
     description: "SubscribedContent-338389Enabled = 0."
     explanation: |
       Pas de suggestions/notifications dans l'app Settings.
@@ -361,7 +370,8 @@ rules:
       - maximal
 
   - id: privacy.start_suggestions_off
-    title: "HKCU : suggestions menu Démarrer désactivées"
+    title: "Suggestions menu Démarrer désactivées"
+    title_en: "Start menu suggestions disabled"
     description: "SystemPaneSuggestionsEnabled = 0."
     explanation: |
       Plus de suggestions d'apps dans le menu Démarrer.
@@ -399,7 +409,8 @@ rules:
       - maximal
 
   - id: privacy.tips_welcome_off
-    title: "HKCU : tips/welcome désactivés (3 SubscribedContent)"
+    title: "Conseils et écrans de bienvenue désactivés"
+    title_en: "Tips and welcome screens disabled"
     description: "SubscribedContent-338388/310093/353698 Enabled = 0."
     explanation: |
       Désactive les 'tips', 'Welcome experience' et autres pop-ups
@@ -438,7 +449,8 @@ rules:
       - maximal
 
   - id: privacy.ink_text_collection_off
-    title: "HKCU : pas de collecte ink/text implicite"
+    title: "Pas de collecte d'écriture stylet / texte par Microsoft"
+    title_en: "No ink/text collection by Microsoft"
     description: "RestrictImplicitInkCollection + RestrictImplicitTextCollection = 1."
     explanation: |
       Empêche Win11 de collecter en arrière-plan ce que tu tapes/écris
@@ -477,7 +489,8 @@ rules:
       - maximal
 
   - id: privacy.advertising_id_user
-    title: "HKCU : Advertising ID désactivé"
+    title: "Identifiant publicitaire désactivé (mon compte)"
+    title_en: "Advertising ID disabled (my account)"
     description: "AdvertisingInfo Enabled = 0 (user courant)."
     explanation: |
       Toggle user-level de l'AdID, en complément de la policy machine-wide.

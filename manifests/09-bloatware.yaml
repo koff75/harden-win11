@@ -3,15 +3,16 @@ version: "1.0"
 section:
   id: bloatware
   order: 9
-  title: "Bloatware Microsoft Store"
+  title: "Apps préinstallées à supprimer"
   description: "Desinstallation des apps Store consommateurs. Tu peux selectionner individuellement celles que tu veux supprimer."
 
-  title_en: "Microsoft Store Bloatware"
+  title_en: "Pre-installed apps to remove"
   description_en: "Removes preinstalled Store apps. You can pick individually which ones to keep."
 rules:
 
   - id: bloatware.clipchamp
-    title: "Clipchamp (editeur video Microsoft)"
+    title: "Clipchamp (éditeur vidéo Microsoft)"
+    title_en: "Clipchamp (Microsoft video editor)"
     description: "Desinstalle 'Clipchamp (editeur video Microsoft)' (Appx + provisioned)."
     explanation: |
       App Store microsoft preinstallee sur Win11 (pattern Appx : *Clipchamp*).
@@ -116,6 +117,7 @@ rules:
       - maximal
   - id: bloatware.get_help
     title: "Get Help (assistant Microsoft)"
+    title_en: "Get Help (Microsoft assistant)"
     description: "Desinstalle 'Get Help (assistant Microsoft)' (Appx + provisioned)."
     explanation: |
       App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.GetHelp*).
@@ -148,6 +150,7 @@ rules:
       - maximal
   - id: bloatware.get_started
     title: "Get Started (tour Win11)"
+    title_en: "Get Started (Win11 tour)"
     description: "Desinstalle 'Get Started (tour Win11)' (Appx + provisioned)."
     explanation: |
       App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.Getstarted*).
@@ -243,7 +246,8 @@ rules:
       - business
       - maximal
   - id: bloatware.people
-    title: "People (carnet d adresses)"
+    title: "People (carnet d'adresses Microsoft)"
+    title_en: "People (Microsoft address book)"
     description: "Desinstalle 'People (carnet d adresses)' (Appx + provisioned)."
     explanation: |
       App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.People*).
@@ -404,6 +408,7 @@ rules:
       - maximal
   - id: bloatware.zune_video
     title: "Films & TV (Zune Video)"
+    title_en: "Movies & TV (Zune Video)"
     description: "Desinstalle 'Films & TV (Zune Video)' (Appx + provisioned)."
     explanation: |
       App Store microsoft preinstallee sur Win11 (pattern Appx : *Microsoft.ZuneVideo*).
@@ -435,7 +440,8 @@ rules:
       - business
       - maximal
   - id: bloatware.disney
-    title: "Disney+ (preinstalle OEM)"
+    title: "Disney+ (préinstallé par le fabricant)"
+    title_en: "Disney+ (OEM preinstalled)"
     description: "Desinstalle 'Disney+ (preinstalle OEM)' (Appx + provisioned)."
     explanation: |
       App Store streaming preinstallee sur Win11 (pattern Appx : *Disney*).
@@ -691,7 +697,8 @@ rules:
       - business
       - maximal
   - id: bloatware.spotify_ab
-    title: "Spotify (variante OEM)"
+    title: "Spotify (version préinstallée fabricant)"
+    title_en: "Spotify (OEM preinstalled version)"
     description: "Desinstalle 'Spotify (variante OEM)' (Appx + provisioned)."
     explanation: |
       App Store media preinstallee sur Win11 (pattern Appx : *SpotifyAB*).
@@ -819,7 +826,8 @@ rules:
       - business
       - maximal
   - id: bloatware.jimmylin
-    title: "Apps OEM publisher JimmyLin (LiveOS games)"
+    title: "Jeux préinstallés par le fabricant (JimmyLin / LiveOS)"
+    title_en: "OEM preinstalled games (JimmyLin / LiveOS)"
     description: "Desinstalle 'Apps OEM publisher JimmyLin (LiveOS games)' (Appx + provisioned)."
     explanation: |
       App Store oem preinstallee sur Win11 (pattern Appx : *JimmyLin*).
@@ -851,7 +859,8 @@ rules:
       - business
       - maximal
   - id: bloatware.pub_5319275a
-    title: "Apps OEM publisher 5319275A"
+    title: "Apps diverses préinstallées par le fabricant"
+    title_en: "Various apps preinstalled by manufacturer"
     description: "Desinstalle 'Apps OEM publisher 5319275A' (Appx + provisioned)."
     explanation: |
       App Store oem preinstallee sur Win11 (pattern Appx : *5319275A*).

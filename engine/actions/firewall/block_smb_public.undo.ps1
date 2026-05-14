@@ -8,9 +8,10 @@ $ErrorActionPreference = 'Stop'
 
 $ruleName = 'Block SMB Inbound (Public) [Hardening]'
 
-$existing = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
-if ($existing) {
-    Remove-NetFirewallRule -DisplayName $ruleName
-}
+# Les crochets [ ] dans le DisplayName sont interpretes comme wildcards par
+# Get/Remove-NetFirewallRule -DisplayName. On filtre via Where-Object pour
+# matcher litteralement, et on supprime par Name (GUID) qui est stable.
+$existing = @(Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $ruleName })
+foreach ($r in $existing) { Remove-NetFirewallRule -Name $r.Name -ErrorAction SilentlyContinue }
 
 @{ ok = $true } | ConvertTo-Json -Compress

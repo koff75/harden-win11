@@ -10,6 +10,33 @@ let engineInfo = null;
 let isRunning = false;
 let totalRulesInRun = 0;
 let processedRules = 0;
+let lastRunRP = null;   // {created, reason, durationMs} pour le dernier run
+let currentRunMode = null;   // 'apply' | 'dryrun' pendant un run actif
+// Rules auto-decochees suite a un dry-run (les would_skip = deja conformes).
+// SESSION-ONLY : pas persiste via savePrefs(), reset au prochain dry-run.
+// Combine avec excludedRules pour calculer ce qu'on envoie au backend.
+const autoExcludedAfterDryRun = new Set();
+
+// effectiveExcluded : union de excludedRules (manuel, persiste) et
+// autoExcludedAfterDryRun (auto-skip post-dryrun, session-only).
+function effectiveExcluded() {
+    const all = new Set(excludedRules);
+    for (const id of autoExcludedAfterDryRun) all.add(id);
+    return all;
+}
+
+// syncCheckboxFor : met a jour la checkbox visuelle + classe row pour une
+// rule donnee selon effectiveExcluded().
+function syncCheckboxFor(ruleID) {
+    const eff = effectiveExcluded();
+    const isExcluded = eff.has(ruleID);
+    const tr = rowsByRuleID[ruleID];
+    if (tr) {
+        tr.classList.toggle('excluded', isExcluded);
+        const cb = tr.querySelector('input.include-rule');
+        if (cb) cb.checked = !isExcluded;
+    }
+}
 let currentProfile = 'personal';   // profil par défaut, override par l'utilisateur
 let availableProfiles = [];
 const rowsByRuleID = {};
@@ -83,6 +110,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await refreshRuns();
     await refreshWatchlistAlerts();
     await refreshDriftAlert();
+    await refreshTamperPreflight();
     bindEvents();
 
     // Restaure le reste des prefs (sections cochées + audit checkbox) APRÈS
@@ -90,6 +118,26 @@ window.addEventListener('DOMContentLoaded', async () => {
     applyPrefs(savedPrefs);
     bindWailsEvents();
 });
+
+async function refreshTamperPreflight() {
+    // Best-effort : on n'echoue jamais le boot a cause de ca.
+    let info = null;
+    try {
+        info = await window.go.main.App.Preflight();
+    } catch {
+        return;
+    }
+    if (!info || !info.isTamperProtected) return;
+    const banner = $('#tamper-banner');
+    if (!banner) return;
+    banner.classList.remove('hidden');
+    $('#btn-open-security').addEventListener('click', () => {
+        try { window.go.main.App.OpenWindowsSecurity(); } catch {}
+    });
+    $('#btn-tamper-dismiss').addEventListener('click', () => {
+        banner.classList.add('hidden');
+    });
+}
 
 async function refreshDriftAlert() {
     let rep = null;
@@ -101,17 +149,10 @@ async function refreshDriftAlert() {
     if (!rep || rep.total_drifted === 0) return;
     const banner = $('#drift-banner');
     if (!banner) return;
-    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
-    const summary = lang === 'en'
-        ? `${rep.total_drifted} item(s) drifted since baseline ${rep.baseline_run_id}.`
-        : `${rep.total_drifted} élément(s) dérivés depuis le baseline ${rep.baseline_run_id}.`;
-    $('#drift-summary').textContent = summary;
+    $('#drift-summary').textContent = t('drift.summary', { n: rep.total_drifted, base: rep.baseline_run_id });
     banner.classList.remove('hidden');
     $('#btn-drift-reapply').addEventListener('click', () => {
-        // Auto-coche la checkbox apply (admin requis) — l'utilisateur cliquera Apply.
-        setStatus('running', lang === 'en'
-            ? `Click "Apply" to re-harden the ${rep.total_drifted} drifted item(s).`
-            : `Clique "Appliquer" pour re-hardener les ${rep.total_drifted} élément(s) dérivés.`);
+        setStatus('running', t('status.applyContinues', { n: rep.total_drifted }));
         banner.classList.add('hidden');
     });
     $('#btn-drift-dismiss').addEventListener('click', () => banner.classList.add('hidden'));
@@ -124,8 +165,7 @@ async function refreshWatchlistAlerts() {
         const banner = $('#watchlist-banner');
         const totalEvents = alerts.reduce((sum, a) => sum + (a.countSeen || 0), 0);
         const sources = new Set(alerts.map(a => a.logName));
-        $('#watchlist-summary').textContent =
-            `${totalEvents} event(s) sur ${sources.size} source(s) — clique pour voir le détail.`;
+        $('#watchlist-summary').textContent = t('watchlist.summary', { n: totalEvents, s: sources.size });
         banner.classList.remove('hidden');
         $('#btn-watchlist-detail').addEventListener('click', () => showWatchlistModal(alerts));
         $('#btn-watchlist-dismiss').addEventListener('click', () => banner.classList.add('hidden'));
@@ -146,17 +186,13 @@ function showWatchlistModal(alerts) {
         <div class="cov-modal" id="watchlist-modal-overlay">
             <div class="cov-modal-content" style="max-width:840px">
                 <span class="cov-close" id="watchlist-modal-close">✕</span>
-                <h3>Anomalies Event Viewer post-apply</h3>
-                <p class="muted small">Détectées par la watchlist 24h après tes derniers apply. Si une source est en pic, c'est qu'une règle Win11 Hardening casse peut-être quelque chose que tu utilises.</p>
+                <h3>${escapeHtml(t('watchlist.modalTitle'))}</h3>
+                <p class="muted small">${escapeHtml(t('watchlist.modalIntro'))}</p>
                 <table>
-                    <thead><tr><th>Run</th><th>Source</th><th>Events</th><th>Pourquoi c'est suspect</th></tr></thead>
+                    <thead><tr><th>${escapeHtml(t('watchlist.thRun'))}</th><th>${escapeHtml(t('watchlist.thSource'))}</th><th>${escapeHtml(t('watchlist.thEvents'))}</th><th>${escapeHtml(t('watchlist.thReason'))}</th></tr></thead>
                     <tbody>${rows}</tbody>
                 </table>
-                <p class="muted small" style="margin-top:12px">
-                    Pour aller plus loin : <code>Get-WinEvent -LogName '&lt;source&gt;' -MaxEvents 50</code>
-                    pour voir les events bruts. Tu peux aussi lancer <code>harden-engine snapshot diff &lt;runID&gt;</code>
-                    pour voir ce qui a été modifié pendant le run.
-                </p>
+                <p class="muted small" style="margin-top:12px">${t('watchlist.modalHelp')}</p>
             </div>
         </div>`;
     document.body.insertAdjacentHTML('beforeend', html);
@@ -174,7 +210,7 @@ async function refreshProfiles() {
     try {
         availableProfiles = await window.go.main.App.GetProfiles();
     } catch (err) {
-        $('#profile-list').innerHTML = `<span style="color:#ff9099">Erreur: ${err}</span>`;
+        $('#profile-list').innerHTML = `<span style="color:#ff9099">${escapeHtml(t('error.generic', { msg: String(err) }))}</span>`;
         return;
     }
 
@@ -195,18 +231,22 @@ async function refreshProfiles() {
         // pas grave : on garde le défaut 'personal'.
     }
 
+    const lang0 = (typeof getLang === 'function') ? getLang() : 'fr';
+    // Backend Reason peut etre bilingue : on prefere reasonEn en EN si dispo.
+    const reasonStr = (suggestion && (lang0 === 'en' && suggestion.reasonEn ? suggestion.reasonEn : suggestion.reason)) || '';
+    const skipReason = (e) => (lang0 === 'en' && e.reasonEn ? e.reasonEn : e.reason);
     const autoSkipBlock = (suggestion && suggestion.autoSkipRules && suggestion.autoSkipRules.length)
         ? `<div class="auto-skip-block">
-             ${suggestion.autoSkipRules.length} règle(s) pré-décochée(s) automatiquement :
+             ${escapeHtml(t('suggestion.autoSkipped', { n: suggestion.autoSkipRules.length }))}
              <ul>${suggestion.autoSkipRules.map(e =>
-                `<li><code>${escapeHtml(e.ruleId)}</code> — ${escapeHtml(e.reason)}</li>`
+                `<li><code>${escapeHtml(e.ruleId)}</code> — ${escapeHtml(skipReason(e))}</li>`
              ).join('')}</ul>
            </div>`
         : '';
     const suggestionBanner = suggestion
-        ? `<div class="profile-suggestion" title="${escapeHtml(suggestion.reason)}">
-              💡 Suggéré : <strong>${escapeHtml(profileTitleFromID(suggestion.suggestedProfile))}</strong>
-              <div class="profile-suggestion-reason">${escapeHtml(suggestion.reason)}</div>
+        ? `<div class="profile-suggestion" title="${escapeHtml(reasonStr)}">
+              ${escapeHtml(t('suggestion.label'))} <strong>${escapeHtml(profileTitleFromID(suggestion.suggestedProfile))}</strong>
+              <div class="profile-suggestion-reason">${escapeHtml(reasonStr)}</div>
               ${autoSkipBlock}
            </div>`
         : '';
@@ -227,11 +267,8 @@ async function refreshProfiles() {
             currentProfile = rb.value;
             savePrefs();
             await refreshSections();
-            const lang = (typeof getLang === 'function') ? getLang() : 'fr';
-            const msg = lang === 'en'
-                ? 'Profile changed. Run a dry-run to see the current state.'
-                : 'Profil changé. Lance un dry-run pour voir l\'état actuel.';
-            $('#results-body').innerHTML = `<tr class="empty"><td colspan="5">${msg}</td></tr>`;
+            const msg = t('status.profileChanged');
+            $('#results-body').innerHTML = `<tr class="empty"><td colspan="5">${escapeHtml(msg)}</td></tr>`;
             $('#dashboard').classList.add('hidden');
             Object.keys(rowsByRuleID).forEach(k => delete rowsByRuleID[k]);
             Object.keys(eventByRuleID).forEach(k => delete eventByRuleID[k]);
@@ -257,20 +294,20 @@ async function refreshEngineInfo() {
 
     if (!engineInfo.isAdmin) {
         $('#btn-apply').disabled = true;
-        $('#btn-apply').title = 'Lance la GUI en admin pour activer';
+        $('#btn-apply').title = t('admin.applyDisabled');
         $('#btn-undo').disabled = true;
-        $('#btn-undo').title = 'Lance la GUI en admin pour activer';
+        $('#btn-undo').title = t('admin.applyDisabled');
         $('#admin-banner').classList.remove('hidden');
         $('#btn-relaunch-admin').addEventListener('click', async () => {
             const btn = $('#btn-relaunch-admin');
             btn.disabled = true;
-            btn.textContent = 'Relancement…';
+            btn.textContent = t('admin.relaunching');
             try {
                 await window.go.main.App.RelaunchAsAdmin();
             } catch (err) {
                 btn.disabled = false;
-                btn.textContent = 'Relancer en admin';
-                alert('Échec du relancement : ' + err);
+                btn.textContent = t('admin.relaunch');
+                alert(t('error.adminRelaunch', { msg: String(err) }));
             }
         });
     }
@@ -278,11 +315,11 @@ async function refreshEngineInfo() {
 
 async function refreshSections() {
     const list = $('#sections-list');
-    list.innerHTML = '<span class="muted small">chargement…</span>';
+    list.innerHTML = `<span class="muted small">${escapeHtml(t('status.loading'))}</span>`;
     try {
         currentSections = await window.go.main.App.GetSections(currentProfile);
     } catch (err) {
-        list.innerHTML = `<span style="color:#ff9099">Erreur: ${err}</span>`;
+        list.innerHTML = `<span style="color:#ff9099">${escapeHtml(t('error.generic', { msg: String(err) }))}</span>`;
         return;
     }
     rulesByID = {};
@@ -314,7 +351,7 @@ async function refreshRuns() {
             return;
         }
         const loadTitle = lang === 'en' ? 'Click to load this run' : 'Cliquer pour charger ce run';
-        const undoTitle = lang === 'en' ? 'Undo this run (rollback applied rules)' : 'Annuler ce run (rollback des règles appliquées)';
+        const undoTitle = t('tooltip.undoRun');
         list.innerHTML = runs.slice(0, 8).map(r =>
             `<div class="run-item" data-run-id="${escapeHtml(r)}">
                 <span class="run-id" title="${loadTitle}">${escapeHtml(r)}</span>
@@ -336,30 +373,26 @@ async function refreshRuns() {
 }
 
 async function undoRun(runID) {
-    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
-    const confirmMsg = lang === 'en'
-        ? `Undo run ${runID}? This will rollback all rules applied during this run.`
-        : `Annuler le run ${runID} ? Cela va revenir sur toutes les règles appliquées pendant ce run.`;
-    if (!confirm(confirmMsg)) return;
-    setStatus('running', lang === 'en' ? `Undoing ${runID}…` : `Annulation de ${runID}…`);
+    if (!confirm(t('tooltip.confirmUndo', { id: runID }))) return;
+    setStatus('running', t('status.undoing', { id: runID }));
     try {
         const out = await window.go.main.App.UndoRun(runID);
-        setStatus('success', lang === 'en' ? `Undo OK for ${runID}` : `Undo OK pour ${runID}`);
+        setStatus('success', t('status.undoOk', { id: runID }));
         console.log('[undo]', out);
         await refreshRuns();
     } catch (err) {
-        setStatus('error', lang === 'en' ? `Undo failed: ${err}` : `Échec undo : ${err}`);
+        setStatus('error', t('error.undoFailed', { msg: String(err) }));
     }
 }
 
 async function loadHistoricalRun(runID) {
     if (isRunning) return;
-    setStatus('running', `Chargement du run ${runID}…`);
+    setStatus('running', t('status.loadingRun', { id: runID }));
     let events;
     try {
         events = await window.go.main.App.LoadRun(runID);
     } catch (err) {
-        setStatus('error', `Erreur: ${err}`);
+        setStatus('error', t('error.generic', { msg: String(err) }));
         return;
     }
 
@@ -397,9 +430,12 @@ function computeSummary(events) {
 function bindEvents() {
     $('#btn-dryrun').addEventListener('click', () => runEngine('dryrun'));
     $('#btn-apply').addEventListener('click', () => promptAndApply());
-    $('#btn-undo').addEventListener('click', () => alert(getLang() === 'en'
-        ? 'Undo via GUI: not wired yet (use harden-engine.exe undo for now)'
-        : "Undo via GUI : à wirer (utilise pour l'instant : harden-engine.exe undo)"));
+    $('#btn-undo').addEventListener('click', () => {
+        // Le bouton ↶ par run dans l'historique fait deja le bon undo.
+        // Ce bouton global redirige vers le dernier run.
+        const firstRun = $('.run-undo');
+        if (firstRun) firstRun.click();
+    });
 
     // Lang toggle FR/EN. On évite window.location.reload() qui ne re-injecte
     // pas correctement les assets dans WebView2 (assets servis via wails://) ;
@@ -473,6 +509,11 @@ function bindEvents() {
             const ruleID = e.target.dataset.ruleId;
             if (e.target.checked) {
                 excludedRules.delete(ruleID);
+                // Si la rule etait auto-exclue par un dry-run precedent
+                // (already_compliant), l'user veut explicitement la
+                // re-tester. Sans ce delete, effectiveExcluded() la
+                // garderait dans le set et le backend la skip silencieusement.
+                autoExcludedAfterDryRun.delete(ruleID);
             } else {
                 excludedRules.add(ruleID);
             }
@@ -504,6 +545,13 @@ function applyI18nStatic() {
         const key = el.dataset.i18n;
         if (!key) return;
         el.textContent = t(key);
+    });
+    // data-i18n-title : applique sur l'attribut HTML title (tooltip natif).
+    // Permet de localiser les survol-tooltips sans toucher au textContent.
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.dataset.i18nTitle;
+        if (!key) return;
+        el.setAttribute('title', t(key));
     });
     // Cas spécial admin-banner : structure HTML mixte.
     const adminText = document.querySelector('#admin-banner .admin-banner-text');
@@ -579,22 +627,24 @@ async function showMaturityModal() {
             </tr>`;
     }).join('');
     const actionsHtml = (report.next_actions || []).map(a => `<li>${escapeHtml(a)}</li>`).join('');
+    const lang = (typeof getLang === 'function') ? getLang() : 'fr';
+    const nextActionsTitle = lang === 'en' ? 'To gain more points' : 'Pour gagner du score';
     const html = `
         <div class="cov-modal" id="maturity-modal-overlay">
             <div class="cov-modal-content" style="max-width:780px">
                 <span class="cov-close" id="maturity-modal-close">✕</span>
-                <h3>📊 Score de maturité</h3>
+                <h3>${escapeHtml(t('score.title'))}</h3>
                 <div class="maturity-grade-block grade-${report.grade}">
                     <div class="maturity-grade">${report.grade}</div>
                     <div class="maturity-score">${report.score}<span class="muted small"> / 100</span></div>
                     <div class="maturity-headline">${escapeHtml(report.headline)}</div>
                 </div>
                 <table class="maturity-table">
-                    <thead><tr><th>Composant</th><th>Points</th><th>Niveau</th><th>Détail</th></tr></thead>
+                    <thead><tr><th>${escapeHtml(t('score.thComponent'))}</th><th>${escapeHtml(t('score.thPoints'))}</th><th>${escapeHtml(t('score.thLevel'))}</th><th>${escapeHtml(t('score.thDetail'))}</th></tr></thead>
                     <tbody>${compsHtml}</tbody>
                 </table>
-                ${actionsHtml ? `<h4 style="margin-top:18px">Pour gagner du score</h4><ol>${actionsHtml}</ol>` : ''}
-                <p class="muted small" style="margin-top:14px"><em>Pondération : critique 50, important 25, optionnel 10, Restore Point 8, watchlist 7. Total max : 100.</em></p>
+                ${actionsHtml ? `<h4 style="margin-top:18px">${escapeHtml(nextActionsTitle)}</h4><ol>${actionsHtml}</ol>` : ''}
+                <p class="muted small" style="margin-top:14px"><em>${escapeHtml(t('score.weighting'))}</em></p>
             </div>
         </div>`;
     document.body.insertAdjacentHTML('beforeend', html);
@@ -602,6 +652,16 @@ async function showMaturityModal() {
     const close = () => overlay.remove();
     $('#maturity-modal-close').addEventListener('click', close);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+}
+
+// ruleTitle : cascade title_en → title selon la langue active. Les rules
+// FR ont toujours `title`, les `title_en` sont optionnels. Si absent ou
+// vide, on retombe sur le FR — vaut mieux du texte que du vide.
+function ruleTitle(rule) {
+    if (!rule) return '';
+    const en = (typeof getLang === 'function') && getLang() === 'en';
+    if (en && rule.titleEn) return rule.titleEn;
+    return rule.title || rule.id || '';
 }
 
 // statusBucket : regroupe les statuses techniques en 4 catégories user-facing
@@ -634,8 +694,8 @@ function applyFilters() {
     });
     const total = rows.length;
     $('#filter-count').textContent = visible === total
-        ? `${total} règle(s)`
-        : `${visible} / ${total} règle(s) affichée(s)`;
+        ? t('table.count', { n: total })
+        : t('table.countFiltered', { visible, total });
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -661,13 +721,18 @@ function renderDashboard() {
 
     // Compter les règles à renforcer (would_apply / applied) par sévérité.
     let toApply = { critical: 0, important: 0, 'nice-to-have': 0 };
-    let evaluatedAll = 0, conformeAll = 0;
+    let evaluatedAll = 0, conformeAll = 0, rolledBackAll = 0, failedAll = 0;
 
     rows.forEach(tr => {
         const rule = rulesByID[tr.dataset.ruleId] || {};
         const sev = rule.severity || 'nice-to-have';
-        const bucket = statusBucket(tr.dataset.status || 'pending');
-        if (bucket === 'pending' || bucket === 'failed') return;
+        const status = tr.dataset.status || 'pending';
+        const bucket = statusBucket(status);
+        // rolled_back doit etre visible dans le dashboard : c'est un safety
+        // net qui s'est declenche, pas un succes. On le compte separement.
+        if (status === 'rolled_back') { rolledBackAll++; evaluatedAll++; return; }
+        if (status === 'failed' || status === 'would_fail') { failedAll++; return; }
+        if (bucket === 'pending') return;
         evaluatedAll++;
         if (bucket === 'conforme') {
             conformeAll++;
@@ -676,7 +741,7 @@ function renderDashboard() {
         }
     });
 
-    if (evaluatedAll === 0) {
+    if (evaluatedAll === 0 && failedAll === 0) {
         dashboard.classList.add('hidden');
         return;
     }
@@ -690,7 +755,30 @@ function renderDashboard() {
     }
 
     const total = toApply.critical + toApply.important + toApply['nice-to-have'];
-    const detail = `${conformeAll}/${evaluatedAll} déjà OK`;
+    const detail = t('dashboard.detailCount', { ok: conformeAll, n: evaluatedAll });
+    const lang0 = (typeof getLang === 'function') ? getLang() : 'fr';
+    const en0 = lang0 === 'en';
+
+    // Priorite haute : si rollback automatique declenche, on previent l'user
+    // que le filet de securite a sauve la mise. Plus important qu'un "tout OK".
+    if (rolledBackAll > 0) {
+        dashboard.classList.add('level-critical');
+        $('#dash-icon').textContent = '↶';
+        $('#dash-headline').textContent = t('dashboard.rollbackAlert', { n: rolledBackAll });
+        $('#dash-detail').textContent = detail;
+        return;
+    }
+
+    // Si des regles ont echoue sans rollback (action retournee ok=false,
+    // rule irreversible/no-undo), surfacer un message d'echec — sinon
+    // on retombe sur "Tout est OK" alors que clairement non.
+    if (failedAll > 0 && total === 0) {
+        dashboard.classList.add('level-critical');
+        $('#dash-icon').textContent = '✗';
+        $('#dash-headline').textContent = t('dashboard.failedAlert', { n: failedAll });
+        $('#dash-detail').textContent = detail;
+        return;
+    }
 
     if (total === 0) {
         dashboard.classList.add('level-ok');
@@ -770,18 +858,37 @@ async function runEngine(mode) {
     if (isRunning) return;
     const sections = selectedSections();
     if (sections.length === 0) {
-        setStatus('error', getLang() === 'en' ? 'Select at least one section.' : 'Sélectionne au moins une section.');
+        setStatus('error', t('error.selectSections'));
         return;
     }
 
     isRunning = true;
+    currentRunMode = mode;
+    // Reset lastRunRP : sinon une session apply throttled bleed sur le
+    // prochain dry-run / chargement historique avec un message "pas de
+    // Restore Point" trompeur (le dry-run n'en tente jamais).
+    lastRunRP = null;
+    // Au debut d'un dry-run, on repart d'une feuille blanche : les rules
+    // auto-decochees par un precedent dry-run sont remises a coche, sauf
+    // si l'user les a aussi decoches manuellement (excludedRules).
+    if (mode === 'dryrun') {
+        const wasAuto = Array.from(autoExcludedAfterDryRun);
+        autoExcludedAfterDryRun.clear();
+        for (const id of wasAuto) syncCheckboxFor(id);
+    }
     prepareTableForRun(sections);
     showLoader(mode);
     disableButtons(true);
 
     try {
         const auditMode = $('#audit-mode').checked;
-        const excluded = Array.from(excludedRules);
+        // On envoie l'union excludedRules ∪ autoExcludedAfterDryRun pour
+        // l'apply, mais juste excludedRules pour le dry-run (sinon on
+        // n'observerait jamais l'etat des rules deja conformes au prochain
+        // refresh — auto-exclusion is for *next* apply only).
+        const excluded = mode === 'apply'
+            ? Array.from(effectiveExcluded())
+            : Array.from(excludedRules);
         const summary = mode === 'apply'
             ? await window.go.main.App.Apply(sections, currentProfile, auditMode, excluded)
             : await window.go.main.App.DryRun(sections, currentProfile, auditMode, excluded);
@@ -789,9 +896,10 @@ async function runEngine(mode) {
         setStatus(cls, summarizeStatus(summary));
         await refreshRuns();
     } catch (err) {
-        setStatus('error', `Erreur: ${err}`);
+        setStatus('error', t('error.generic', { msg: String(err) }));
     } finally {
         isRunning = false;
+        currentRunMode = null;
         hideLoader();
         disableButtons(false);
     }
@@ -800,7 +908,7 @@ async function runEngine(mode) {
 function promptAndApply() {
     const sections = selectedSections();
     if (sections.length === 0) {
-        setStatus('error', getLang() === 'en' ? 'Select at least one section.' : 'Sélectionne au moins une section.');
+        setStatus('error', t('error.selectSections'));
         return;
     }
     $('#modal-sections').innerHTML = sections.map(id => `<li>${escapeHtml(id)}</li>`).join('');
@@ -823,7 +931,7 @@ function disableButtons(disabled) {
 
 function showLoader(mode) {
     $('#loader-title').textContent = mode === 'apply' ? 'Application en cours…' : 'Analyse en cours…';
-    $('#loader-progress').textContent = `0 / ${totalRulesInRun} règles`;
+    $('#loader-progress').textContent = t('loader.progress', { done: 0, total: totalRulesInRun });
     $('#loader-current').textContent = '—';
     $('#loader').classList.remove('hidden');
 }
@@ -834,9 +942,9 @@ function hideLoader() {
 
 function updateLoader(currentRule) {
     processedRules++;
-    $('#loader-progress').textContent = `${processedRules} / ${totalRulesInRun} règles`;
+    $('#loader-progress').textContent = t('loader.progress', { done: processedRules, total: totalRulesInRun });
     const rule = rulesByID[currentRule];
-    $('#loader-current').textContent = rule ? rule.title : currentRule;
+    $('#loader-current').textContent = rule ? ruleTitle(rule) : currentRule;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -859,9 +967,9 @@ function bindWailsEvents() {
     window.runtime.EventsOn('run_start', (payload) => {
         if (payload && payload.ruleCount) {
             totalRulesInRun = payload.ruleCount;
-            $('#loader-progress').textContent = `0 / ${totalRulesInRun} règles`;
+            $('#loader-progress').textContent = t('loader.progress', { done: 0, total: totalRulesInRun });
         }
-        setStatus('running', `Run ${payload.runId} (${payload.mode}, ${payload.sectionCount} section(s), ${payload.ruleCount} règles)`);
+        setStatus('running', t('status.runStart', { id: payload.runId, mode: payload.mode, sec: payload.sectionCount, n: payload.ruleCount }));
     });
     window.runtime.EventsOn('run_end', (summary) => {
         const cls = summary.cancelled || summary.aborted ? 'aborted' : 'success';
@@ -870,23 +978,17 @@ function bindWailsEvents() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     window.runtime.EventsOn('restore_point_started', () => {
-        const en = getLang() === 'en';
-        setStatus('running', en
-            ? 'Creating a Windows Restore Point (may take 30-60s)…'
-            : 'Création d\'un Restore Point Windows (peut prendre 30-60s)…');
+        setStatus('running', t('status.creatingRP'));
     });
     window.runtime.EventsOn('restore_point_done', (payload) => {
-        const en = getLang() === 'en';
+        lastRunRP = payload || null;
         if (payload && payload.created) {
             const sec = Math.round((payload.durationMs || 0)/1000);
-            setStatus('running', en
-                ? `Restore Point created in ${sec}s. Starting apply…`
-                : `Restore Point créé en ${sec}s. Démarrage de l'apply…`);
+            setStatus('running', t('status.rpCreated', { sec }));
         } else {
-            const why = payload && payload.reason ? `(${payload.reason})` : '';
-            setStatus('running', en
-                ? `Restore Point not created ${why} — apply continues (rollback via journal still available).`
-                : `Restore Point non créé ${why} — l'apply continue (rollback via journal disponible).`);
+            const en = getLang() === 'en';
+            const why = payload && payload.reason ? `(${humanRPReason(payload.reason, en)}) ` : '';
+            setStatus('running', t('status.rpSkipped', { why }));
         }
     });
 }
@@ -895,6 +997,15 @@ function handleEngineEvent(ev) {
     if (ev.type === 'action_result') {
         updateRuleRow(ev);
         updateLoader(ev.rule_id);
+        // Auto-skip "deja conforme" apres un dry-run : on decoche la rule
+        // pour que l'user voie clairement ce qui sera applique au prochain
+        // Apply (= seulement les non-conformes restees cochees).
+        if (currentRunMode === 'dryrun' &&
+            (ev.status === 'would_skip' || ev.status === 'skipped') &&
+            ev.reason === 'already_compliant') {
+            autoExcludedAfterDryRun.add(ev.rule_id);
+            syncCheckboxFor(ev.rule_id);
+        }
     }
 }
 
@@ -910,19 +1021,22 @@ function prepareTableForRun(sectionIDs) {
     processedRules = 0;
     totalRulesInRun = 0;
 
+    // Le compteur du loader doit refleter ce qui sera evalue cote backend :
+    // dry-run = excludedRules manuel ; apply = union avec auto-skip post-dryrun.
+    const skipForCounting = currentRunMode === 'apply' ? effectiveExcluded() : excludedRules;
+
     for (const s of currentSections) {
         if (!sectionIDs.includes(s.id)) continue;
         for (const r of (s.rules || [])) {
             const tr = renderRuleRow(r, 'pending', null);
             tbody.appendChild(tr);
             rowsByRuleID[r.id] = tr;
-            totalRulesInRun++;
+            if (!skipForCounting.has(r.id)) totalRulesInRun++;
         }
     }
     applyFilters();
     if (totalRulesInRun === 0) {
-        const lang = (typeof getLang === 'function') ? getLang() : 'fr';
-        tbody.innerHTML = `<tr class="empty"><td colspan="5">${lang === 'en' ? 'No rules in selection.' : 'Aucune règle dans la sélection.'}</td></tr>`;
+        tbody.innerHTML = `<tr class="empty"><td colspan="5">${escapeHtml(t('error.noRulesInSelection'))}</td></tr>`;
     }
     // Cacher le dashboard tant qu'on n'a pas évalué.
     $('#dashboard').classList.add('hidden');
@@ -934,13 +1048,13 @@ function renderRuleRow(rule, status, ev) {
     tr.dataset.ruleId = rule.id;
     tr.dataset.status = status;
     const severity = rule.severity || 'nice-to-have';
-    const excluded = excludedRules.has(rule.id);
+    const excluded = effectiveExcluded().has(rule.id);
     if (excluded) tr.classList.add('excluded');
     tr.innerHTML = `
-        <td class="col-include"><input type="checkbox" class="include-rule" data-rule-id="${escapeHtml(rule.id)}" ${excluded ? '' : 'checked'} title="Décocher pour exclure cette règle"></td>
+        <td class="col-include"><input type="checkbox" class="include-rule" data-rule-id="${escapeHtml(rule.id)}" ${excluded ? '' : 'checked'} title="${escapeHtml(t('tooltip.includeRow'))}"></td>
         <td><span class="severity ${severity}">${humanSeverity(severity)}</span></td>
         <td class="rule-name">
-            ${escapeHtml(rule.title || rule.id)}
+            ${escapeHtml(ruleTitle(rule) || rule.id)}
             <span class="rule-id-tech">${escapeHtml(rule.id)}</span>
         </td>
         <td><span class="status ${status}">${escapeHtml(humanStatus(status, rule.id))}</span></td>
@@ -1037,7 +1151,7 @@ function formatActionCell(rule, status, ev) {
         // Cellule courte : verbe contextuel + 1 ligne synthétique.
         const verb = contextualVerb(rule);
         const userAfter = en ? (rule.userAfterEn || rule.userAfter) : rule.userAfter;
-        const synth = userAfter || rule.title || (en ? 'system change' : 'modification système');
+        const synth = userAfter || ruleTitle(rule) || (en ? 'system change' : 'modification système');
         return `<span class="action-icon warn">⚠</span><span class="action-text"><strong>${escapeHtml(verb)}</strong> · ${escapeHtml(synth)}</span>`;
     }
     if (status === 'applied') {
@@ -1050,7 +1164,7 @@ function formatActionCell(rule, status, ev) {
 // humanStateBlurb : transforme un current_state {Foo: 1, Bar: "Disabled"}
 // en un texte court "Foo=1, Bar=Disabled" (déjà plus lisible que JSON brut).
 function humanStateBlurb(state) {
-    if (state === null || state === undefined) return '<em>non défini</em>';
+    if (state === null || state === undefined) return `<em>${escapeHtml(t('tooltip.notdefined'))}</em>`;
     if (typeof state !== 'object') return `<code>${escapeHtml(String(state))}</code>`;
     const entries = Object.entries(state).slice(0, 3);
     return entries.map(([k, v]) => {
@@ -1094,6 +1208,41 @@ function humanSeverity(s) {
     }[s] || s;
 }
 
+// Convertit un run_id "2026-05-14T08-50-25" en "14/05 à 10:50" (FR) ou
+// "14/05 at 10:50" (EN). Le run_id est en UTC ; on l'affiche en local pour
+// l'utilisateur. Garde le run_id en title pour debug.
+function formatRunDate(runId, en) {
+    // Format: YYYY-MM-DDTHH-MM-SS (UTC, dashes au lieu de :)
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})$/.exec(runId || '');
+    if (!m) return runId || '';
+    const utc = new Date(Date.UTC(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]));
+    const dd = String(utc.getDate()).padStart(2, '0');
+    const mm = String(utc.getMonth()+1).padStart(2, '0');
+    const hh = String(utc.getHours()).padStart(2, '0');
+    const mi = String(utc.getMinutes()).padStart(2, '0');
+    return en ? `${dd}/${mm} at ${hh}:${mi}` : `${dd}/${mm} à ${hh}:${mi}`;
+}
+
+// Vulgarise les raisons techniques du RP retournees par l'engine en
+// phrase comprehensible. Fallback : retourne tel quel si reason inconnu.
+function humanRPReason(reason, en) {
+    const map = {
+        fr: {
+            'throttled':   'Windows en a créé un récemment',
+            'admin_required': 'droits admin nécessaires',
+            'disabled':    'fonctionnalité désactivée sur ce PC',
+            'failed':      'Windows a refusé',
+        },
+        en: {
+            'throttled':   'Windows created one recently',
+            'admin_required': 'admin rights required',
+            'disabled':    'feature disabled on this PC',
+            'failed':      'Windows refused',
+        },
+    };
+    return (map[en ? 'en' : 'fr'][reason]) || reason || '';
+}
+
 function summarizeStatus(s) {
     const lang = (typeof getLang === 'function') ? getLang() : 'fr';
     const en = lang === 'en';
@@ -1106,11 +1255,23 @@ function summarizeStatus(s) {
         parts.push(`${s.applied} ${verb}`);
     }
     if (s.failed) parts.push(`${s.failed} ${en ? 'failure(s)' : 'échec(s)'}`);
-    if (s.rolledBack) parts.push(`${s.rolledBack} rollback`);
+    if (s.rolledBack) parts.push(`${s.rolledBack} ${en ? (s.rolledBack > 1 ? 'changes reverted' : 'change reverted') : (s.rolledBack > 1 ? 'modifs annulées' : 'modif annulée')}`);
+    // Si le RP a ete throttle/skip, on le mentionne dans le summary final
+    // pour que l'user sache qu'il n'y en a PAS pour ce run (le message
+    // intermediaire avait disparu sous les events suivants).
+    if (lastRunRP && lastRunRP.created === false) {
+        const why = lastRunRP.reason ? ` (${humanRPReason(lastRunRP.reason, en)})` : '';
+        parts.push(en ? `no Restore Point${why}` : `pas de Restore Point${why}`);
+    }
     let suffix = '';
     if (s.cancelled) suffix = en ? ' [CANCELLED]' : ' [ANNULÉ]';
-    else if (s.aborted) suffix = en ? ' [STOPPED after rollback]' : ' [ARRÊTÉ après rollback]';
-    return `Run ${s.runId} (${s.mode}) · ${parts.join(' · ')}${suffix}`;
+    else if (s.aborted) suffix = en ? ' [Stopped for safety]' : ' [Stoppé par sécurité]';
+    const when = formatRunDate(s.runId, en);
+    const label = s.mode === 'apply'
+        ? (en ? 'Application' : 'Application')
+        : (en ? 'Check' : 'Vérification');
+    // run_id technique reste visible dans la sidebar Historique pour debug.
+    return `${label} ${when} · ${parts.join(' · ')}${suffix}`;
 }
 
 function setStatus(kind, message) {
@@ -1228,15 +1389,15 @@ function showTooltip(rule, status, currentState) {
         : '';
 
     const rebootSection = rule.requiresReboot
-        ? `<div class="tt-section" style="color:#ffd770;font-size:11px">⚙ ${lang === 'en' ? 'Reboot required after applying' : 'Redémarrage requis après application'}</div>`
+        ? `<div class="tt-section" style="color:#ffd770;font-size:11px">⚙ ${escapeHtml(t('tooltip.rebootRequired'))}</div>`
         : '';
 
     const irreversibleSection = rule.irreversible
-        ? `<div class="tt-irreversible">⚠ ${lang === 'en' ? 'Irreversible' : 'Irréversible'} : ${escapeHtml(rule.irreversibleReason || (lang === 'en' ? "This rule can't be reverted via undo." : "Cette règle ne peut pas être annulée par undo."))}</div>`
+        ? `<div class="tt-irreversible">⚠ ${escapeHtml(t('tooltip.irreversible'))} : ${escapeHtml(rule.irreversibleReason || t('tooltip.cantUndo'))}</div>`
         : '';
 
     tt.innerHTML = `
-        <h4>${escapeHtml(rule.title)} <span class="severity ${rule.severity}" style="margin-left:6px;font-size:9px;vertical-align:middle">${escapeHtml(humanSeverity(rule.severity))}</span></h4>
+        <h4>${escapeHtml(ruleTitle(rule))} <span class="severity ${rule.severity}" style="margin-left:6px;font-size:9px;vertical-align:middle">${escapeHtml(humanSeverity(rule.severity))}</span></h4>
         ${userFriendlySection}
         ${currentSection}
         ${breaksSection}

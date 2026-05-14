@@ -118,6 +118,7 @@ type EngineInfo struct {
 type RuleInfo struct {
 	ID                 string   `json:"id"`
 	Title              string   `json:"title"`
+	TitleEn            string   `json:"titleEn,omitempty"`
 	Description        string   `json:"description"`
 	Explanation        string   `json:"explanation"`
 	Impact             string   `json:"impact"`
@@ -332,6 +333,49 @@ if ($rp) {
 	return strings.TrimSpace(string(out)) == "yes"
 }
 
+// PreflightInfo retourne les conditions environnementales que la GUI doit
+// connaitre AVANT un apply, pour avertir l'user (pas pour bloquer). Pour
+// l'instant : Tamper Protection ON = certaines regles Defender vont rollback.
+type PreflightInfo struct {
+	IsTamperProtected bool   `json:"isTamperProtected"`
+	DetectError       string `json:"detectError,omitempty"`
+}
+
+// Preflight : interroge Defender via PS. Sur Win11 recent, Get-MpComputerStatus
+// expose IsTamperProtected. Si absent ou erreur (Defender desinstalle, etc.),
+// on retourne false + l'erreur dans DetectError. Best-effort : ce check ne
+// doit JAMAIS bloquer la GUI.
+func (a *App) Preflight() PreflightInfo {
+	cmd := exec.Command("powershell.exe", "-NoProfile", "-Command",
+		`try {
+    $s = Get-MpComputerStatus -ErrorAction Stop
+    if ($s.PSObject.Properties['IsTamperProtected']) { if ($s.IsTamperProtected) { 'yes' } else { 'no' } } else { 'na' }
+} catch { 'err:' + $_.Exception.Message }`)
+	cmd.SysProcAttr = hideWindowAttr()
+	out, err := cmd.Output()
+	if err != nil {
+		logf("Preflight: PS error: %v", err)
+		return PreflightInfo{DetectError: err.Error()}
+	}
+	r := strings.TrimSpace(string(out))
+	logf("Preflight: IsTamperProtected raw=%q", r)
+	if strings.HasPrefix(r, "err:") {
+		return PreflightInfo{DetectError: strings.TrimPrefix(r, "err:")}
+	}
+	return PreflightInfo{IsTamperProtected: r == "yes"}
+}
+
+// OpenWindowsSecurity : ouvre la page Defender de Sécurité Windows via le
+// schéma ms-settings. Utilise par le bouton "Ouvrir Securite Windows" du
+// banner Tamper Protection. Best-effort, swallowed errors.
+func (a *App) OpenWindowsSecurity() {
+	cmd := exec.Command("cmd.exe", "/c", "start", "windowsdefender:")
+	cmd.SysProcAttr = hideWindowAttr()
+	if err := cmd.Start(); err != nil {
+		logf("OpenWindowsSecurity: %v", err)
+	}
+}
+
 // WatchlistAlert : un alert résumé pour le frontend.
 type WatchlistAlert struct {
 	RunID     string `json:"runId"`
@@ -445,6 +489,7 @@ type ContextDetection struct {
 	NetworkPrinters  bool   `json:"networkPrinters"`
 	SuggestedProfile string `json:"suggestedProfile"`
 	Reason           string `json:"reason"`
+	ReasonEn         string `json:"reasonEn,omitempty"`
 	// AutoSkipRules : rule_ids que la GUI doit pré-cocher comme exclus parce
 	// qu'ils casseraient une fonctionnalité utilisée sur cette machine
 	// (ex: rename_admin sur AD-joined, hibernate_off sur laptop).
@@ -453,8 +498,9 @@ type ContextDetection struct {
 
 // AutoSkipEntry décrit une rule auto-exclue + la raison user-facing.
 type AutoSkipEntry struct {
-	RuleID string `json:"ruleId"`
-	Reason string `json:"reason"`
+	RuleID   string `json:"ruleId"`
+	Reason   string `json:"reason"`
+	ReasonEn string `json:"reasonEn,omitempty"`
 }
 
 // DetectContext spawn un PS qui détecte le contexte machine (AD-joined,
@@ -502,7 +548,11 @@ try {
 	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("harden-detect-%d.ps1", time.Now().UnixNano()))
 	if err := os.WriteFile(tmpFile, []byte(psScript), 0o644); err != nil {
 		logf("DetectContext: write tmp script: %v", err)
-		return ContextDetection{SuggestedProfile: "personal", Reason: "détection impossible — défaut PC personnel"}
+		return ContextDetection{
+			SuggestedProfile: "personal",
+			Reason:           "détection impossible — défaut PC personnel",
+			ReasonEn:         "detection failed — defaulting to personal PC",
+		}
 	}
 	defer os.Remove(tmpFile)
 
@@ -512,7 +562,11 @@ try {
 	out, err := r.RunPS(ctx, tmpFile, nil)
 	if err != nil {
 		logf("DetectContext: PS error: %v", err)
-		return ContextDetection{SuggestedProfile: "personal", Reason: "détection impossible — défaut PC personnel"}
+		return ContextDetection{
+			SuggestedProfile: "personal",
+			Reason:           "détection impossible — défaut PC personnel",
+			ReasonEn:         "detection failed — defaulting to personal PC",
+		}
 	}
 
 	d := ContextDetection{}
@@ -536,25 +590,30 @@ try {
 	if d.ADJoined {
 		d.SuggestedProfile = "business"
 		d.Reason = "Machine jointe à un domaine Active Directory."
+		d.ReasonEn = "Machine joined to an Active Directory domain."
 	} else if d.NetworkPrinters || d.PrinterCount >= 3 {
 		d.SuggestedProfile = "business"
 		d.Reason = fmt.Sprintf("%d imprimante(s) détectée(s) dont au moins une réseau — usage probable petite entreprise.", d.PrinterCount)
+		d.ReasonEn = fmt.Sprintf("%d printer(s) detected, at least one networked — likely small business usage.", d.PrinterCount)
 	} else {
 		d.SuggestedProfile = "personal"
 		d.Reason = "Pas de domaine AD, peu d'imprimantes — usage perso probable."
+		d.ReasonEn = "No AD domain, few printers — likely personal use."
 	}
 
 	// Auto-skip rules : règles incompatibles avec ce contexte spécifique.
 	if d.ADJoined {
 		d.AutoSkipRules = append(d.AutoSkipRules, AutoSkipEntry{
-			RuleID: "accounts.rename_admin",
-			Reason: "Machine AD-joined : la GPO du domaine peut écraser le rename. Renommage à faire via politique AD plutôt qu'en local.",
+			RuleID:   "accounts.rename_admin",
+			Reason:   "Machine AD-joined : la GPO du domaine peut écraser le rename. Renommage à faire via politique AD plutôt qu'en local.",
+			ReasonEn: "AD-joined machine: domain GPO may overwrite the rename. Do it via AD policy, not locally.",
 		})
 	}
 	if d.IsLaptop || d.HasBattery {
 		d.AutoSkipRules = append(d.AutoSkipRules, AutoSkipEntry{
-			RuleID: "system_settings.hibernate_off",
-			Reason: "Laptop détecté : l'hibernation est utile pour préserver la batterie en mobilité (sleep prolongé consomme).",
+			RuleID:   "system_settings.hibernate_off",
+			Reason:   "Laptop détecté : l'hibernation est utile pour préserver la batterie en mobilité (sleep prolongé consomme).",
+			ReasonEn: "Laptop detected: hibernation helps preserve battery on the go (long sleep drains it).",
 		})
 	}
 
@@ -634,6 +693,7 @@ func (a *App) GetSections(profile string) ([]SectionInfo, error) {
 			rules = append(rules, RuleInfo{
 				ID:                 r.ID,
 				Title:              r.Title,
+				TitleEn:            r.TitleEn,
 				Description:        r.Description,
 				Explanation:        strings.TrimSpace(r.Explanation),
 				Impact:             r.Impact,
@@ -739,9 +799,16 @@ func (a *App) runEngine(mode executor.Mode, sectionIDs []string, profile string,
 		}
 	}
 
+	// totalRules = nombre de rules qui seront effectivement evaluees, donc on
+	// soustrait celles explicitement excluded par l'user. Sinon le loader
+	// affiche "X / 85" alors que seules 74 seront traitees.
 	totalRules := 0
 	for _, s := range sections {
-		totalRules += s.RuleCount
+		for _, r := range s.Rules {
+			if !excluded[r.ID] {
+				totalRules++
+			}
+		}
 	}
 
 	runID := time.Now().UTC().Format("2006-01-02T15-04-05")

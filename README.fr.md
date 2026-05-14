@@ -8,17 +8,17 @@
 
 À la sortie de la boîte, **Windows 11 n'est pas durci** contre les attaques modernes. Ce projet comble ce trou — il amène ton PC perso au niveau d'une machine d'entreprise correctement administrée.
 
-[![Release](https://img.shields.io/github/v/release/koff75/win11-hardening?style=for-the-badge&color=2ea44f&logo=github)](https://github.com/koff75/win11-hardening/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/koff75/win11-hardening/total?style=for-the-badge&color=blue&logo=download)](https://github.com/koff75/win11-hardening/releases/latest)
-[![Stars](https://img.shields.io/github/stars/koff75/win11-hardening?style=for-the-badge&color=yellow&logo=star)](https://github.com/koff75/win11-hardening/stargazers)
+[![Release](https://img.shields.io/github/v/release/koff75/harden-win11?style=for-the-badge&color=2ea44f&logo=github)](https://github.com/koff75/harden-win11/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/koff75/harden-win11/total?style=for-the-badge&color=blue&logo=download)](https://github.com/koff75/harden-win11/releases/latest)
+[![Stars](https://img.shields.io/github/stars/koff75/harden-win11?style=for-the-badge&color=yellow&logo=star)](https://github.com/koff75/harden-win11/stargazers)
 [![License](https://img.shields.io/badge/license-WTFPL-lightgrey?style=for-the-badge)](LICENSE)
 
-[![CI](https://img.shields.io/github/actions/workflow/status/koff75/win11-hardening/ci.yml?branch=main&style=flat-square&label=CI&logo=github-actions)](https://github.com/koff75/win11-hardening/actions)
-[![Tests](https://img.shields.io/badge/tests-98%20Pester%20%2B%20100%2B%20Go-green?style=flat-square)](https://github.com/koff75/win11-hardening)
+[![CI](https://img.shields.io/github/actions/workflow/status/koff75/harden-win11/ci.yml?branch=main&style=flat-square&label=CI&logo=github-actions)](https://github.com/koff75/harden-win11/actions)
+[![Tests](https://img.shields.io/badge/tests-98%20Pester%20%2B%20100%2B%20Go-green?style=flat-square)](https://github.com/koff75/harden-win11)
 [![CIS](https://img.shields.io/badge/CIS%20Win11-62%25-blue?style=flat-square)](mappings/baselines.yaml) [![MS](https://img.shields.io/badge/MS%20Baseline-65%25-blue?style=flat-square)](mappings/baselines.yaml) [![ANSSI](https://img.shields.io/badge/ANSSI-42%25-blue?style=flat-square)](mappings/baselines.yaml)
 [![EN/FR](https://img.shields.io/badge/EN%20%2F%20FR-purple?style=flat-square)](#)
 
-### [⬇️ **Télécharger pour Windows 11**](https://github.com/koff75/win11-hardening/releases/latest) · [🇬🇧 **English version**](README.md)
+### [⬇️ **Télécharger pour Windows 11**](https://github.com/koff75/harden-win11/releases/latest) · [🇬🇧 **English version**](README.md)
 
 ![Hero — interface principale](docs/screenshots/01-dashboard.png)
 
@@ -50,16 +50,27 @@ Une installation Windows 11 fraîche en 2026 livre encore :
 
 Ce n'est pas une question de configuration — ce sont des choix Microsoft, pour la rétrocompat. **Win11 Hardening les change**, en t'expliquant chacun en langage simple, et te laisse annuler n'importe quelle règle individuellement.
 
-|                                | Réglages manuels | O&O ShutUp10++ | Scripts tweaks | **Win11 Hardening** |
-| ------------------------------ | :--------------: | :------------: | :------------: | :-----------------: |
-| Explications en français clair |         ❌         |       ⚠️        |        ❌        |          ✅          |
-| Survol règle = détail complet  |         ❌         |       ❌        |        ❌        |          ✅          |
-| Réversible règle par règle     |         ❌         |       ⚠️        |        ❌        |          ✅          |
-| Restore Point auto             |         ❌         |       ❌        |        ❌        |          ✅          |
-| Re-test après apply            |         ❌         |       ❌        |        ❌        |          ✅          |
-| Détecte le drift Windows-Update |         ❌         |       ❌        |        ❌        |          ✅          |
-| Mappé CIS / ANSSI / MS         |         ❌         |       ❌        |        ⚠️        |          ✅          |
-| Open source, audité            |         ✅         |       ❌        |        ⚠️        |          ✅          |
+### Comparaison avec d'autres outils de durcissement Windows
+
+Honnêtement : il y a de très bons outils. Mais la plupart couvrent **une partie de la surface** — soit la vie privée *ou* le durcissement entreprise, soit GUI *ou* CLI, soit populaire *ou* exhaustif. Win11 Hardening essaye de combiner UX grand public et couverture niveau entreprise.
+
+| Fonctionnalité | [O&O ShutUp10++](https://www.oo-software.com/fr/shutup10) | [Privatezilla](https://github.com/builtbybel/privatezilla) | [Chris Titus WinUtil](https://github.com/ChrisTitusTech/winutil) | [MS Security Baseline](https://www.microsoft.com/en-us/download/details.aspx?id=55319) | **Win11 Hardening** |
+|---|:---:|:---:|:---:|:---:|:---:|
+| GUI grand public | ✅ | ✅ | ✅ | ❌ (GPO/expert) | ✅ |
+| Explication par règle en langage clair | ⚠️ (1 ligne) | ⚠️ (1 ligne) | ❌ | ❌ (.docx) | ✅ (4 lignes + survol) |
+| Couverture vie privée / bloatware | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Couverture Defender + Pare-feu + ASR | ❌ | ❌ | ⚠️ (basique) | ✅ | ✅ |
+| Annulation par règle individuelle | ⚠️ (préréglages) | ⚠️ (toggle) | ⚠️ (re-lancer) | ❌ | ✅ |
+| Restore Point automatique | ✅ | ❌ | ⚠️ (manuel) | ❌ | ✅ |
+| Re-test post-apply + rollback auto | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Détection du drift Windows Update | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Mappé CIS / ANSSI / MS | ❌ | ❌ | ❌ | MS seul | ✅ |
+| Open source | ❌ (freeware) | ✅ | ✅ | ⚠️ (partiel) | ✅ |
+| Langues | EN/DE | EN/DE/RU | EN | EN | EN/FR |
+
+**Là où Win11 Hardening est unique** : la combinaison (1) UX détaillée en langage clair d'un outil privacy grand public, (2) couverture Defender/Pare-feu/ASR d'un baseline entreprise, et (3) features originales qu'aucun autre outil n'a — re-test post-apply avec rollback automatique, et détection du drift Windows Update.
+
+**Là où d'autres sont meilleurs** : O&O ShutUp10++ si tu veux uniquement la vie privée avec une expérience freeware polie · Microsoft Security Baseline si tu gères une flotte via GPO/Intune · Chris Titus WinUtil si tu veux un tweaker tout-en-un populaire qui inclut aussi du non-sécurité (debloat installer presets, dark mode, etc.).
 
 ---
 
@@ -184,12 +195,3 @@ Référence CLI complète : `harden-engine.exe --help`. Format des manifests et 
 
 [`docs/smoke-test.md`](docs/smoke-test.md) · [`docs/manual-e2e-checklist.md`](docs/manual-e2e-checklist.md) · [`mappings/baselines.yaml`](mappings/baselines.yaml) · [`README.md`](README.md)
 
----
-
-<div align="center">
-
-### Utile ? **Une ⭐ aide le projet à atteindre les gens qui en ont besoin.**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=koff75/win11-hardening&type=Date)](https://star-history.com/#koff75/win11-hardening&Date)
-
-</div>

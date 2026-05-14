@@ -16,6 +16,16 @@
     <button type="button" id="btn-relaunch-admin" class="btn-relaunch" data-i18n="admin.relaunch">Relancer en admin</button>
 </div>
 
+<div id="tamper-banner" class="watchlist-banner hidden">
+    <span class="watchlist-banner-icon">🛡</span>
+    <span class="watchlist-banner-text">
+        <strong data-i18n="tamper.title">Petite étape avant d'améliorer ton antivirus.</strong>
+        <span data-i18n="tamper.detail"> Windows bloque les modifications de Defender. Dans Sécurité Windows → « Protection contre les virus et menaces » → « Gérer les paramètres » → désactive « Protection contre les falsifications ».</span>
+    </span>
+    <button type="button" id="btn-open-security" class="btn-watchlist-detail" data-i18n="tamper.open">Ouvre-moi la page →</button>
+    <button type="button" id="btn-tamper-dismiss" class="btn-watchlist-dismiss" title="Dismiss">✕</button>
+</div>
+
 <div id="drift-banner" class="watchlist-banner hidden">
     <span class="watchlist-banner-icon">🛠</span>
     <span class="watchlist-banner-text">
@@ -61,18 +71,18 @@
 
         <h2 data-i18n="aside.actions">Actions</h2>
         <div class="actions">
-            <button id="btn-dryrun" title="Lit l'état système sans rien modifier (sans admin requis)" data-i18n="btn.dryrun">
+            <button id="btn-dryrun" data-i18n-title="title.dryrun" title="Lit l'état système sans rien modifier (sans admin requis)" data-i18n="btn.dryrun">
                 🔍 Vérifier (dry-run)
             </button>
-            <button id="btn-apply" class="danger" title="Applique réellement les changements (admin requis)" data-i18n="btn.apply">
+            <button id="btn-apply" class="danger" data-i18n-title="title.apply" title="Applique réellement les changements (admin requis)" data-i18n="btn.apply">
                 ⚙️ Appliquer
             </button>
-            <button id="btn-undo" class="warn" title="Annule les changements du dernier run" data-i18n="btn.undo">
+            <button id="btn-undo" class="warn" data-i18n-title="title.undo" title="Annule les changements du dernier run" data-i18n="btn.undo">
                 ↶ Annuler le dernier run
             </button>
             <details class="advanced">
                 <summary data-i18n="aside.advanced">Options avancées</summary>
-                <label class="audit-toggle" title="Pour les protections Microsoft Defender qui peuvent générer des faux positifs (ASR, Network Protection) : active un mode test pendant 1-2 semaines pour voir ce qui serait bloqué dans Event Viewer (events 1121/1122) sans casser tes apps. Une fois sûr qu'aucune app légitime n'est impactée, décoche pour activer le blocage réel.">
+                <label class="audit-toggle" data-i18n-title="title.auditMode" title="Pour les protections Microsoft Defender qui peuvent générer des faux positifs (ASR, Network Protection) : active un mode test pendant 1-2 semaines pour voir ce qui serait bloqué dans Event Viewer (events 1121/1122) sans casser tes apps. Une fois sûr qu'aucune app légitime n'est impactée, décoche pour activer le blocage réel.">
                     <input type="checkbox" id="audit-mode">
                     <span data-i18n="aside.audit_label">Mode test (n'enregistre que sans bloquer)</span>
                 </label>
@@ -90,7 +100,7 @@
             <span id="dash-icon" class="dash-icon">⚠</span>
             <span id="dash-headline" class="dash-headline">—</span>
             <span id="dash-detail" class="dash-detail"></span>
-            <button type="button" id="btn-maturity" class="btn-maturity hidden" title="Voir ton score de maturité hardening (note A/B/C/D)" data-i18n="btn.score">📊 Score</button>
+            <button type="button" id="btn-maturity" class="btn-maturity hidden" data-i18n-title="title.score" title="Voir ton score de maturité hardening (note A/B/C/D)" data-i18n="btn.score">📊 Score</button>
         </div>
 
         <div id="filters">
@@ -107,7 +117,7 @@
                 <label><input type="checkbox" class="filter-status" value="to-apply" checked> <span data-i18n="filter.toapply">À renforcer</span></label>
                 <label><input type="checkbox" class="filter-status" value="failed" checked> <span data-i18n="filter.failed">Échec</span></label>
             </div>
-            <button id="filter-reset" class="filter-reset" title="Réinitialiser les filtres" data-i18n="filter.reset">Reset</button>
+            <button id="filter-reset" class="filter-reset" data-i18n-title="title.filterReset" title="Réinitialiser les filtres" data-i18n="filter.reset">Reset</button>
             <span id="filter-count" class="muted small"></span>
         </div>
 
@@ -115,8 +125,8 @@
             <table id="results-table">
                 <thead>
                     <tr>
-                        <th class="col-include" title="Décoche pour exclure cette règle du prochain run">
-                            <input type="checkbox" id="include-all" checked title="Tout cocher / décocher">
+                        <th class="col-include" data-i18n-title="title.colInclude" title="Décoche pour exclure cette règle du prochain run">
+                            <input type="checkbox" id="include-all" checked data-i18n-title="title.includeAll" title="Tout cocher / décocher">
                         </th>
                         <th class="col-severity" data-i18n="table.severity">Niveau</th>
                         <th class="col-rule" data-i18n="table.rule">Règle</th>

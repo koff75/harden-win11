@@ -23,6 +23,9 @@ type SectionMeta struct {
 type Rule struct {
 	ID                 string   `yaml:"id"`
 	Title              string   `yaml:"title"`
+	// TitleEn : titre anglais. Optionnel. La GUI cascade title_en → title
+	// quand l'utilisateur a sélectionné la langue 'en'.
+	TitleEn            string   `yaml:"title_en,omitempty"`
 	Description        string   `yaml:"description"`
 	Explanation        string   `yaml:"explanation"`
 	Severity           string   `yaml:"severity"` // critical | important | nice-to-have

@@ -42,6 +42,17 @@ __debug_bin*
 /cmd/harden-gui/build/
 /cmd/harden-gui/frontend/wailsjs/
 
+# Bundles de debug generes par tools/collect-debug.ps1
+# (logs + NDJSON anonymises, mais on les garde locaux par defaut)
+/debug-bundles/
+
+# Artefacts go test (-coverprofile genere ce dossier ou fichier)
+/coverage
+/coverage/
+
+# Git worktrees (branches checkees en parallele via git worktree add)
+/worktrees/
+
 # Secrets / credentials — ne jamais commit
 .env
 .env.*

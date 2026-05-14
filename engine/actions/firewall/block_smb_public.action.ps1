@@ -1,30 +1,47 @@
 # block_smb_public.action.ps1
-# Crée une firewall rule pour bloquer SMB (TCP 445) entrant sur le profil Public.
-# Idempotent : supprime la rule existante avant recréation.
+# Cree une firewall rule pour bloquer SMB (TCP 445) entrant sur le profil Public.
+# Idempotent : supprime la rule existante avant recreation.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ruleName = 'Block SMB Inbound (Public) [Hardening]'
 
-$existing = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
+# Note : les crochets [ ] dans le DisplayName sont interpretes comme
+# wildcards PowerShell par Get-NetFirewallRule -DisplayName. Donc on
+# filtre via Where-Object pour matcher litteralement, et on capture
+# le Name (GUID) retourne par New-NetFirewallRule pour les Get suivants
+# qui sont stables.
+$existing = Get-NetFirewallRule -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq $ruleName }
 $before = @{
     existed = [bool]$existing
-    enabled = if ($existing) { $existing.Enabled.ToString() } else { $null }
+    enabled = if ($existing) { $existing[0].Enabled.ToString() } else { $null }
 }
 
 if ($existing) {
-    Remove-NetFirewallRule -DisplayName $ruleName
+    foreach ($r in $existing) { Remove-NetFirewallRule -Name $r.Name -ErrorAction SilentlyContinue }
 }
 
-New-NetFirewallRule -DisplayName $ruleName `
+$new = New-NetFirewallRule -DisplayName $ruleName `
     -Direction Inbound `
     -Protocol TCP `
     -LocalPort 445 `
     -Action Block `
-    -Profile Public | Out-Null
+    -Profile Public
 
-$now = Get-NetFirewallRule -DisplayName $ruleName
+# Get-NetFirewallRule -Name est stable (pas de wildcard) — utilise le GUID
+# retourne par PassThru pour eviter le piege des crochets dans DisplayName.
+$now = Get-NetFirewallRule -Name $new.Name -ErrorAction SilentlyContinue
+if (-not $now) {
+    @{
+        ok    = $false
+        error = "Firewall rule non trouvable apres creation (Name=$($new.Name))."
+        before = $before
+        after  = @{ existed = $false; enabled = $null }
+    } | ConvertTo-Json -Compress -Depth 10
+    exit 0
+}
+
 $after = @{
     existed = $true
     enabled = $now.Enabled.ToString()
