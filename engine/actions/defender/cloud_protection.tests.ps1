@@ -10,10 +10,12 @@ BeforeAll {
     $script:TestScript   = Join-Path $PSScriptRoot 'cloud_protection.test.ps1'
     $script:UndoScript   = Join-Path $PSScriptRoot 'cloud_protection.undo.ps1'
 
+    # Defender cmdlets vivent dans 'Defender' (Windows Server) ou
+    # 'ConfigDefender' (Windows 11 Home/Pro). On essaie les deux.
     Import-Module Defender -ErrorAction SilentlyContinue
-
-    $script:mapsToByte  = @{ 'Disabled' = 0; 'Basic' = 1; 'Advanced' = 2 }
-    $script:blockToByte = @{ 'Default' = 0; 'Moderate' = 2; 'High' = 4; 'HighPlus' = 6; 'ZeroTolerance' = 8 }
+    Import-Module ConfigDefender -ErrorAction SilentlyContinue
+    # Force la creation de la fonction au scope global pour que Pester
+    # puisse la mocker peu importe le module source.
 }
 
 Describe 'cloud_protection.test.ps1' {
@@ -59,46 +61,54 @@ Describe 'cloud_protection.test.ps1' {
 
 Describe 'cloud_protection.action.ps1 (Enterprise/Pro path)' {
     BeforeEach {
-        # Etat initial mutable : valeurs avant apply.
-        $script:mpState = [PSCustomObject]@{
-            MAPSReporting        = [byte]1   # Basic
-            CloudBlockLevel      = [byte]0   # Default
+        # Etat mutable. $global: car Pester mock body n'accede pas a $script:
+        # de maniere dynamique apres un BeforeEach.
+        $global:mpState = [PSCustomObject]@{
+            MAPSReporting        = [byte]1
+            CloudBlockLevel      = [byte]0
             CloudExtendedTimeout = 0
         }
+        $global:mapsToByte  = @{ 'Disabled'=0; 'Basic'=1; 'Advanced'=2 }
+        $global:blockToByte = @{ 'Default'=0; 'Moderate'=2; 'High'=4; 'HighPlus'=6; 'ZeroTolerance'=8 }
 
         Mock -CommandName Get-MpPreference -MockWith {
-            # Retourne un nouveau snapshot a chaque appel pour eviter les surprises.
             [PSCustomObject]@{
-                MAPSReporting        = $script:mpState.MAPSReporting
-                CloudBlockLevel      = $script:mpState.CloudBlockLevel
-                CloudExtendedTimeout = $script:mpState.CloudExtendedTimeout
+                MAPSReporting        = $global:mpState.MAPSReporting
+                CloudBlockLevel      = $global:mpState.CloudBlockLevel
+                CloudExtendedTimeout = $global:mpState.CloudExtendedTimeout
             }
         }
 
         Mock -CommandName Set-MpPreference -MockWith {
-            if ($PSBoundParameters.ContainsKey('MAPSReporting')) {
-                $v = $PSBoundParameters['MAPSReporting']
-                $byte = if ($v -is [string]) { [byte]$script:mapsToByte[$v] } else { [byte]$v }
-                $script:mpState.MAPSReporting = $byte
+            $mapsMap  = @{ 'Disabled'=0; 'Basic'=1; 'Advanced'=2 }
+            $blockMap = @{ 'Default'=0; 'Moderate'=2; 'High'=4; 'HighPlus'=6; 'ZeroTolerance'=8 }
+            if ($PesterBoundParameters.ContainsKey('MAPSReporting')) {
+                $v = $PesterBoundParameters['MAPSReporting']
+                $b = if ($v -is [string]) { [byte]$mapsMap[$v] } else { [byte]$v }
+                $global:mpState.MAPSReporting = $b
             }
-            if ($PSBoundParameters.ContainsKey('CloudBlockLevel')) {
-                $v = $PSBoundParameters['CloudBlockLevel']
-                $byte = if ($v -is [string]) { [byte]$script:blockToByte[$v] } else { [byte]$v }
-                $script:mpState.CloudBlockLevel = $byte
+            if ($PesterBoundParameters.ContainsKey('CloudBlockLevel')) {
+                $v = $PesterBoundParameters['CloudBlockLevel']
+                $b = if ($v -is [string]) { [byte]$blockMap[$v] } else { [byte]$v }
+                $global:mpState.CloudBlockLevel = $b
             }
-            if ($PSBoundParameters.ContainsKey('CloudExtendedTimeout')) {
-                $script:mpState.CloudExtendedTimeout = [int]$PSBoundParameters['CloudExtendedTimeout']
+            if ($PesterBoundParameters.ContainsKey('CloudExtendedTimeout')) {
+                $global:mpState.CloudExtendedTimeout = [int]$PesterBoundParameters['CloudExtendedTimeout']
             }
         }
+    }
+
+    AfterEach {
+        Remove-Variable -Name mpState -Scope Global -ErrorAction SilentlyContinue
     }
 
     It 'returns ok=true and sets MAPS=Advanced, Block=High, Timeout=50' {
         $output = & $ActionScript | ConvertFrom-Json
 
         $output.ok | Should -Be $true
-        $script:mpState.MAPSReporting | Should -Be 2
-        $script:mpState.CloudBlockLevel | Should -Be 4
-        $script:mpState.CloudExtendedTimeout | Should -Be 50
+        $global:mpState.MAPSReporting | Should -Be 2
+        $global:mpState.CloudBlockLevel | Should -Be 4
+        $global:mpState.CloudExtendedTimeout | Should -Be 50
 
         Should -Invoke -CommandName Set-MpPreference -Times 1 -ParameterFilter { "$MAPSReporting" -eq 'Advanced' }
         Should -Invoke -CommandName Set-MpPreference -Times 1 -ParameterFilter { "$CloudBlockLevel" -eq 'High' }
@@ -108,38 +118,39 @@ Describe 'cloud_protection.action.ps1 (Enterprise/Pro path)' {
 
 Describe 'cloud_protection.action.ps1 (Windows Home path)' {
     BeforeEach {
-        # Sur Home, CloudBlockLevel reste a 0 quoi qu'il arrive (accept silencieux).
-        $script:mpStateHome = [PSCustomObject]@{
+        $global:mpStateHome = [PSCustomObject]@{
             MAPSReporting        = [byte]1
             CloudBlockLevel      = [byte]0
             CloudExtendedTimeout = 0
         }
+        $global:mapsToByte = @{ 'Disabled'=0; 'Basic'=1; 'Advanced'=2 }
 
         Mock -CommandName Get-MpPreference -MockWith {
             [PSCustomObject]@{
-                MAPSReporting        = $script:mpStateHome.MAPSReporting
-                CloudBlockLevel      = $script:mpStateHome.CloudBlockLevel
-                CloudExtendedTimeout = $script:mpStateHome.CloudExtendedTimeout
+                MAPSReporting        = $global:mpStateHome.MAPSReporting
+                CloudBlockLevel      = $global:mpStateHome.CloudBlockLevel
+                CloudExtendedTimeout = $global:mpStateHome.CloudExtendedTimeout
             }
         }
 
-        # Set-MpPreference -CloudBlockLevel = no-op (simulate Home behavior).
-        # Les autres prefs marchent normalement, mais on n'arrive jamais a les
-        # mettre car l'action bail out apres le probe Block qui echoue.
+        # Set-MpPreference -CloudBlockLevel = no-op (Home behavior).
         Mock -CommandName Set-MpPreference -MockWith {
-            # CloudBlockLevel ignored
-            if ($PSBoundParameters.ContainsKey('MAPSReporting')) {
-                $v = $PSBoundParameters['MAPSReporting']
-                $script:mpStateHome.MAPSReporting = if ($v -is [string]) { [byte]$script:mapsToByte[$v] } else { [byte]$v }
+            if ($PesterBoundParameters.ContainsKey('MAPSReporting')) {
+                $v = $PesterBoundParameters['MAPSReporting']
+                $global:mpStateHome.MAPSReporting = if ($v -is [string]) { [byte]$global:mapsToByte[$v] } else { [byte]$v }
             }
-            if ($PSBoundParameters.ContainsKey('CloudExtendedTimeout')) {
-                $script:mpStateHome.CloudExtendedTimeout = [int]$PSBoundParameters['CloudExtendedTimeout']
+            if ($PesterBoundParameters.ContainsKey('CloudExtendedTimeout')) {
+                $global:mpStateHome.CloudExtendedTimeout = [int]$PesterBoundParameters['CloudExtendedTimeout']
             }
         }
 
         Mock -CommandName Get-CimInstance -MockWith {
             [PSCustomObject]@{ Caption = 'Microsoft Windows 11 Home' }
         }
+    }
+
+    AfterEach {
+        Remove-Variable -Name mpStateHome, mapsToByte -Scope Global -ErrorAction SilentlyContinue
     }
 
     It 'returns ok=false with clear error mentioning MDE / Pro requirement' {
@@ -149,10 +160,9 @@ Describe 'cloud_protection.action.ps1 (Windows Home path)' {
         $output.error | Should -Match 'CloudBlockLevel'
         $output.error | Should -Match 'Pro|MDE|Enterprise'
 
-        # Should NOT have touched MAPSReporting nor CloudExtendedTimeout
-        # (bail out before they're set).
-        $script:mpStateHome.MAPSReporting | Should -Be 1
-        $script:mpStateHome.CloudExtendedTimeout | Should -Be 0
+        # Bail out before MAPSReporting and CloudExtendedTimeout are set.
+        $global:mpStateHome.MAPSReporting | Should -Be 1
+        $global:mpStateHome.CloudExtendedTimeout | Should -Be 0
     }
 }
 
