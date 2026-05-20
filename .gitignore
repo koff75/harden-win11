@@ -53,6 +53,9 @@ __debug_bin*
 # Git worktrees (branches checkees en parallele via git worktree add)
 /worktrees/
 
+# Claude Code session artifacts (lock files, scheduled tasks state)
+.claude/
+
 # Secrets / credentials — ne jamais commit
 .env
 .env.*
