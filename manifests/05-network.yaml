@@ -134,12 +134,14 @@ rules:
   - id: network.wpad_disable
     title: "Désactiver WPAD (détection auto de proxy, exploitable)"
     title_en: "Disable WPAD (auto-proxy detection, exploitable)"
-    description: "Désactive le Web Proxy Auto-Discovery (vecteur de proxy poisoning)."
+    description: "Passe le service WinHttpAutoProxySvc en Manual (ne broadcast plus en arrière-plan)."
     explanation: |
       WPAD broadcast pour découvrir un proxy auto-config. Vulnérable au
-      poisoning sur réseau local (Responder/MitM). Aucune raison de l'avoir
-      activé sur PC perso : si tu as un proxy entreprise, il est configuré
-      en dur via Group Policy ou IT.
+      poisoning sur réseau local (Responder/MitM). On met le service en
+      Manual (Start=3) : il ne tourne plus tout seul mais peut démarrer
+      à la demande si une dépendance le réclame (cas du WiFi sur certaines
+      configs Win11 ARM). Disable (Start=4) cassait le WiFi sur ces
+      machines — voir release notes v0.4.1.
     severity: important
     impact: "Si ton réseau utilise WPAD (rare en perso, possible en entreprise), pas appliquer."
     requires_reboot: true
@@ -176,6 +178,7 @@ rules:
       - maximal
     breaks:
       - "Configuration de proxy automatique via WPAD/PAC (souvent utilise en entreprise). Si tes settings Internet utilisent un proxy auto-discovery, casse l acces web."
+      - "Avant v0.4.1, mettait le service en Disabled — cassait le WiFi sur certaines machines (notamment Win11 ARM Home). Depuis v0.4.1, mis en Manual : safe."
 
   - id: network.ntlm_v2_only
     title: "Forcer l'authentification moderne (NTLMv2 uniquement)"
