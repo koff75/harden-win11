@@ -368,7 +368,7 @@ async function refreshRuns() {
             });
         });
     } catch (err) {
-        list.innerHTML = `<span style="color:#ff9099">${err}</span>`;
+        list.innerHTML = `<span style="color:#ff9099">${escapeHtml(String(err))}</span>`;
     }
 }
 
