@@ -11,9 +11,9 @@ jobs:
     name: Go build + tests
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.26'
           cache: true
@@ -56,7 +56,7 @@ jobs:
           .\dist\harden-engine.exe apply --dry-run --section accounts
 
       - name: Upload binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: harden-engine-windows-amd64
           path: dist/harden-engine.exe
@@ -66,13 +66,27 @@ jobs:
     name: Pester (PowerShell)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install Pester 5
+        # -SkipPublisherCheck est requis ici : Windows pré-installe Pester 3.4.0
+        # (signée Microsoft Authenticode) dans C:\Program Files\WindowsPowerShell\Modules,
+        # et Pester 5.x est signée par l'équipe Pester (cert DigiCert). Deux publishers
+        # légitimes différents — sans -SkipPublisherCheck, l'install échoue avec
+        # PublishersMismatch.
+        # Atténuations compensatoires :
+        #   1. -RequiredVersion 5.7.1 pinne la version (anti rolling-version attack).
+        #   2. Vérification post-install que la version installée correspond exactement.
+        # Cf. finding S015-F002 (medium) — exception documentée.
         shell: powershell
         run: |
           Install-Module -Name Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck -Scope CurrentUser
-          Get-Module -ListAvailable Pester | Where-Object { $_.Version.Major -ge 5 } | Format-Table
+          $installed = Get-Module -ListAvailable Pester | Where-Object { $_.Version.ToString() -eq '5.7.1' }
+          if (-not $installed) {
+            Write-Error "Pester 5.7.1 install verification failed: pinned version not present after install"
+            exit 1
+          }
+          $installed | Format-Table Name, Version, Path -AutoSize
 
       - name: Run Pester
         shell: powershell
@@ -89,7 +103,7 @@ jobs:
 
       - name: Upload Pester results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: pester-results
           path: pester-results.xml
@@ -99,7 +113,7 @@ jobs:
     name: Manifest static audit
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Debug environment
         shell: powershell
         run: |
@@ -132,12 +146,12 @@ jobs:
     runs-on: windows-latest
     needs: go-build-test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.26'
           cache: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20'
       - name: Frontend syntax check
@@ -155,7 +169,7 @@ jobs:
         working-directory: cmd/harden-gui
         run: wails build
       - name: Upload GUI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: harden-gui-windows-amd64
           path: cmd/harden-gui/build/bin/harden-gui.exe
@@ -165,13 +179,15 @@ jobs:
     name: Security scan (gosec)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.26'
           cache: true
       - name: Install gosec
-        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+        # Version pinnée — éviter @latest qui peut introduire des breaks ou des binaires backdoorés
+        # sans review. Bump manuel après vérification du changelog.
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.26.1
       # G301/G302/G306 : noise sur Windows (perms POSIX ignorées par l'OS).
       # G204/G304 : design intentionnel (on spawn des PS scripts validés via JSONSchema).
       # On garde les autres rules pour détecter les vraies vulnérabilités.
@@ -187,13 +203,14 @@ jobs:
     runs-on: windows-latest
     needs: go-build-test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.26'
           cache: true
       - name: Install gremlins
-        run: go install github.com/go-gremlins/gremlins/cmd/gremlins@latest
+        # Version pinnée — éviter @latest, cf. note gosec.
+        run: go install github.com/go-gremlins/gremlins/cmd/gremlins@v0.6.0
       # Mutation testing : modifie le source (ex: > devient <), relance les tests,
       # vérifie que le test échoue. Si pas → bug latent dans la suite de tests.
       # On le fait sur les packages business logic qui ont >90% coverage : maturity, baseline.
@@ -209,8 +226,8 @@ jobs:
     name: Fuzz parsers (smoke 30s each)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.26'
           cache: true
@@ -225,16 +242,16 @@ jobs:
     name: golangci-lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.26'
           cache: true
 
-      - uses: golangci/golangci-lint-action@v8
+      - uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8.0.0
         with:
-          version: latest
+          version: v2.12.2
           # v8 de l'action supporte golangci-lint v2 (config en version: "2").
           # --timeout est défini dans .golangci.yml (run.timeout).
 
@@ -245,9 +262,9 @@ jobs:
     name: Go cross-compile sanity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.26'
           cache: true
