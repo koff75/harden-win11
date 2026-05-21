@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -254,8 +255,14 @@ func runDryParallel(ctx context.Context, rules []manifest.Rule, opts Options, ti
 
 // runDry exécute la logique dry-run pour une règle.
 func runDry(ctx context.Context, rule manifest.Rule, opts Options, timeout time.Duration, sum *Summary) map[string]any {
-	testPath := resolvePath(opts.BasePath, rule.Test)
 	ev := baseEvent(rule, opts, "dry-run")
+	testPath, err := resolvePath(opts.BasePath, rule.Test)
+	if err != nil {
+		ev["status"] = "would_fail"
+		ev["error"] = fmt.Sprintf("resolve test path: %v", err)
+		sum.Failed++
+		return ev
+	}
 
 	out, dur, err := runPS(ctx, opts.Runner, testPath, nil, timeout)
 	ev["duration_ms"] = dur.Milliseconds()
@@ -291,9 +298,21 @@ func runDry(ctx context.Context, rule manifest.Rule, opts Options, timeout time.
 // runApply exécute la logique apply pour une règle. Retourne (event, aborted).
 // aborted=true signale au caller de stopper le run global (auto-rollback enclenché).
 func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout time.Duration, sum *Summary) (map[string]any, bool) {
-	testPath := resolvePath(opts.BasePath, rule.Test)
-	actionPath := resolvePath(opts.BasePath, rule.Action)
 	ev := baseEvent(rule, opts, "apply")
+	testPath, err := resolvePath(opts.BasePath, rule.Test)
+	if err != nil {
+		ev["status"] = "failed"
+		ev["error"] = fmt.Sprintf("resolve test path: %v", err)
+		sum.Failed++
+		return ev, false
+	}
+	actionPath, err := resolvePath(opts.BasePath, rule.Action)
+	if err != nil {
+		ev["status"] = "failed"
+		ev["error"] = fmt.Sprintf("resolve action path: %v", err)
+		sum.Failed++
+		return ev, false
+	}
 
 	// 1. Test : skip si déjà conforme OU si la feature est en cours d'utilisation.
 	testOut, testDur, testErr := runPS(ctx, opts.Runner, testPath, nil, timeout)
@@ -430,7 +449,25 @@ func runApply(ctx context.Context, rule manifest.Rule, opts Options, timeout tim
 	if rollbackInput == nil {
 		rollbackInput = testOut["current"]
 	}
-	undoPath := resolvePath(opts.BasePath, rule.Undo)
+	undoPath, undoResolveErr := resolvePath(opts.BasePath, rule.Undo)
+	if undoResolveErr != nil {
+		// Si on ne peut même pas résoudre le path d'undo, on est en état système
+		// inconnu (action a peut-être modifié des trucs) — on aborte tout le run.
+		rollbackEv := map[string]any{
+			"type":        "rollback_result",
+			"run_id":      opts.RunID,
+			"section_id":  ev["section_id"],
+			"rule_id":     rule.ID,
+			"timestamp":   time.Now().UTC().Format(time.RFC3339),
+			"status":      "rollback_failed",
+			"error":       fmt.Sprintf("resolve undo path: %v", undoResolveErr),
+			"trigger":     "rollback_path_invalid",
+		}
+		ev["rollback"] = "failed"
+		sum.Failed++
+		_ = opts.Writer.Emit(rollbackEv)
+		return ev, true
+	}
 	_, undoDur, undoErr := runPS(ctx, opts.Runner, undoPath, rollbackInput, timeout)
 
 	// actionErr peut être nil si on est arrivé ici via le path "recheck_failed"
@@ -508,16 +545,40 @@ func ruleSectionID(rule manifest.Rule) string {
 	return rule.ID
 }
 
-// resolvePath retourne path tel quel s'il est absolu (cas où le manifest a
-// utilisé un chemin absolu, p.ex. dans des tests), sinon joint avec base.
+// resolvePath joint path à base et garantit que le résultat reste contenu
+// sous base. Refuse les chemins absolus et les traversées (../).
 //
-// Sur Windows, filepath.Join("C:\\base", "C:\\foo") retourne "C:\\base\\C:\\foo"
-// (Go ne drop pas le second drive letter), donc on doit faire le check à la main.
-func resolvePath(base, path string) string {
-	if filepath.IsAbs(path) {
-		return path
+// Why: un manifest YAML est attacker-controlled dès qu'il peut être planté
+// dans un dossier que le binaire élevé consomme (cf. findRepoLayout). Sans
+// containment check, un manifest peut référencer C:\Windows\System32\evil.ps1
+// ou ../../../../evil.ps1, et le runner l'exécute avec les privilèges du
+// process (typiquement admin).
+func resolvePath(base, path string) (string, error) {
+	if path == "" {
+		return "", errors.New("resolvePath: path is empty")
 	}
-	return filepath.Join(base, path)
+	if filepath.IsAbs(path) {
+		return "", fmt.Errorf("resolvePath: absolute paths are rejected (got %q)", path)
+	}
+	// Sur Windows, refuser aussi les paths UNC type \\server\share qui ne sont
+	// pas IsAbs() techniquement mais sortent du containment.
+	if strings.HasPrefix(path, `\\`) || strings.HasPrefix(path, "//") {
+		return "", fmt.Errorf("resolvePath: UNC paths are rejected (got %q)", path)
+	}
+	absBase, err := filepath.Abs(base)
+	if err != nil {
+		return "", fmt.Errorf("resolvePath: invalid base %q: %w", base, err)
+	}
+	joined := filepath.Join(absBase, path)
+	rel, err := filepath.Rel(absBase, joined)
+	if err != nil {
+		return "", fmt.Errorf("resolvePath: cannot compute relative path: %w", err)
+	}
+	// rel commence par ".." si joined sort de absBase.
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("resolvePath: path %q escapes base %q (resolved to %q)", path, base, joined)
+	}
+	return joined, nil
 }
 
 func runPS(ctx context.Context, r *runner.Runner, path string, input any, timeout time.Duration) (map[string]any, time.Duration, error) {

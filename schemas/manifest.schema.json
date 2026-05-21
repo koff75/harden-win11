@@ -64,9 +64,9 @@
           "items": { "type": "string" }
         },
         "added_in": { "type": "string" },
-        "action": { "type": "string", "pattern": "\\.action\\.ps1$" },
-        "test": { "type": "string", "pattern": "\\.test\\.ps1$" },
-        "undo": { "type": "string", "pattern": "\\.undo\\.ps1$" },
+        "action": { "type": "string", "pattern": "^\\./engine/actions/[a-z0-9_]+/[a-z0-9_]+\\.action\\.ps1$" },
+        "test": { "type": "string", "pattern": "^\\./engine/actions/[a-z0-9_]+/[a-z0-9_]+\\.test\\.ps1$" },
+        "undo": { "type": "string", "pattern": "^\\./engine/actions/[a-z0-9_]+/[a-z0-9_]+\\.undo\\.ps1$" },
         "profiles": {
           "type": "array",
           "items": { "enum": ["personal", "business", "maximal"] },

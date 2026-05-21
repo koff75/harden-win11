@@ -56,6 +56,9 @@ __debug_bin*
 # Claude Code session artifacts (lock files, scheduled tasks state)
 .claude/
 
+# openhack workspace (cloned upstream + runs/ artifacts)
+.openhack/
+
 # Secrets / credentials — ne jamais commit
 .env
 .env.*
